@@ -11,6 +11,8 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+  <!-- html2canvas: captura el mapa como imagen PNG descargable -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     /* ── Variables globales ──────────────────────────────────── */
     :root {
@@ -439,10 +441,39 @@
   }
 
   /* ─── Captura del mapa ───────────────────────────────────────── */
+  /* Captura el mapa como PNG y lo descarga automáticamente.
+     html2canvas renderiza el contenedor de Leaflet a un canvas
+     y lo convierte en imagen con resolución doble (scale:2). */
   function capturarMapa() {
-    // Usamos la API nativa de captura de pantalla del navegador si está disponible;
-    // si no, abrimos el mapa en ventana nueva para que el usuario capture manualmente
-    toast('📷 Use la captura de pantalla de su dispositivo para guardar el mapa');
+    const btn = document.querySelector('.capture-btn');
+    btn.textContent = '⏳ Capturando...';
+    btn.disabled = true;
+
+    const mapEl = document.getElementById('map-container');
+    const ahora = new Date();
+    const fecha = ahora.toLocaleDateString('es-SV').replace(/\//g, '-');
+    const hora  = ahora.toLocaleTimeString('es-SV', { hour:'2-digit', minute:'2-digit' })
+                       .replace(/:/g, '-').replace(/\s/g, '');
+    const ts    = fecha + '_' + hora;
+
+    html2canvas(mapEl, {
+      useCORS:  true,   // permite tiles de CartoDB
+      allowTaint: true,
+      scale:    2,      // resolución doble para mayor nitidez
+      logging:  false,
+    }).then(canvas => {
+      const link    = document.createElement('a');
+      link.download = 'CCM_Mapa_' + ts + '.png';
+      link.href     = canvas.toDataURL('image/png');
+      link.click();
+      toast('✅ Imagen descargada: CCM_Mapa_' + ts + '.png');
+    }).catch(err => {
+      console.error('Error al capturar:', err);
+      toast('❌ No se pudo capturar. Use la captura de pantalla del dispositivo.');
+    }).finally(() => {
+      btn.innerHTML = '&#128247; Capturar mapa';
+      btn.disabled  = false;
+    });
   }
 
   /* ─── Carga del listado de semáforos ────────────────────────── */
