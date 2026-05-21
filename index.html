@@ -24,8 +24,15 @@
     }
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
     body { font-family:'Inter',sans-serif; background:var(--bg-page); color:var(--text-dark); -webkit-font-smoothing:antialiased; font-size:14px; }
-    @keyframes spin  { to { transform:rotate(360deg); } }
-    @keyframes pulse { 0%,100%{ opacity:.4 } 50%{ opacity:1 } }
+    @keyframes spin      { to { transform:rotate(360deg); } }
+    @keyframes pulse     { 0%,100%{ opacity:.4 } 50%{ opacity:1 } }
+    /* Pulso para marcadores críticos (apagado / accidente) */
+    @keyframes ring-pulse {
+      0%   { box-shadow:0 0 0 0   rgba(239,68,68,.6), 0 2px 6px rgba(0,0,0,.25); }
+      70%  { box-shadow:0 0 0 10px rgba(239,68,68,0), 0 2px 6px rgba(0,0,0,.25); }
+      100% { box-shadow:0 0 0 0   rgba(239,68,68,0), 0 2px 6px rgba(0,0,0,.25); }
+    }
+    .marker-critical { animation:ring-pulse 1.6s ease-out infinite; }
 
     /* ── Loading ─────────────────────────────────────────────── */
     #loading-overlay { position:fixed; inset:0; background:var(--bg-header); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; z-index:9999; transition:opacity .4s ease; }
@@ -151,6 +158,33 @@
       box-shadow: 0 1px 3px rgba(0,0,0,.2);
     }
 
+    /* ── Tabs de navegación principal ───────────────────────── */
+    .tab-nav {
+      font-family:inherit; font-size:11px; font-weight:700;
+      color:var(--text-mid); background:transparent;
+      border:none; border-bottom:2.5px solid transparent;
+      padding:11px 20px; cursor:pointer;
+      text-transform:uppercase; letter-spacing:.05em;
+      transition:all .15s; display:flex; align-items:center; gap:7px;
+    }
+    .tab-nav:hover  { color:var(--flag-blue); }
+    .tab-nav.active { color:var(--flag-blue); border-bottom-color:var(--flag-blue); }
+
+    /* Panel de ranking */
+    .ranking-panel { display:none; flex:1; overflow-y:auto; }
+    .ranking-panel.active { display:block; animation:fadeIn .2s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+
+    /* Panel hora pico */
+    .horapico-panel { display:none; flex:1; overflow-y:auto; }
+    .horapico-panel.active { display:block; animation:fadeIn .2s ease; }
+
+    /* Card del ranking */
+    .ranking-card {
+      background:var(--bg-white); border:1px solid var(--border);
+      border-radius:var(--r-xl); padding:18px 22px;
+    }
+
     /* ── Toast de notificación ───────────────────────────────── */
     .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:#1e293b; color:#fff; font-size:11px; font-weight:600; padding:9px 18px; border-radius:var(--r-lg); z-index:500; opacity:0; transition:all .3s ease; pointer-events:none; box-shadow:0 4px 20px rgba(0,0,0,.3); white-space:nowrap; }
     .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
@@ -264,8 +298,26 @@
   </div>
 </div>
 
+<!-- Tabs de navegación -->
+<div style="background:var(--bg-white);border-bottom:1px solid var(--border);flex-shrink:0">
+  <div style="max-width:1400px;margin:0 auto;padding:0 28px;display:flex;gap:4px">
+    <button class="tab-nav active" id="tab-mapa" onclick="switchMainTab('mapa',this)">
+      &#128204; MAPA DE INCIDENCIAS
+    </button>
+    <button class="tab-nav" id="tab-ranking" onclick="switchMainTab('ranking',this)">
+      &#127942; SEMÁFOROS CON MÁS INCIDENCIAS
+    </button>
+    <button class="tab-nav" id="tab-horapico" onclick="switchMainTab('horapico',this)">
+      &#128336; HORA PICO
+    </button>
+  </div>
+</div>
+
 <!-- Contenido -->
 <main class="main">
+
+  <!-- Panel: Mapa (pestaña principal) -->
+  <div id="panel-mapa" style="display:flex;flex-direction:column;flex:1;gap:12px;min-height:0">
 
   <!-- Cards de resumen -->
   <div class="stats-grid">
@@ -321,6 +373,22 @@
       <span id="map-status-text">Cargando datos...</span>
     </div>
 
+  </div>
+
+  <!-- Panel: Ranking -->
+  <div id="panel-ranking" class="ranking-panel">
+    <div class="ranking-card">
+      <div class="card-title">SEMÁFOROS CON MÁS INCIDENCIAS</div>
+      <div id="ranking-body" style="font-size:12px;color:var(--text-light);padding:8px 0">Aplica filtros y cambia a esta pestaña para ver el ranking.</div>
+    </div>
+  </div>
+
+  <!-- Panel: Hora Pico -->
+  <div id="panel-horapico" class="horapico-panel">
+    <div class="ranking-card">
+      <div class="card-title">ANÁLISIS DE HORA PICO</div>
+      <div id="horapico-body" style="font-size:12px;color:var(--text-light);padding:8px 0">Aplica filtros y cambia a esta pestaña para ver el análisis.</div>
+    </div>
   </div>
 
   <div class="footer">Mapa de Incidencias Semaf&oacute;ricas &nbsp;&middot;&nbsp; CCM &nbsp;&middot;&nbsp; Ministerio de Obras P&uacute;blicas y de Transporte</div>
@@ -507,6 +575,32 @@
     });
   }
 
+  /* ─── Caché con sessionStorage (10 minutos) ─────────────────────
+     Evita llamadas repetidas a GViz si el usuario recarga la página.
+     La clave incluye la URL para invalidar si cambia el Sheet.
+  ─────────────────────────────────────────────────────────────── */
+  const CACHE_TTL = 10 * 60 * 1000; // 10 minutos en ms
+  const CACHE_KEY = 'ccm_mapa_dataset_v1';
+
+  function cacheGuardar(data) {
+    try {
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+        ts: Date.now(),
+        data,
+      }));
+    } catch(e) { /* sessionStorage lleno o deshabilitado */ }
+  }
+
+  function cacheLeer() {
+    try {
+      const raw = sessionStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      const { ts, data } = JSON.parse(raw);
+      if (Date.now() - ts > CACHE_TTL) { sessionStorage.removeItem(CACHE_KEY); return null; }
+      return data;
+    } catch(e) { return null; }
+  }
+
   /* ─── Carga del listado de semáforos ────────────────────────── */
   async function loadSemaforos() {
     try {
@@ -533,39 +627,49 @@
     }
   }
 
-  /* ─── Carga de P. Semaforico ─────────────────────────────────── */
+  /* ─── Carga de P. Semaforico con caché ──────────────────────────
+     1. Intenta leer del sessionStorage (caché de 10 min)
+     2. Si no hay caché, hace fetch a GViz
+     3. loadSemaforos() se ejecuta en diferido (no bloquea el mapa)
+  ─────────────────────────────────────────────────────────────── */
   async function loadData() {
     document.getElementById('update-note').textContent = 'ACTUALIZANDO...';
     try {
-      await Promise.all([
-        loadSemaforos(),
-        (async () => {
-          const url   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
-          const res   = await fetch(url);
-          const text  = await res.text();
-          const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/);
-          if (!match) throw new Error('Formato de respuesta inesperado.');
-          const json  = JSON.parse(match[1]);
-          dataset = (json.table.rows||[]).map(row => {
-            const c   = row.c;
-            const get = i => (c[i]?.v != null) ? String(c[i].f||c[i].v).trim() : '';
-            const codigo = get(2);
-            const ref    = coordsMap[codigo?.toUpperCase()] || {};
-            const latRaw = get(8) || ref.lat?.toString() || '';
-            const lngRaw = get(9) || ref.lng?.toString() || '';
-            const lngNum = parseFloat(lngRaw);
-            const lngFix = (!isNaN(lngNum) && lngNum>0) ? -lngNum : lngNum;
-            return {
-              fecha:      get(0), hora: get(1), codigo,
-              reporte:    get(3), incidencia: get(4),
-              dir:        get(6), ciudad: get(7) || ref.zona || '',
-              latitud:    latRaw ? parseFloat(latRaw).toString() : '',
-              longitud:   latRaw ? lngFix.toString() : '',
-              operador:   get(10),
-            };
-          }).filter(r => r.fecha || r.codigo);
-        })(),
-      ]);
+      // ── Intentar caché primero
+      const cached = cacheLeer();
+      if (cached) {
+        dataset = cached;
+        console.info('Datos desde caché — omitiendo fetch a GViz');
+      } else {
+        // ── Fetch real a GViz
+        const url   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
+        const res   = await fetch(url);
+        const text  = await res.text();
+        const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/);
+        if (!match) throw new Error('Formato de respuesta inesperado.');
+        const json  = JSON.parse(match[1]);
+        dataset = (json.table.rows||[]).map(row => {
+          const c   = row.c;
+          const get = i => (c[i]?.v != null) ? String(c[i].f||c[i].v).trim() : '';
+          const codigo = get(2);
+          // coordsMap puede estar vacío en primera carga; se rellena tras loadSemaforos
+          const ref    = coordsMap[codigo?.toUpperCase()] || {};
+          const latRaw = get(8) || ref.lat?.toString() || '';
+          const lngRaw = get(9) || ref.lng?.toString() || '';
+          const lngNum = parseFloat(lngRaw);
+          const lngFix = (!isNaN(lngNum) && lngNum>0) ? -lngNum : lngNum;
+          return {
+            fecha:      get(0), hora: get(1), codigo,
+            reporte:    get(3), incidencia: get(4),
+            dir:        get(6), ciudad: get(7) || ref.zona || '',
+            latitud:    latRaw ? parseFloat(latRaw).toString() : '',
+            longitud:   latRaw ? lngFix.toString() : '',
+            operador:   get(10),
+          };
+        }).filter(r => r.fecha || r.codigo);
+        // Guardar en caché para las próximas 10 min
+        cacheGuardar(dataset);
+      }
 
       // Poblar selector de ciudades con San Salvador por defecto
       const ciudades = [...new Set(dataset.map(r=>r.ciudad).filter(Boolean))].sort();
@@ -574,10 +678,23 @@
         ciudades.map(c => `<option value="${c}" ${c==='San Salvador'?'selected':''}>${c}</option>`).join('');
 
       const hora = new Date().toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit'});
-      document.getElementById('update-note').textContent = `${hora} · ${dataset.length} registros`;
+      const desdCache = !!cached ? ' (caché)' : '';
+      document.getElementById('update-note').textContent = `${hora} · ${dataset.length} registros${desdCache}`;
       document.getElementById('live-label').textContent  = `Actualizado ${hora}`;
+
+      // ── Render inicial del mapa (inmediato)
       initMap();
       setRange('mes');
+
+      // ── Cargar listado de semáforos en diferido (no bloquea el mapa)
+      // Se usa para los puntos grises y coordsMap; el mapa ya funcionó sin él
+      if (!cached) {
+        loadSemaforos().then(() => {
+          // Volver a aplicar filtro para que los puntos grises aparezcan
+          aplicarFiltroMapa();
+        });
+      }
+
     } catch(err) {
       document.getElementById('update-note').textContent = 'Error al cargar — verifique la conexión';
       document.getElementById('live-label').textContent  = 'Sin conexión';
@@ -641,6 +758,7 @@
     } else {
       document.getElementById('stat-activos-sub').textContent = 'en el período seleccionado';
     }
+
   }
 
   /* ─── Render principal de marcadores y heatmap ───────────────── */
@@ -786,13 +904,14 @@
         // Ícono: círculo con semáforo SVG centrado
         // iconAnchor=[half,half] alinea el centro del círculo
         // exactamente con las coordenadas del semáforo
-        const glowStyle = isCritical
-          ? 'box-shadow:0 0 8px #ef4444,0 2px 6px rgba(0,0,0,.3)'
-          : 'box-shadow:0 2px 6px rgba(0,0,0,.25)';
+        // Críticos: clase CSS ring-pulse para animación de anillo rojo
+        const criticalClass = isCritical ? 'marker-critical' : '';
         const iconHtml = `
           <div style="position:relative;width:${size}px;height:${size}px">
-            <div style="width:${size}px;height:${size}px;background:${color};
-                        border-radius:50%;border:2.5px solid #fff;${glowStyle};
+            <div class="${criticalClass}"
+                 style="width:${size}px;height:${size}px;background:${color};
+                        border-radius:50%;border:2.5px solid #fff;
+                        box-shadow:0 2px 6px rgba(0,0,0,.25);
                         display:flex;align-items:center;justify-content:center;">
               <svg width="${Math.round(size*.5)}" height="${Math.round(size*.62)}"
                    viewBox="0 0 16 20" fill="none">
@@ -868,6 +987,176 @@
     } else {
       mapInstance.setView([13.6894,-89.1872], 8);
     }
+  }
+
+  /* ─── Tabs de navegación principal ──────────────────────────── */
+  function switchMainTab(name, btn) {
+    ['mapa','ranking','horapico'].forEach(t => {
+      const panel = document.getElementById('panel-' + t);
+      if (panel) panel.style.display = 'none';
+    });
+    document.querySelectorAll('.tab-nav').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const panel = document.getElementById('panel-' + name);
+    if (panel) panel.style.display = name === 'mapa' ? 'flex' : 'block';
+    if (name === 'ranking')  renderRanking();
+    if (name === 'horapico') renderHoraPico();
+  }
+
+  /* ─── Ranking: todos los semáforos ordenados por incidencias ─── */
+  function renderRanking() {
+    // Reutiliza los grupos del último filtro aplicado
+    const tipo     = document.getElementById('map-tipo').value;
+    const ciudad   = document.getElementById('map-ciudad').value;
+    const fechaIni = document.getElementById('f-fecha-ini').value;
+    const fechaFin = document.getElementById('f-fecha-fin').value;
+    const dateIni  = fechaIni ? new Date(fechaIni + 'T00:00:00') : null;
+    const dateFin  = fechaFin ? new Date(fechaFin + 'T23:59:59') : null;
+    const MAP_KW   = {
+      forzamiento:'forzamiento', apagado:'apagado', accidente:'accidente',
+      mejora:'mejora', intermitencia:'intermitencia', error:'error', vdt:'vdt',
+    };
+
+    let rows = dataset.filter(r => {
+      if (dateIni||dateFin) {
+        const d = parseSheetDate(r.fecha);
+        if (!d||(dateIni&&d<dateIni)||(dateFin&&d>dateFin)) return false;
+      }
+      if (tipo!=='todos' && MAP_KW[tipo] && !r.incidencia.toLowerCase().includes(MAP_KW[tipo])) return false;
+      if (ciudad!=='todas' && (r.ciudad||'').toLowerCase()!==ciudad.toLowerCase()) return false;
+      return true;
+    });
+
+    // Agrupar por código
+    const grupos = {};
+    rows.forEach(r => {
+      const key = r.codigo.trim().toUpperCase() || r.dir;
+      if (!grupos[key]) grupos[key] = { codigo:r.codigo, dir:r.dir, ciudad:r.ciudad, registros:[] };
+      grupos[key].registros.push(r);
+    });
+
+    const sorted = Object.values(grupos).sort((a,b) => b.registros.length - a.registros.length);
+
+    if (sorted.length === 0) {
+      document.getElementById('ranking-body').innerHTML =
+        '<p style="color:var(--text-light);padding:20px 0">Sin datos para el filtro actual.</p>';
+      return;
+    }
+
+    const rankIcon = ['🥇','🥈','🥉'];
+    document.getElementById('ranking-body').innerHTML = `
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="border-bottom:1.5px solid var(--border)">
+            <th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:800;color:var(--text-light);text-transform:uppercase;letter-spacing:.08em">#</th>
+            <th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:800;color:var(--text-light);text-transform:uppercase;letter-spacing:.08em">CÓDIGO</th>
+            <th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:800;color:var(--text-light);text-transform:uppercase;letter-spacing:.08em">DIRECCIÓN</th>
+            <th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:800;color:var(--text-light);text-transform:uppercase;letter-spacing:.08em">CIUDAD</th>
+            <th style="text-align:right;padding:8px 10px;font-size:10px;font-weight:800;color:var(--text-light);text-transform:uppercase;letter-spacing:.08em">INCIDENCIAS</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sorted.map((g,i) => `
+            <tr style="border-bottom:1px solid var(--border)" onmouseover="this.style.background='var(--bg-page)'" onmouseout="this.style.background=''">
+              <td style="padding:9px 10px;font-size:14px">${rankIcon[i] || (i+1)}</td>
+              <td style="padding:9px 10px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--flag-blue)">${g.codigo}</td>
+              <td style="padding:9px 10px;color:var(--text-mid)">${g.dir || '—'}</td>
+              <td style="padding:9px 10px;color:var(--text-mid)">${g.ciudad || '—'}</td>
+              <td style="padding:9px 10px;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:800;font-size:14px;color:var(--text-dark)">${g.registros.length}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  /* ─── Hora Pico: AM (5-9h) y PM (15-20h) ─────────────────────── */
+  function parseHora(str) {
+    const m = (str||'').match(/(\d+):(\d+).*?(a\.m\.|p\.m\.)/i);
+    if (!m) return -1;
+    let h = parseInt(m[1]);
+    const pm = m[3].toLowerCase().includes('p');
+    if (pm && h !== 12) h += 12;
+    if (!pm && h === 12) h = 0;
+    return h;
+  }
+
+  function renderHoraPico() {
+    const fechaIni = document.getElementById('f-fecha-ini').value;
+    const fechaFin = document.getElementById('f-fecha-fin').value;
+    const dateIni  = fechaIni ? new Date(fechaIni + 'T00:00:00') : null;
+    const dateFin  = fechaFin ? new Date(fechaFin + 'T23:59:59') : null;
+    const ciudad   = document.getElementById('map-ciudad').value;
+
+    let rows = dataset.filter(r => {
+      if (dateIni||dateFin) {
+        const d = parseSheetDate(r.fecha);
+        if (!d||(dateIni&&d<dateIni)||(dateFin&&d>dateFin)) return false;
+      }
+      if (ciudad!=='todas' && (r.ciudad||'').toLowerCase()!==ciudad.toLowerCase()) return false;
+      return true;
+    });
+
+    // Clasificar por franja horaria
+    const AM_INI = 5, AM_FIN = 9;   // 5:00 - 9:00 a.m.
+    const PM_INI = 15, PM_FIN = 20; // 3:00 - 8:00 p.m.
+
+    const am = rows.filter(r => { const h = parseHora(r.hora); return h >= AM_INI && h <= AM_FIN; });
+    const pm = rows.filter(r => { const h = parseHora(r.hora); return h >= PM_INI && h <= PM_FIN; });
+    const otros = rows.filter(r => { const h = parseHora(r.hora); return h >= 0 && !(h >= AM_INI && h <= AM_FIN) && !(h >= PM_INI && h <= PM_FIN); });
+
+    // Top 5 tipos por franja
+    function topTipos(arr, n=5) {
+      const cnt = {};
+      arr.forEach(r => { const l = getTipo(r.incidencia).label; cnt[l] = (cnt[l]||0)+1; });
+      return Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,n);
+    }
+
+    function franjaHtml(titulo, emoji, color, datos, total) {
+      const pct = total > 0 ? Math.round((datos.length/total)*100) : 0;
+      const top  = topTipos(datos);
+      const maxT = top[0]?.[1] || 1;
+      return `
+        <div style="background:var(--bg-white);border:1px solid var(--border);border-radius:var(--r-lg);
+                    padding:18px 20px;border-left:4px solid ${color}">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px">
+            <div style="font-size:15px;font-weight:800;color:var(--text-dark)">${emoji} ${titulo}</div>
+            <div>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:800;color:${color}">${datos.length}</span>
+              <span style="font-size:11px;color:var(--text-light);margin-left:6px">incidencias (${pct}%)</span>
+            </div>
+          </div>
+          <div style="font-size:10px;font-weight:700;color:var(--text-light);text-transform:uppercase;
+                      letter-spacing:.08em;margin-bottom:10px">Tipos más frecuentes</div>
+          ${top.length === 0
+            ? '<p style="color:var(--text-light);font-size:12px">Sin registros en esta franja</p>'
+            : top.map(([lbl, cnt]) => {
+                const tipoColor = Object.values(TIPOS).find(t=>t.label===lbl)?.color || '#94a3b8';
+                const barW = Math.round((cnt/maxT)*100);
+                return `<div style="display:flex;align-items:center;gap:10px;padding:5px 0;
+                                    border-bottom:1px solid var(--border)">
+                  <div style="width:9px;height:9px;border-radius:50%;background:${tipoColor};flex-shrink:0"></div>
+                  <div style="flex:1;font-size:12px;color:var(--text-mid)">${lbl}</div>
+                  <div style="width:80px;height:6px;background:var(--bg-page);border-radius:3px;flex-shrink:0">
+                    <div style="width:${barW}%;height:100%;background:${tipoColor};border-radius:3px"></div>
+                  </div>
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;
+                              color:var(--text-dark);min-width:28px;text-align:right">${cnt}</div>
+                </div>`;
+              }).join('')
+          }
+        </div>`;
+    }
+
+    document.getElementById('horapico-body').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        ${franjaHtml('HORA PICO AM', '🌅', '#f59e0b', am, rows.length)}
+        ${franjaHtml('HORA PICO PM', '🌆', '#3b82f6', pm, rows.length)}
+      </div>
+      <div style="background:var(--bg-page);border-radius:var(--r-lg);padding:14px 18px;
+                  font-size:12px;color:var(--text-mid);display:flex;gap:24px;flex-wrap:wrap">
+        <span>🌅 <strong>AM:</strong> 5:00 – 9:00 a.m. &nbsp;·&nbsp; ${am.length} registros</span>
+        <span>🌆 <strong>PM:</strong> 3:00 – 8:00 p.m. &nbsp;·&nbsp; ${pm.length} registros</span>
+        <span>🌙 <strong>Otros:</strong> fuera de hora pico &nbsp;·&nbsp; ${otros.length} registros</span>
+      </div>`;
   }
 
   /* ─── Inicio ─────────────────────────────────────────────────── */
