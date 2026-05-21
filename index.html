@@ -337,6 +337,29 @@
     'error spinnaker':        { label: 'Error Spinnaker',        color: '#be123c' },
   };
 
+
+  /* ─── Conteo de semáforos por ciudad ────────────────────────
+     Fuente: Listado de Semáforos oficial (353 semáforos totales).
+     Se usa en la Card "Semáforos en zona" del panel de resumen.
+     Actualizar manualmente si se agregan semáforos al listado.
+  ─────────────────────────────────────────────────────────────── */
+  const SEMAFOROS_X_CIUDAD = {
+    'SAN SALVADOR':      226,
+    'SAN MIGUEL':         46,
+    'SANTA ANA':          17,
+    'SANTA TECLA':        16,
+    'SOYAPANGO':          14,
+    'CIUDAD MERLIOT':      9,
+    'ANTIGUO CUSCATLAN':   8,
+    'METAPAN':             6,
+    'SONSONATE':           6,
+    'AHUACHAPAN':          2,
+    'APOPA':               2,
+    'QUEZALTEPEQUE':       1,
+  };
+  // Total nacional de semáforos registrados
+  const TOTAL_SEMAFOROS = Object.values(SEMAFOROS_X_CIUDAD).reduce((a, b) => a + b, 0);
+
   const getTipo = raw => TIPOS[(raw || '').toLowerCase().trim()] || { label: raw || 'Otro', color: '#94a3b8' };
 
   /* ─── Estado global ─────────────────────────────────────────── */
@@ -405,10 +428,10 @@
       (json.table.rows || []).forEach(row => {
         const c   = row.c;
         const get = i => (c[i]?.v != null) ? String(c[i].f || c[i].v).trim() : '';
-        const id     = get(0); // col A — ID del semáforo en sistema
-        const ciudad = get(7); // col H — ciudad (SANTA ANA, SAN MIGUEL, etc.)
-        const lat    = parseFloat(get(2)); // col C — latitud
-        const lng    = parseFloat(get(3)); // col D — longitud
+        const id     = get(1); // col B — ID del semáforo (AH0001, SS1301, etc.)
+        const ciudad = get(3); // col D — ciudad (SAN SALVADOR, SAN MIGUEL, etc.)
+        const lat    = parseFloat(get(4)); // col E — latitud
+        const lng    = parseFloat(get(5)); // col F — longitud
 
         // Verificar que ID y ambas coordenadas son válidos
         if (!id || isNaN(lat) || isNaN(lng) || lat === 0) return;
@@ -502,21 +525,18 @@
     document.getElementById('stat-zonas-sub').textContent =
       numZonas === 1 ? [...zonas][0] : `${numZonas} ciudades en el filtro`;
 
-    // ── Card 2: Semáforos en zona según 'Lista Semáforo' (col C = ciudad)
-    // Si hay ciudad seleccionada, cuenta los del listado que pertenecen a esa ciudad.
-    // Si es "todas", cuenta el total del listado maestro.
+    // ── Card 2: Semáforos en zona según listado oficial (SEMAFOROS_X_CIUDAD)
+    // Busca por ciudad normalizada a mayúsculas para coincidir con las claves.
     let totalListado = 0;
     if (ciudad !== 'todas') {
-      // Buscar en coordsMap cuántos semáforos tienen esa zona
-      totalListado = Object.values(coordsMap)
-        .filter(s => (s.zona || '').toLowerCase() === ciudad.toLowerCase()).length;
+      const key = ciudad.toUpperCase();
+      totalListado = SEMAFOROS_X_CIUDAD[key] || 0;
     } else {
-      totalListado = Object.keys(coordsMap).length;
+      totalListado = TOTAL_SEMAFOROS;
     }
-    document.getElementById('stat-total-sem').textContent =
-      totalListado > 0 ? totalListado : '—';
+    document.getElementById('stat-total-sem').textContent = totalListado || '—';
     document.getElementById('stat-total-sem-sub').textContent =
-      totalListado > 0 ? 'según listado maestro' : 'listado no disponible';
+      totalListado > 0 ? 'según listado oficial' : 'ciudad no registrada';
 
     // ── Card 3: Semáforos únicos con incidencias en el período
     // = número de grupos (un grupo = un semáforo con código único)
