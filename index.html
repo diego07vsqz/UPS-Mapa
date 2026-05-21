@@ -72,22 +72,43 @@
     .search-code-clear { position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--text-light); font-size:13px; line-height:1; display:none; }
     .search-code-clear.visible { display:block; }
 
-    /* ── Contenedor principal ────────────────────────────────── */
-    .main { max-width:1400px; margin:0 auto; padding:20px 28px 48px; }
-    .card { background:var(--bg-white); border:1px solid var(--border); border-radius:var(--r-xl); padding:16px 20px; }
-    .card-title { font-size:10px; font-weight:700; color:var(--text-light); text-transform:uppercase; letter-spacing:.12em; margin-bottom:13px; padding-bottom:9px; border-bottom:1.5px solid var(--border); display:flex; align-items:center; gap:8px; }
+    /* ── Layout viewport — todo en pantalla sin scroll ──────────
+       html/body = 100% viewport. page-body distribuye el espacio
+       verticalmente: header + filtros (fijos) + main (flex:1).
+       El mapa ocupa el espacio restante sin overflow.
+    ─────────────────────────────────────────────────────────── */
+    html, body { height:100%; overflow:hidden; }
+    .page-body  { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+    .header     { flex-shrink:0; }
+    .filter-bar { flex-shrink:0; }
+
+    .main {
+      flex:1; padding:10px 20px; overflow:hidden;
+      display:flex; flex-direction:column; gap:10px; min-height:0;
+    }
+
+    /* Card del mapa: crece para llenar el espacio restante */
+    .card-map {
+      flex:1; min-height:0; overflow:hidden;
+      display:flex; flex-direction:column;
+      background:var(--bg-white); border:1px solid var(--border);
+      border-radius:var(--r-xl); padding:14px 18px;
+    }
+
+    .card { background:var(--bg-white); border:1px solid var(--border); border-radius:var(--r-xl); padding:14px 18px; }
+    .card-title { font-size:10px; font-weight:700; color:var(--text-light); text-transform:uppercase; letter-spacing:.12em; margin-bottom:10px; padding-bottom:8px; border-bottom:1.5px solid var(--border); display:flex; align-items:center; gap:8px; flex-shrink:0; }
     .card-title::before { content:''; width:4px; height:13px; background:var(--flag-blue); border-radius:3px; flex-shrink:0; }
 
     /* ── Cards de resumen ────────────────────────────────────── */
-    .stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
+    .stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; flex-shrink:0; }
     @media(max-width:700px){ .stats-grid { grid-template-columns:1fr; } }
-    .stat-card { background:var(--bg-white); border:1px solid var(--border); border-radius:var(--r-lg); padding:14px 16px; display:flex; align-items:center; gap:12px; position:relative; }
+    .stat-card { background:var(--bg-white); border:1px solid var(--border); border-radius:var(--r-lg); padding:10px 14px; display:flex; align-items:center; gap:10px; position:relative; }
     .stat-card::before { content:''; position:absolute; left:0; top:11px; bottom:11px; width:3px; border-radius:0 3px 3px 0; }
     .stat-card.s-blue::before   { background:var(--blue); }
     .stat-card.s-green::before  { background:#10b981; }
     .stat-card.s-yellow::before { background:var(--yellow); }
     .stat-icon { width:44px; height:44px; border-radius:var(--r-md); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:20px; }
-    .stat-num { font-size:26px; font-weight:800; font-family:'JetBrains Mono',monospace; line-height:1.1; color:var(--text-dark); }
+    .stat-num { font-size:22px; font-weight:800; font-family:'JetBrains Mono',monospace; line-height:1.1; color:var(--text-dark); }
     .stat-label { font-size:9px; font-weight:700; color:var(--text-mid); text-transform:uppercase; letter-spacing:.07em; margin-top:2px; }
     .stat-sub { font-size:9px; color:var(--text-light); margin-top:3px; line-height:1.4; }
 
@@ -98,8 +119,8 @@
     .capture-btn { font-family:inherit; font-size:9px; font-weight:700; color:var(--text-mid); background:var(--bg-page); border:1px solid var(--border-mid); border-radius:var(--r-sm); padding:4px 12px; cursor:pointer; transition:all .15s; display:flex; align-items:center; gap:5px; margin-left:auto; }
     .capture-btn:hover { background:#059669; border-color:#059669; color:#fff; }
 
-    /* ── Mapa ────────────────────────────────────────────────── */
-    .map-container { width:100%; height:540px; border-radius:var(--r-lg); overflow:hidden; border:1px solid var(--border-mid); }
+    /* ── Mapa: ocupa todo el espacio restante de card-map ─────── */
+    .map-container { flex:1; min-height:0; width:100%; border-radius:var(--r-lg); overflow:hidden; border:1px solid var(--border-mid); }
     .map-status { margin-top:10px; font-size:11px; color:var(--text-light); display:flex; align-items:center; gap:6px; }
 
     /* ── Leyenda ─────────────────────────────────────────────── */
@@ -119,6 +140,7 @@
   </style>
 </head>
 <body>
+<div class="page-body">
 
 <!-- Loading -->
 <div id="loading-overlay">
@@ -254,7 +276,7 @@
   </div>
 
   <!-- Mapa -->
-  <div class="card">
+  <div class="card-map">
     <div class="card-title">
       MAPA DE INCIDENCIAS &mdash; EL SALVADOR
     </div>
@@ -789,5 +811,6 @@
     setTimeout(() => overlay.remove(), 400);
   });
 </script>
+</div>
 </body>
 </html>
