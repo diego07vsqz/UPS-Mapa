@@ -406,9 +406,9 @@
         const c   = row.c;
         const get = i => (c[i]?.v != null) ? String(c[i].f || c[i].v).trim() : '';
         const id     = get(0); // col A — ID del semáforo en sistema
-        const ciudad = get(2); // col C — ciudad
-        const lat    = parseFloat(get(3)); // col D — latitud
-        const lng    = parseFloat(get(4)); // col E — longitud
+        const ciudad = get(7); // col H — ciudad (SANTA ANA, SAN MIGUEL, etc.)
+        const lat    = parseFloat(get(2)); // col C — latitud
+        const lng    = parseFloat(get(3)); // col D — longitud
 
         // Verificar que ID y ambas coordenadas son válidos
         if (!id || isNaN(lat) || isNaN(lng) || lat === 0) return;
