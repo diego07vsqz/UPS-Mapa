@@ -219,9 +219,9 @@
     <span style="flex-basis:100%"></span>
     <span class="filter-label">RANGO</span>
     <div class="range-btns">
-      <button class="range-btn" id="rbtn-mes"  onclick="setRange('mes')">ESTE MES</button>
+      <button class="range-btn active-range" id="rbtn-mes" onclick="setRange('mes')">ESTE MES</button>
       <button class="range-btn" id="rbtn-ant"  onclick="setRange('ant')">MES ANTERIOR</button>
-      <button class="range-btn active-range" id="rbtn-3m" onclick="setRange('3m')">ÚLTIMOS 3 MESES</button>
+      <button class="range-btn" id="rbtn-3m" onclick="setRange('3m')">ÚLTIMOS 3 MESES</button>
       <button class="range-btn" id="rbtn-todo" onclick="setRange('todo')">TODO</button>
     </div>
   </div>
@@ -409,7 +409,7 @@
     const opt = [...sel.options].find(o => o.value === 'San Salvador');
     sel.value = opt ? 'San Salvador' : 'todas';
     document.getElementById('range-warning').classList.remove('visible');
-    setRange('3m');
+    setRange('mes');
   }
 
   /* ─── Carga del listado maestro de semáforos ────────────────────
@@ -492,7 +492,7 @@
       document.getElementById('live-label').textContent  = `Actualizado ${hora}`;
 
       initMap();
-      setRange('3m');
+      setRange('mes');
     } catch (err) {
       document.getElementById('update-note').textContent = 'Error al cargar';
       document.getElementById('live-label').textContent  = 'Sin conexion';
