@@ -1,4 +1,4 @@
-here<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -196,7 +196,7 @@ here<!DOCTYPE html>
       <input type="date" class="date-input" id="f-fecha-fin" onchange="onManualDate()">
       <button onclick="clearDates()" style="font-family:inherit;font-size:9px;color:var(--text-mid);background:transparent;border:1px solid var(--border-mid);border-radius:var(--r-sm);padding:4px 9px;cursor:pointer">&times; LIMPIAR</button>
     </div>
-    <select class="filter-select" id="map-tipo">
+    <select class="filter-select" id="map-tipo" onchange="aplicarFiltroMapa()">
       <option value="todos">TODOS LOS TIPOS</option>
       <option value="forzamiento">Forzamiento de Tiempos</option>
       <option value="apagado">Apagado</option>
@@ -206,7 +206,7 @@ here<!DOCTYPE html>
       <option value="error">Error de Comunicaci&oacute;n</option>
       <option value="vdt">Revisi&oacute;n VDT</option>
     </select>
-    <select class="filter-select" id="map-ciudad">
+    <select class="filter-select" id="map-ciudad" onchange="aplicarFiltroMapa()">
       <option value="todas">TODAS LAS CIUDADES</option>
     </select>
     <button class="btn-apply" onclick="aplicarFiltroMapa()">
