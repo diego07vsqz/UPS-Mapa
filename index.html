@@ -298,8 +298,8 @@
   /* Configuracion */
   const SHEET_ID      = '1z7RURqLK9EQGftyyre7FcGdj_i7WWjWFWAvMFhgsQgU';
   const SHEET_NAME    = 'P. Semaforico';
-  const SEMAFOROS_ID   = '12UGyAEYZIz-Qu-3_EKxaaehZwVXnFhvYi-gkBGwPOk0';
-  const SEMAFOROS_NAME = 'Hoja1';
+  const SEMAFOROS_ID   = '1z7RURqLK9EQGftyyre7FcGdj_i7WWjWFWAvMFhgsQgU'; // mismo Sheet que P. Semaforico
+  const SEMAFOROS_NAME = 'Lista Semáforo'; // hoja dentro de DATA CCM
 
   /* ─── Catálogo de incidencias (col E) ────────────────────────
      Claves en minúsculas para comparación con toLowerCase().
@@ -405,12 +405,16 @@
       (json.table.rows || []).forEach(row => {
         const c   = row.c;
         const get = i => (c[i]?.v != null) ? String(c[i].f || c[i].v).trim() : '';
-        const codigo = get(2), zona = get(7);
-        const lat = parseFloat(get(8)), lng = parseFloat(get(9));
-        // FIX: verificar que AMBAS coordenadas son números válidos antes de guardar
-        if (!codigo || isNaN(lat) || isNaN(lng) || lat === 0) return;
+        const id     = get(0); // col A — ID del semáforo en sistema
+        const ciudad = get(2); // col C — ciudad
+        const lat    = parseFloat(get(3)); // col D — latitud
+        const lng    = parseFloat(get(4)); // col E — longitud
+
+        // Verificar que ID y ambas coordenadas son válidos
+        if (!id || isNaN(lat) || isNaN(lng) || lat === 0) return;
+
         // Corrección de signo: longitud de El Salvador es negativa (-89.x)
-        coordsMap[codigo.toUpperCase()] = { lat, lng: lng > 0 ? -lng : lng, zona };
+        coordsMap[id.toUpperCase()] = { lat, lng: lng > 0 ? -lng : lng, zona: ciudad };
       });
       console.info('Semaforos cargados:', Object.keys(coordsMap).length);
     } catch (err) {
@@ -498,9 +502,9 @@
     document.getElementById('stat-zonas-sub').textContent =
       numZonas === 1 ? [...zonas][0] : `${numZonas} ciudades en el filtro`;
 
-    // ── Card 2: Semáforos en zona según listado maestro (coordsMap)
-    // Si hay ciudad seleccionada, cuenta los del listado que pertenecen a esa zona.
-    // Si es "todas", cuenta todos los del listado.
+    // ── Card 2: Semáforos en zona según 'Lista Semáforo' (col C = ciudad)
+    // Si hay ciudad seleccionada, cuenta los del listado que pertenecen a esa ciudad.
+    // Si es "todas", cuenta el total del listado maestro.
     let totalListado = 0;
     if (ciudad !== 'todas') {
       // Buscar en coordsMap cuántos semáforos tienen esa zona
