@@ -33,13 +33,13 @@
       100% { box-shadow:0 0 0 0   rgba(239,68,68,0), 0 2px 6px rgba(0,0,0,.25); }
     }
     .marker-critical { animation:ring-pulse 1.6s ease-out infinite; }
-
+ 
     /* ── Loading ─────────────────────────────────────────────── */
     #loading-overlay { position:fixed; inset:0; background:var(--bg-header); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; z-index:9999; transition:opacity .4s ease; }
     #loading-overlay.fade-out { opacity:0; pointer-events:none; }
     .spinner { width:40px; height:40px; border:2.5px solid rgba(245,158,11,.2); border-top-color:var(--yellow); border-radius:50%; animation:spin .8s linear infinite; }
     .loading-msg { font-size:14px; font-weight:700; color:#fff; letter-spacing:.06em; text-transform:uppercase; }
-
+ 
     /* ── Header ──────────────────────────────────────────────── */
     .header { background:var(--bg-header); border-bottom:2px solid var(--yellow); position:sticky; top:0; z-index:100; }
     .header-inner { max-width:1400px; margin:0 auto; padding:0 28px; display:flex; align-items:center; justify-content:space-between; height:64px; }
@@ -53,7 +53,7 @@
     .live-dot  { width:6px; height:6px; border-radius:50%; background:#34d399; animation:pulse 1.5s ease-in-out infinite; }
     .btn-refresh { display:flex; align-items:center; gap:6px; background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.25); border-radius:var(--r-sm); color:var(--yellow); font-size:12px; font-weight:600; padding:6px 14px; cursor:pointer; transition:background .2s; font-family:inherit; text-transform:uppercase; letter-spacing:.05em; }
     .btn-refresh:hover { background:rgba(245,158,11,.2); }
-
+ 
     /* ── Filtros ─────────────────────────────────────────────── */
     .filter-bar { background:var(--bg-white); border-bottom:1px solid var(--border); }
     .filter-bar-inner { max-width:1400px; margin:0 auto; padding:9px 28px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
@@ -71,14 +71,14 @@
     .btn-limpiar { font-family:inherit; font-size:11px; font-weight:600; color:var(--text-mid); background:transparent; border:1px solid var(--border-mid); border-radius:var(--r-sm); padding:4px 10px; cursor:pointer; transition:all .15s; }
     .btn-limpiar:hover { background:var(--flag-blue); color:#fff; border-color:var(--flag-blue); }
     .update-note { font-size:11px; color:var(--text-light); background:var(--bg-page); padding:3px 9px; border-radius:20px; white-space:nowrap; }
-
+ 
     /* ── Buscador por código ─────────────────────────────────── */
     .search-code-wrap { position:relative; }
     .search-code { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-dark); background:var(--bg-white); border:1px solid var(--border-mid); border-radius:var(--r-sm); padding:5px 30px 5px 11px; outline:none; width:130px; transition:border-color .15s; }
     .search-code:focus { border-color:var(--flag-blue); }
     .search-code-clear { position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--text-light); font-size:13px; line-height:1; display:none; }
     .search-code-clear.visible { display:block; }
-
+ 
     /* ── Layout viewport — todo en pantalla sin scroll ──────────
        html/body = 100% viewport. page-body distribuye el espacio
        verticalmente: header + filtros (fijos) + main (flex:1).
@@ -88,12 +88,12 @@
     .page-body  { display:flex; flex-direction:column; min-height:100vh; }
     .header     { flex-shrink:0; }
     .filter-bar { flex-shrink:0; }
-
+ 
     .main {
       flex:1; padding:14px 24px 24px;
       display:flex; flex-direction:column; gap:12px;
     }
-
+ 
     /* Card del mapa */
     .card-map {
       flex:1;
@@ -101,11 +101,11 @@
       background:var(--bg-white); border:1px solid var(--border);
       border-radius:var(--r-xl); padding:14px 18px;
     }
-
+ 
     .card { background:var(--bg-white); border:1px solid var(--border); border-radius:var(--r-xl); padding:14px 18px; }
     .card-title { font-size:12px; font-weight:700; color:var(--text-light); text-transform:uppercase; letter-spacing:.12em; margin-bottom:10px; padding-bottom:8px; border-bottom:1.5px solid var(--border); display:flex; align-items:center; gap:8px; flex-shrink:0; }
     .card-title::before { content:''; width:4px; height:13px; background:var(--flag-blue); border-radius:3px; flex-shrink:0; }
-
+ 
     /* ── Cards de resumen ────────────────────────────────────── */
     .stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; flex-shrink:0; }
     @media(max-width:700px){ .stats-grid { grid-template-columns:1fr; } }
@@ -118,21 +118,21 @@
     .stat-num { font-size:26px; font-weight:800; font-family:'JetBrains Mono',monospace; line-height:1.1; color:var(--text-dark); }
     .stat-label { font-size:11px; font-weight:700; color:var(--text-mid); text-transform:uppercase; letter-spacing:.07em; margin-top:2px; }
     .stat-sub { font-size:11px; color:var(--text-light); margin-top:3px; line-height:1.4; }
-
+ 
     /* ── Toolbar del mapa ────────────────────────────────────── */
     .map-toolbar { display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
     .layer-btn { font-family:inherit; font-size:11px; font-weight:700; color:var(--text-mid); background:var(--bg-page); border:1px solid var(--border-mid); border-radius:20px; padding:4px 12px; cursor:pointer; transition:all .15s; display:flex; align-items:center; gap:5px; }
     .layer-btn:hover, .layer-btn.active { background:var(--flag-blue); border-color:var(--flag-blue); color:#fff; }
     .capture-btn { font-family:inherit; font-size:11px; font-weight:700; color:var(--text-mid); background:var(--bg-page); border:1px solid var(--border-mid); border-radius:var(--r-sm); padding:4px 12px; cursor:pointer; transition:all .15s; display:flex; align-items:center; gap:5px; margin-left:auto; }
     .capture-btn:hover { background:#059669; border-color:#059669; color:#fff; }
-
+ 
     /* ── Mapa: altura generosa, crece con la card-map ─────────── */
     .map-container { flex:1; min-height:520px; width:100%; border-radius:var(--r-lg); overflow:hidden; border:1px solid var(--border-mid); }
     .map-status { margin-top:10px; font-size:13px; color:var(--text-light); display:flex; align-items:center; gap:6px; }
-
+ 
     /* Marcador personalizado Leaflet */
     .custom-marker { background:transparent !important; border:none !important; }
-
+ 
     /* ── Leyenda dentro del mapa (control Leaflet) ──────────── */
     .map-legend-control {
       background: rgba(255,255,255,.96);
@@ -157,7 +157,7 @@
       border: 1.5px solid rgba(255,255,255,.8);
       box-shadow: 0 1px 3px rgba(0,0,0,.2);
     }
-
+ 
     /* ── Tabs de navegación principal ───────────────────────── */
     .tab-nav {
       font-family:inherit; font-size:11px; font-weight:700;
@@ -169,33 +169,33 @@
     }
     .tab-nav:hover  { color:var(--flag-blue); }
     .tab-nav.active { color:var(--flag-blue); border-bottom-color:var(--flag-blue); }
-
+ 
     /* Panel de ranking */
     .ranking-panel { display:none; flex:1; overflow-y:auto; }
     .ranking-panel.active { display:block; animation:fadeIn .2s ease; }
     @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
-
+ 
     /* Panel hora pico */
     .horapico-panel { display:none; flex:1; overflow-y:auto; }
     .horapico-panel.active { display:block; animation:fadeIn .2s ease; }
-
+ 
     /* Card del ranking */
     .ranking-card {
       background:var(--bg-white); border:1px solid var(--border);
       border-radius:var(--r-xl); padding:18px 22px;
     }
-
+ 
     /* ── Toast de notificación ───────────────────────────────── */
     .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:#1e293b; color:#fff; font-size:11px; font-weight:600; padding:9px 18px; border-radius:var(--r-lg); z-index:500; opacity:0; transition:all .3s ease; pointer-events:none; box-shadow:0 4px 20px rgba(0,0,0,.3); white-space:nowrap; }
     .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-
+ 
     /* ── Footer ──────────────────────────────────────────────── */
     .footer { margin-top:28px; padding-top:16px; border-top:1px solid var(--border); text-align:center; font-size:11px; color:var(--text-light); text-transform:uppercase; letter-spacing:.07em; }
   </style>
 </head>
 <body>
 <div class="page-body">
-
+ 
 <!-- Loading -->
 <div id="loading-overlay">
   <div style="filter:drop-shadow(0 0 10px rgba(255,209,0,.4))">
@@ -215,7 +215,7 @@
   <div class="spinner"></div>
   <div class="loading-msg">CARGANDO DATOS</div>
 </div>
-
+ 
 <!-- Header -->
 <header class="header">
   <div class="header-inner">
@@ -249,7 +249,7 @@
     </div>
   </div>
 </header>
-
+ 
 <!-- Filtros -->
 <div class="filter-bar">
   <div class="filter-bar-inner">
@@ -279,7 +279,7 @@
              oninput="onSearchCode(this.value)" autocomplete="off">
       <button class="search-code-clear" id="search-code-clear" onclick="clearSearchCode()">&times;</button>
     </div>
-
+ 
     <button class="btn-apply" onclick="aplicarFiltroMapa()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       APLICAR
@@ -297,7 +297,7 @@
     </div>
   </div>
 </div>
-
+ 
 <!-- Tabs de navegación -->
 <div style="background:var(--bg-white);border-bottom:1px solid var(--border);flex-shrink:0">
   <div style="max-width:1400px;margin:0 auto;padding:0 28px;display:flex;gap:4px">
@@ -312,13 +312,13 @@
     </button>
   </div>
 </div>
-
+ 
 <!-- Contenido -->
 <main class="main">
-
+ 
   <!-- Panel: Mapa (pestaña principal) -->
   <div id="panel-mapa" style="display:flex;flex-direction:column;flex:1;gap:12px;min-height:0">
-
+ 
   <!-- Cards de resumen -->
   <div class="stats-grid">
     <div class="stat-card s-blue">
@@ -346,13 +346,13 @@
       </div>
     </div>
   </div>
-
+ 
   <!-- Mapa -->
   <div class="card-map">
     <div class="card-title">
       MAPA DE INCIDENCIAS &mdash; EL SALVADOR
     </div>
-
+ 
     <!-- Toolbar: capas + captura -->
     <div class="map-toolbar">
       <button class="layer-btn active" id="btn-marcadores" onclick="setLayer('marcadores')">
@@ -365,16 +365,16 @@
         &#128247; Capturar mapa
       </button>
     </div>
-
+ 
     <div class="map-container" id="map-container"></div>
-
+ 
     <div class="map-status">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       <span id="map-status-text">Cargando datos...</span>
     </div>
-
+ 
   </div>
-
+ 
   <!-- Panel: Ranking -->
   <div id="panel-ranking" class="ranking-panel">
     <div class="ranking-card">
@@ -382,7 +382,7 @@
       <div id="ranking-body" style="font-size:12px;color:var(--text-light);padding:8px 0">Aplica filtros y cambia a esta pestaña para ver el ranking.</div>
     </div>
   </div>
-
+ 
   <!-- Panel: Hora Pico -->
   <div id="panel-horapico" class="horapico-panel">
     <div class="ranking-card">
@@ -390,22 +390,22 @@
       <div id="horapico-body" style="font-size:12px;color:var(--text-light);padding:8px 0">Aplica filtros y cambia a esta pestaña para ver el análisis.</div>
     </div>
   </div>
-
+ 
   <div class="footer">Mapa de Incidencias Semaf&oacute;ricas &nbsp;&middot;&nbsp; CCM &nbsp;&middot;&nbsp; Ministerio de Obras P&uacute;blicas y de Transporte</div>
 </main>
-
+ 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
-
+ 
 <script>
   'use strict';
-
+ 
   /* ─── Configuración ──────────────────────────────────────────── */
   const SHEET_ID       = '1z7RURqLK9EQGftyyre7FcGdj_i7WWjWFWAvMFhgsQgU';
   const SHEET_NAME     = 'P. Semaforico';
   const SEMAFOROS_ID   = '1z7RURqLK9EQGftyyre7FcGdj_i7WWjWFWAvMFhgsQgU';
   const SEMAFOROS_NAME = 'Lista Semáforos';
-
+ 
   /* ─── Catálogo de incidencias (col E) ────────────────────────── */
   const TIPOS = {
     'forzamiento de tiempos': { label:'Forzamiento de Tiempos', color:'#ca8a04' },
@@ -439,7 +439,7 @@
     'error spinnaker':        { label:'Error Spinnaker',        color:'#be123c' },
   };
   const getTipo = raw => TIPOS[(raw||'').toLowerCase().trim()] || { label:raw||'Otro', color:'#94a3b8' };
-
+ 
   /* ─── Conteo oficial de semáforos por ciudad (PDF 2024) ──────── */
   const SEMAFOROS_X_CIUDAD = {
     'SAN SALVADOR':     226, 'SAN MIGUEL':    46,
@@ -450,7 +450,7 @@
     'APOPA':              2, 'QUEZALTEPEQUE':  1,
   };
   const TOTAL_SEMAFOROS = Object.values(SEMAFOROS_X_CIUDAD).reduce((a,b) => a+b, 0); // 353
-
+ 
   /* ─── Estado global ──────────────────────────────────────────── */
   let dataset      = [];
   let coordsMap    = {};
@@ -460,7 +460,7 @@
   let capaBusqueda = null;   // marcador de búsqueda por código
   let capaActual   = 'marcadores'; // 'marcadores' | 'heatmap'
   let codigoFiltro = '';
-
+ 
   /* ─── Helpers ────────────────────────────────────────────────── */
   function parseSheetDate(str) {
     const [d, m, y] = (str||'').split('/');
@@ -477,7 +477,7 @@
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), dur);
   }
-
+ 
   /* ─── Filtros de fecha y hora ────────────────────────────────── */
   function clearDates() {
     document.getElementById('f-fecha-ini').value = '';
@@ -506,7 +506,7 @@
     setActiveRangeBtn(rango);
     aplicarFiltroMapa();
   }
-
+ 
   /* ─── Buscador por código de semáforo ──────────────────────── */
   function onSearchCode(val) {
     codigoFiltro = val.trim().toUpperCase();
@@ -519,7 +519,7 @@
     document.getElementById('search-code-clear').classList.remove('visible');
     aplicarFiltroMapa();
   }
-
+ 
   /* ─── Limpiar todos los filtros ──────────────────────────────── */
   function limpiarFiltros() {
     document.getElementById('map-tipo').value = 'todos';
@@ -530,7 +530,7 @@
     clearSearchCode();
     setRange('mes');
   }
-
+ 
   /* ─── Toggle de capa: marcadores ↔ heatmap ───────────────────── */
   function setLayer(capa) {
     capaActual = capa;
@@ -538,7 +538,7 @@
     document.getElementById('btn-heatmap').classList.toggle('active', capa==='heatmap');
     aplicarFiltroMapa();
   }
-
+ 
   /* ─── Captura del mapa ───────────────────────────────────────── */
   /* Captura el mapa como PNG y lo descarga automáticamente.
      html2canvas renderiza el contenedor de Leaflet a un canvas
@@ -547,14 +547,14 @@
     const btn = document.querySelector('.capture-btn');
     btn.textContent = '⏳ Capturando...';
     btn.disabled = true;
-
+ 
     const mapEl = document.getElementById('map-container');
     const ahora = new Date();
     const fecha = ahora.toLocaleDateString('es-SV').replace(/\//g, '-');
     const hora  = ahora.toLocaleTimeString('es-SV', { hour:'2-digit', minute:'2-digit' })
                        .replace(/:/g, '-').replace(/\s/g, '');
     const ts    = fecha + '_' + hora;
-
+ 
     html2canvas(mapEl, {
       useCORS:  true,   // permite tiles de CartoDB
       allowTaint: true,
@@ -574,14 +574,14 @@
       btn.disabled  = false;
     });
   }
-
+ 
   /* ─── Caché con sessionStorage (10 minutos) ─────────────────────
      Evita llamadas repetidas a GViz si el usuario recarga la página.
      La clave incluye la URL para invalidar si cambia el Sheet.
   ─────────────────────────────────────────────────────────────── */
   const CACHE_TTL = 10 * 60 * 1000; // 10 minutos en ms
   const CACHE_KEY = 'ccm_mapa_dataset_v1';
-
+ 
   function cacheGuardar(data) {
     try {
       sessionStorage.setItem(CACHE_KEY, JSON.stringify({
@@ -590,7 +590,7 @@
       }));
     } catch(e) { /* sessionStorage lleno o deshabilitado */ }
   }
-
+ 
   function cacheLeer() {
     try {
       const raw = sessionStorage.getItem(CACHE_KEY);
@@ -600,7 +600,7 @@
       return data;
     } catch(e) { return null; }
   }
-
+ 
   /* ─── Carga del listado de semáforos ────────────────────────── */
   async function loadSemaforos() {
     try {
@@ -626,7 +626,7 @@
       console.warn('Listado de semáforos no disponible:', err.message);
     }
   }
-
+ 
   /* ─── Carga de P. Semaforico con caché ──────────────────────────
      1. Intenta leer del sessionStorage (caché de 10 min)
      2. Si no hay caché, hace fetch a GViz
@@ -670,22 +670,22 @@
         // Guardar en caché para las próximas 10 min
         cacheGuardar(dataset);
       }
-
+ 
       // Poblar selector de ciudades con San Salvador por defecto
       const ciudades = [...new Set(dataset.map(r=>r.ciudad).filter(Boolean))].sort();
       document.getElementById('map-ciudad').innerHTML =
         '<option value="todas">TODAS LAS CIUDADES</option>' +
         ciudades.map(c => `<option value="${c}" ${c==='San Salvador'?'selected':''}>${c}</option>`).join('');
-
+ 
       const hora = new Date().toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit'});
       const desdCache = !!cached ? ' (caché)' : '';
       document.getElementById('update-note').textContent = `${hora} · ${dataset.length} registros${desdCache}`;
       document.getElementById('live-label').textContent  = `Actualizado ${hora}`;
-
+ 
       // ── Render inicial del mapa (inmediato)
       initMap();
       setRange('mes');
-
+ 
       // ── Cargar listado de semáforos en diferido (no bloquea el mapa)
       // Se usa para los puntos grises y coordsMap; el mapa ya funcionó sin él
       if (!cached) {
@@ -694,14 +694,14 @@
           aplicarFiltroMapa();
         });
       }
-
+ 
     } catch(err) {
       document.getElementById('update-note').textContent = 'Error al cargar — verifique la conexión';
       document.getElementById('live-label').textContent  = 'Sin conexión';
       console.error(err);
     }
   }
-
+ 
   /* ─── Inicialización del mapa ────────────────────────────────── */
   function initMap() {
     if (mapInstance) return;
@@ -710,7 +710,7 @@
       attribution:'&copy; <a href="https://www.openstreetmap.org">OSM</a> &amp; CARTO',
       subdomains:'abcd', maxZoom:19, minZoom:5,
     }).addTo(mapInstance);
-
+ 
     // ── Leyenda como control Leaflet (esquina inferior izquierda)
     const legend = L.control({ position: 'bottomleft' });
     legend.onAdd = () => {
@@ -732,7 +732,7 @@
     };
     legend.addTo(mapInstance);
   }
-
+ 
   /* ─── Cards de resumen ───────────────────────────────────────── */
   function renderStats(rows, grupos, ciudad) {
     // Card 1: Zonas únicas
@@ -740,7 +740,7 @@
     document.getElementById('stat-zonas').textContent = zonas.size || '—';
     document.getElementById('stat-zonas-sub').textContent =
       zonas.size===1 ? [...zonas][0] : `${zonas.size} ciudades en el filtro`;
-
+ 
     // Card 2: Semáforos en zona según listado oficial
     let totalListado = ciudad!=='todas'
       ? (SEMAFOROS_X_CIUDAD[ciudad.toUpperCase()] || 0)
@@ -748,7 +748,7 @@
     document.getElementById('stat-total-sem').textContent = totalListado || '—';
     document.getElementById('stat-total-sem-sub').textContent =
       totalListado>0 ? 'según listado oficial' : 'ciudad no registrada';
-
+ 
     // Card 3: Semáforos únicos con incidencias + porcentaje
     const numActivos = Object.keys(grupos).length;
     document.getElementById('stat-activos').textContent = numActivos || '—';
@@ -758,25 +758,25 @@
     } else {
       document.getElementById('stat-activos-sub').textContent = 'en el período seleccionado';
     }
-
+ 
   }
-
+ 
   /* ─── Render principal de marcadores y heatmap ───────────────── */
   function aplicarFiltroMapa() {
     if (!mapInstance) return;
-
+ 
     const tipo     = document.getElementById('map-tipo').value;
     const ciudad   = document.getElementById('map-ciudad').value;
     const fechaIni = document.getElementById('f-fecha-ini').value;
     const fechaFin = document.getElementById('f-fecha-fin').value;
     const dateIni  = fechaIni ? new Date(fechaIni+'T00:00:00') : null;
     const dateFin  = fechaFin ? new Date(fechaFin+'T23:59:59') : null;
-
+ 
     const MAP_KW = {
       forzamiento:'forzamiento', apagado:'apagado', accidente:'accidente',
       mejora:'mejora', intermitencia:'intermitencia', error:'error', vdt:'vdt',
     };
-
+ 
     // Paso 1 — filtrar sin restricción de coordenadas primero
     let rowsAll = dataset.filter(r => {
       if (dateIni||dateFin) {
@@ -790,7 +790,7 @@
       if (codigoFiltro && !r.codigo.toUpperCase().includes(codigoFiltro)) return false;
       return true;
     });
-
+ 
     // Separar registros con y sin coordenadas válidas
     let rows = rowsAll.filter(r => {
       const lat = parseFloat(r.latitud);
@@ -798,7 +798,7 @@
       return !isNaN(lat) && !isNaN(lng) && lat!==0 && lng!==0;
     });
     const sinCoords = rowsAll.length - rows.length;
-
+ 
     const totalConCoords = rows.length;
     const statusBase = totalConCoords===0
       ? 'No hay registros con coordenadas válidas para los filtros seleccionados.'
@@ -807,11 +807,11 @@
       ? ` · <span style="color:#f59e0b;font-weight:600">${sinCoords} sin coordenadas</span>`
       : '';
     document.getElementById('map-status-text').innerHTML = statusBase + statusExtra;
-
+ 
     // Limpiar capas anteriores
     if (clusterLayer) { mapInstance.removeLayer(clusterLayer); clusterLayer=null; }
     if (heatLayer)    { mapInstance.removeLayer(heatLayer);    heatLayer=null; }
-
+ 
     // Agrupar por código
     const grupos = {};
     rows.forEach(r => {
@@ -823,12 +823,12 @@
       }
       grupos[key].registros.push(r);
     });
-
+ 
     // Actualizar cards de resumen
     renderStats(rows, grupos, ciudad);
-
+ 
     const bounds = [];
-
+ 
     // ── MEJORA: semáforos sin incidencias como puntos grises pequeños
     // Se muestran solo cuando hay ciudad seleccionada (para no saturar vista nacional)
     if (capaActual === 'marcadores' && ciudad !== 'todas' && Object.keys(coordsMap).length > 0) {
@@ -846,7 +846,7 @@
          .addTo(clusterLayer || mapInstance);
       });
     }
-
+ 
     if (capaActual === 'heatmap') {
       // ── Heatmap: intensidad proporcional a la cantidad de incidencias
       const puntos = Object.values(grupos).map(g => [g.lat, g.lng, g.registros.length]);
@@ -855,7 +855,7 @@
         gradient: { 0.2:'#2563eb', 0.5:'#f59e0b', 0.8:'#ef4444', 1.0:'#7f1d1d' },
       }).addTo(mapInstance);
       Object.values(grupos).forEach(g => bounds.push([g.lat, g.lng]));
-
+ 
     } else {
       // ── Marcadores con clustering
       clusterLayer = L.markerClusterGroup({
@@ -874,33 +874,33 @@
           });
         },
       });
-
+ 
       Object.values(grupos).forEach(grupo => {
         const { lat, lng, registros } = grupo;
         const total = registros.length;
-
+ 
         // Conteo por tipo (col E)
         const conteo = {};
         registros.forEach(r => { const lbl=getTipo(r.incidencia).label; conteo[lbl]=(conteo[lbl]||0)+1; });
-
+ 
         // Tipo predominante → color del marcador
         const tipoPrincipal = Object.entries(conteo).sort((a,b)=>b[1]-a[1])[0][0];
         const color = Object.values(TIPOS).find(t=>t.label===tipoPrincipal)?.color || '#94a3b8';
-
+ 
         const isCritical = registros.some(r =>
           r.incidencia.toLowerCase().includes('apagado') ||
           r.incidencia.toLowerCase().includes('accidente')
         );
-
+ 
         // MEJORA: tamaño del marcador proporcional a la cantidad
         const size = total===1 ? 26 : total<5 ? 28 : total<15 ? 32 : 36;
-
+ 
         const badgeHtml = total>1
           ? `<div style="position:absolute;top:-5px;right:-5px;background:#0033a0;color:#fff;
                          border-radius:20px;font-size:7px;font-weight:800;padding:1px 4px;
                          min-width:14px;text-align:center;border:1.5px solid #fff">${total}</div>`
           : '';
-
+ 
         // Ícono: círculo con semáforo SVG centrado
         // iconAnchor=[half,half] alinea el centro del círculo
         // exactamente con las coordenadas del semáforo
@@ -923,10 +923,10 @@
             </div>
             ${badgeHtml}
           </div>`;
-
+ 
         const half2 = Math.round(size/2);
         const icon = L.divIcon({ html:iconHtml, iconSize:[size,size], iconAnchor:[half2,half2], className:'custom-marker' });
-
+ 
         // Popup con desglose y fecha de última incidencia
         const maxCnt = Math.max(...Object.values(conteo));
         const filas  = Object.entries(conteo).sort((a,b)=>b[1]-a[1]).map(([lbl,cnt]) => {
@@ -941,7 +941,7 @@
                         color:#111;min-width:22px;text-align:right">${cnt}</div>
           </div>`;
         }).join('');
-
+ 
         // Ordenar por fecha descendente para historial
         const registrosOrdenados = [...registros].sort((a,b) => {
           const da = parseSheetDate(a.fecha), db = parseSheetDate(b.fecha);
@@ -949,7 +949,7 @@
         });
         const ultimaFecha = registrosOrdenados[0]?.fecha || '—';
         const r0 = registrosOrdenados[0];
-
+ 
         // Para 1 incidencia: detalle completo
         // Para N: fecha última + mini historial de hasta 5 registros
         const detalleHtml = total===1
@@ -960,7 +960,7 @@
                <div>📋 ${r0.reporte}</div>
              </div>`
           : `<div style="margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9;font-size:10px;color:#9ca3af">Última: <strong style="color:#4b5563">${ultimaFecha}</strong></div>`;
-
+ 
         const popupHtml = `
           <div style="font-family:'Inter',sans-serif;font-size:12px;min-width:270px">
             <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:2px">
@@ -973,14 +973,14 @@
             ${filas}
             ${detalleHtml}
           </div>`;
-
+ 
         L.marker([lat,lng],{icon}).bindPopup(popupHtml,{maxWidth:300}).addTo(clusterLayer);
         bounds.push([lat,lng]);
       });
-
+ 
       clusterLayer.addTo(mapInstance);
     }
-
+ 
     // Ajustar vista
     if (bounds.length>0) {
       mapInstance.fitBounds(bounds, {padding:[30,30], maxZoom:15});
@@ -988,7 +988,7 @@
       mapInstance.setView([13.6894,-89.1872], 8);
     }
   }
-
+ 
   /* ─── Tabs de navegación principal ──────────────────────────── */
   function switchMainTab(name, btn) {
     ['mapa','ranking','horapico'].forEach(t => {
@@ -1002,7 +1002,7 @@
     if (name === 'ranking')  renderRanking();
     if (name === 'horapico') renderHoraPico();
   }
-
+ 
   /* ─── Ranking: todos los semáforos ordenados por incidencias ─── */
   function renderRanking() {
     // Reutiliza los grupos del último filtro aplicado
@@ -1016,7 +1016,7 @@
       forzamiento:'forzamiento', apagado:'apagado', accidente:'accidente',
       mejora:'mejora', intermitencia:'intermitencia', error:'error', vdt:'vdt',
     };
-
+ 
     let rows = dataset.filter(r => {
       if (dateIni||dateFin) {
         const d = parseSheetDate(r.fecha);
@@ -1026,7 +1026,7 @@
       if (ciudad!=='todas' && (r.ciudad||'').toLowerCase()!==ciudad.toLowerCase()) return false;
       return true;
     });
-
+ 
     // Agrupar por código
     const grupos = {};
     rows.forEach(r => {
@@ -1034,15 +1034,15 @@
       if (!grupos[key]) grupos[key] = { codigo:r.codigo, dir:r.dir, ciudad:r.ciudad, registros:[] };
       grupos[key].registros.push(r);
     });
-
+ 
     const sorted = Object.values(grupos).sort((a,b) => b.registros.length - a.registros.length);
-
+ 
     if (sorted.length === 0) {
       document.getElementById('ranking-body').innerHTML =
         '<p style="color:var(--text-light);padding:20px 0">Sin datos para el filtro actual.</p>';
       return;
     }
-
+ 
     const rankIcon = ['🥇','🥈','🥉'];
     document.getElementById('ranking-body').innerHTML = `
       <table style="width:100%;border-collapse:collapse;font-size:12px">
@@ -1067,7 +1067,7 @@
         </tbody>
       </table>`;
   }
-
+ 
   /* ─── Hora Pico: AM (5-9h) y PM (15-20h) ─────────────────────── */
   function parseHora(str) {
     const m = (str||'').match(/(\d+):(\d+).*?(a\.m\.|p\.m\.)/i);
@@ -1078,14 +1078,14 @@
     if (!pm && h === 12) h = 0;
     return h;
   }
-
+ 
   function renderHoraPico() {
     const fechaIni = document.getElementById('f-fecha-ini').value;
     const fechaFin = document.getElementById('f-fecha-fin').value;
     const dateIni  = fechaIni ? new Date(fechaIni + 'T00:00:00') : null;
     const dateFin  = fechaFin ? new Date(fechaFin + 'T23:59:59') : null;
     const ciudad   = document.getElementById('map-ciudad').value;
-
+ 
     let rows = dataset.filter(r => {
       if (dateIni||dateFin) {
         const d = parseSheetDate(r.fecha);
@@ -1094,22 +1094,22 @@
       if (ciudad!=='todas' && (r.ciudad||'').toLowerCase()!==ciudad.toLowerCase()) return false;
       return true;
     });
-
+ 
     // Clasificar por franja horaria
     const AM_INI = 5, AM_FIN = 9;   // 5:00 - 9:00 a.m.
     const PM_INI = 15, PM_FIN = 20; // 3:00 - 8:00 p.m.
-
+ 
     const am = rows.filter(r => { const h = parseHora(r.hora); return h >= AM_INI && h <= AM_FIN; });
     const pm = rows.filter(r => { const h = parseHora(r.hora); return h >= PM_INI && h <= PM_FIN; });
     const otros = rows.filter(r => { const h = parseHora(r.hora); return h >= 0 && !(h >= AM_INI && h <= AM_FIN) && !(h >= PM_INI && h <= PM_FIN); });
-
+ 
     // Top 5 tipos por franja
     function topTipos(arr, n=5) {
       const cnt = {};
       arr.forEach(r => { const l = getTipo(r.incidencia).label; cnt[l] = (cnt[l]||0)+1; });
       return Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,n);
     }
-
+ 
     function franjaHtml(titulo, emoji, color, datos, total) {
       const pct = total > 0 ? Math.round((datos.length/total)*100) : 0;
       const top  = topTipos(datos);
@@ -1145,7 +1145,7 @@
           }
         </div>`;
     }
-
+ 
     document.getElementById('horapico-body').innerHTML = `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
         ${franjaHtml('HORA PICO AM', '🌅', '#f59e0b', am, rows.length)}
@@ -1158,7 +1158,7 @@
         <span>🌙 <strong>Otros:</strong> fuera de hora pico &nbsp;·&nbsp; ${otros.length} registros</span>
       </div>`;
   }
-
+ 
   /* ─── Inicio ─────────────────────────────────────────────────── */
   window.addEventListener('DOMContentLoaded', async () => {
     await loadData();
