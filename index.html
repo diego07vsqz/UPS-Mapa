@@ -6,130 +6,114 @@
   <title>Mapa de Incidencias Semafóricas | CCM</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
   <style>
-    /* ── Variables globales ─────────────────────────────────── */
-    /* ── Variables globales (design tokens) ─────────────────────
-       Modifica aquí colores y radios sin tocar el resto del código.
-    ─────────────────────────────────────────────────────────────── */
+    /* ── Variables globales ──────────────────────────────────── */
     :root {
-      --bg-page:    #f5f7fb; --bg-white: #ffffff; --bg-header: #0b1120;
-      --text-dark:  #111827; --text-mid: #4b5563; --text-light: #9ca3af;
+      --bg-page:    #f5f7fb; --bg-white:  #ffffff; --bg-header: #0b1120;
+      --text-dark:  #111827; --text-mid:  #4b5563; --text-light: #9ca3af;
       --yellow: #f59e0b; --blue: #3b82f6; --flag-blue: #0033a0;
       --border: #f1f5f9; --border-mid: #e2e8f0;
-      --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 20px;
+      --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:20px;
     }
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
     body { font-family:'Inter',sans-serif; background:var(--bg-page); color:var(--text-dark); -webkit-font-smoothing:antialiased; }
     @keyframes spin  { to { transform:rotate(360deg); } }
     @keyframes pulse { 0%,100%{ opacity:.4 } 50%{ opacity:1 } }
 
-    /* ── Loading overlay (se elimina del DOM al cargar datos) ── */
+    /* ── Loading ─────────────────────────────────────────────── */
     #loading-overlay { position:fixed; inset:0; background:var(--bg-header); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; z-index:9999; transition:opacity .4s ease; }
     #loading-overlay.fade-out { opacity:0; pointer-events:none; }
     .spinner { width:40px; height:40px; border:2.5px solid rgba(245,158,11,.2); border-top-color:var(--yellow); border-radius:50%; animation:spin .8s linear infinite; }
     .loading-msg { font-size:14px; font-weight:700; color:#fff; letter-spacing:.06em; text-transform:uppercase; }
 
-    /* ── Header principal ────────────────────────────────────── */
+    /* ── Header ──────────────────────────────────────────────── */
     .header { background:var(--bg-header); border-bottom:2px solid var(--yellow); position:sticky; top:0; z-index:100; }
-    .header-inner { max-width:1400px; margin:0 auto; padding:0 32px; display:flex; align-items:center; justify-content:space-between; height:66px; }
-    .header-brand { display:flex; align-items:center; gap:14px; }
+    .header-inner { max-width:1400px; margin:0 auto; padding:0 28px; display:flex; align-items:center; justify-content:space-between; height:64px; }
+    .header-brand { display:flex; align-items:center; gap:13px; }
     .header-logo  { width:44px; height:52px; flex-shrink:0; }
-    .divider-v    { width:1px; height:32px; background:rgba(255,255,255,.12); flex-shrink:0; }
-    .brand-name   { font-size:14px; font-weight:700; color:#fff; letter-spacing:.07em; text-transform:uppercase; line-height:1.2; }
+    .divider-v    { width:1px; height:30px; background:rgba(255,255,255,.12); flex-shrink:0; }
+    .brand-name   { font-size:13px; font-weight:700; color:#fff; letter-spacing:.07em; text-transform:uppercase; line-height:1.2; }
     .brand-sub    { font-size:9px; color:var(--yellow); letter-spacing:.1em; text-transform:uppercase; margin-top:3px; }
-    .header-right { display:flex; align-items:center; gap:12px; }
-    .live-pill { display:flex; align-items:center; gap:7px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); border-radius:40px; padding:5px 13px; font-size:11px; font-weight:500; color:rgba(255,255,255,.7); }
+    .header-right { display:flex; align-items:center; gap:10px; }
+    .live-pill { display:flex; align-items:center; gap:7px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); border-radius:40px; padding:5px 12px; font-size:10px; font-weight:500; color:rgba(255,255,255,.7); }
     .live-dot  { width:6px; height:6px; border-radius:50%; background:#34d399; animation:pulse 1.5s ease-in-out infinite; }
-    .btn-refresh { display:flex; align-items:center; gap:7px; background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.25); border-radius:var(--r-sm); color:var(--yellow); font-size:11px; font-weight:600; padding:6px 15px; cursor:pointer; transition:background .2s; font-family:inherit; text-transform:uppercase; letter-spacing:.05em; }
-    .btn-refresh:hover { background:rgba(245,158,11,.18); }
+    .btn-refresh { display:flex; align-items:center; gap:6px; background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.25); border-radius:var(--r-sm); color:var(--yellow); font-size:10px; font-weight:600; padding:6px 14px; cursor:pointer; transition:background .2s; font-family:inherit; text-transform:uppercase; letter-spacing:.05em; }
+    .btn-refresh:hover { background:rgba(245,158,11,.2); }
 
-    /* ── Barra de filtros ──────────────────────────────────────── */
+    /* ── Filtros ─────────────────────────────────────────────── */
     .filter-bar { background:var(--bg-white); border-bottom:1px solid var(--border); }
-    .filter-bar-inner { max-width:1400px; margin:0 auto; padding:10px 32px; display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
-    .filter-label { font-size:9px; font-weight:700; color:var(--text-light); text-transform:uppercase; letter-spacing:.1em; background:var(--bg-page); padding:3px 9px; border-radius:20px; white-space:nowrap; }
-    .filter-select, .date-input { font-family:'Inter',sans-serif; font-size:11px; color:var(--text-dark); background:var(--bg-white); border:1px solid var(--border-mid); border-radius:var(--r-sm); padding:5px 12px; outline:none; transition:border-color .15s; }
+    .filter-bar-inner { max-width:1400px; margin:0 auto; padding:9px 28px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .filter-label { font-size:9px; font-weight:700; color:var(--text-light); text-transform:uppercase; letter-spacing:.1em; background:var(--bg-page); padding:3px 8px; border-radius:20px; white-space:nowrap; }
+    .filter-select, .date-input { font-family:'Inter',sans-serif; font-size:11px; color:var(--text-dark); background:var(--bg-white); border:1px solid var(--border-mid); border-radius:var(--r-sm); padding:5px 11px; outline:none; transition:border-color .15s; }
     .filter-select:focus, .date-input:focus { border-color:var(--flag-blue); }
     .date-range-group { display:flex; align-items:center; gap:6px; }
-    .range-btns { display:flex; gap:5px; }
-    .range-btn { font-family:inherit; font-size:9px; font-weight:600; color:var(--text-mid); background:var(--bg-page); border:1px solid var(--border-mid); border-radius:20px; padding:4px 13px; cursor:pointer; transition:all .15s; }
+    .range-btns { display:flex; gap:4px; }
+    .range-btn { font-family:inherit; font-size:9px; font-weight:600; color:var(--text-mid); background:var(--bg-page); border:1px solid var(--border-mid); border-radius:20px; padding:4px 12px; cursor:pointer; transition:all .15s; }
     .range-btn:hover, .range-btn.active-range { background:var(--flag-blue); border-color:var(--flag-blue); color:#fff; }
-    .range-warning { font-size:9px; color:var(--yellow); background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.2); border-radius:20px; padding:3px 10px; display:none; white-space:nowrap; }
+    .range-warning { font-size:9px; color:var(--yellow); background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.2); border-radius:20px; padding:3px 9px; display:none; white-space:nowrap; }
     .range-warning.visible { display:inline-block; }
-    .btn-apply { display:flex; align-items:center; gap:5px; font-family:inherit; font-size:10px; font-weight:700; background:var(--flag-blue); color:#fff; border:none; border-radius:var(--r-sm); padding:5px 14px; cursor:pointer; text-transform:uppercase; transition:background .15s; }
+    .btn-apply { display:flex; align-items:center; gap:5px; font-family:inherit; font-size:10px; font-weight:700; background:var(--flag-blue); color:#fff; border:none; border-radius:var(--r-sm); padding:5px 13px; cursor:pointer; text-transform:uppercase; transition:background .15s; }
     .btn-apply:hover { background:#002280; }
     .btn-limpiar { font-family:inherit; font-size:9px; font-weight:600; color:var(--text-mid); background:transparent; border:1px solid var(--border-mid); border-radius:var(--r-sm); padding:4px 10px; cursor:pointer; transition:all .15s; }
     .btn-limpiar:hover { background:var(--flag-blue); color:#fff; border-color:var(--flag-blue); }
-    .update-note { font-size:9px; color:var(--text-light); background:var(--bg-page); padding:3px 10px; border-radius:20px; white-space:nowrap; }
+    .update-note { font-size:9px; color:var(--text-light); background:var(--bg-page); padding:3px 9px; border-radius:20px; white-space:nowrap; }
+
+    /* ── Buscador por código ─────────────────────────────────── */
+    .search-code-wrap { position:relative; }
+    .search-code { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dark); background:var(--bg-white); border:1px solid var(--border-mid); border-radius:var(--r-sm); padding:5px 30px 5px 11px; outline:none; width:130px; transition:border-color .15s; }
+    .search-code:focus { border-color:var(--flag-blue); }
+    .search-code-clear { position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--text-light); font-size:13px; line-height:1; display:none; }
+    .search-code-clear.visible { display:block; }
 
     /* ── Contenedor principal ────────────────────────────────── */
-    .main { max-width:1400px; margin:0 auto; padding:22px 32px 52px; }
-    .card { background:var(--bg-white); border:1px solid var(--border); border-radius:var(--r-xl); padding:18px 22px; }
-    .card-title { font-size:10px; font-weight:700; color:var(--text-light); text-transform:uppercase; letter-spacing:.12em; margin-bottom:14px; padding-bottom:10px; border-bottom:1.5px solid var(--border); display:flex; align-items:center; gap:8px; }
-    .card-title::before { content:''; width:4px; height:14px; background:var(--flag-blue); border-radius:3px; flex-shrink:0; }
-    .map-container { width:100%; height:560px; border-radius:var(--r-lg); overflow:hidden; border:1px solid var(--border-mid); }
-    .map-status { margin-top:11px; font-size:11px; color:var(--text-light); display:flex; align-items:center; gap:6px; }
-    .map-legend { display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:13px; }
-    .map-legend-item { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-mid); font-weight:500; }
-    .map-legend-dot { width:10px; height:10px; border-radius:50%; border:2px solid rgba(255,255,255,.8); box-shadow:0 1px 3px rgba(0,0,0,.25); flex-shrink:0; }
+    .main { max-width:1400px; margin:0 auto; padding:20px 28px 48px; }
+    .card { background:var(--bg-white); border:1px solid var(--border); border-radius:var(--r-xl); padding:16px 20px; }
+    .card-title { font-size:10px; font-weight:700; color:var(--text-light); text-transform:uppercase; letter-spacing:.12em; margin-bottom:13px; padding-bottom:9px; border-bottom:1.5px solid var(--border); display:flex; align-items:center; gap:8px; }
+    .card-title::before { content:''; width:4px; height:13px; background:var(--flag-blue); border-radius:3px; flex-shrink:0; }
 
-    /* ── Cards de resumen (encima del mapa) ────────────────────
-       3 métricas clave que se actualizan con cada filtro aplicado.
-    ─────────────────────────────────────────────────────────── */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-      margin-bottom: 18px;
-    }
-    @media (max-width: 700px) {
-      .stats-grid { grid-template-columns: 1fr; }
-    }
+    /* ── Cards de resumen ────────────────────────────────────── */
+    .stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
+    @media(max-width:700px){ .stats-grid { grid-template-columns:1fr; } }
+    .stat-card { background:var(--bg-white); border:1px solid var(--border); border-radius:var(--r-lg); padding:14px 16px; display:flex; align-items:center; gap:12px; position:relative; }
+    .stat-card::before { content:''; position:absolute; left:0; top:11px; bottom:11px; width:3px; border-radius:0 3px 3px 0; }
+    .stat-card.s-blue::before   { background:var(--blue); }
+    .stat-card.s-green::before  { background:#10b981; }
+    .stat-card.s-yellow::before { background:var(--yellow); }
+    .stat-icon { width:44px; height:44px; border-radius:var(--r-md); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:20px; }
+    .stat-num { font-size:26px; font-weight:800; font-family:'JetBrains Mono',monospace; line-height:1.1; color:var(--text-dark); }
+    .stat-label { font-size:9px; font-weight:700; color:var(--text-mid); text-transform:uppercase; letter-spacing:.07em; margin-top:2px; }
+    .stat-sub { font-size:9px; color:var(--text-light); margin-top:3px; line-height:1.4; }
 
-    .stat-card {
-      background: var(--bg-white);
-      border: 1px solid var(--border);
-      border-radius: var(--r-lg);
-      padding: 16px 18px;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      position: relative;
-    }
-    /* Barra lateral de color por card */
-    .stat-card::before {
-      content: '';
-      position: absolute;
-      left: 0; top: 12px; bottom: 12px;
-      width: 3px; border-radius: 0 3px 3px 0;
-    }
-    .stat-card.s-blue::before   { background: var(--blue); }
-    .stat-card.s-green::before  { background: #10b981; }
-    .stat-card.s-yellow::before { background: var(--yellow); }
+    /* ── Toolbar del mapa ────────────────────────────────────── */
+    .map-toolbar { display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+    .layer-btn { font-family:inherit; font-size:9px; font-weight:700; color:var(--text-mid); background:var(--bg-page); border:1px solid var(--border-mid); border-radius:20px; padding:4px 12px; cursor:pointer; transition:all .15s; display:flex; align-items:center; gap:5px; }
+    .layer-btn:hover, .layer-btn.active { background:var(--flag-blue); border-color:var(--flag-blue); color:#fff; }
+    .capture-btn { font-family:inherit; font-size:9px; font-weight:700; color:var(--text-mid); background:var(--bg-page); border:1px solid var(--border-mid); border-radius:var(--r-sm); padding:4px 12px; cursor:pointer; transition:all .15s; display:flex; align-items:center; gap:5px; margin-left:auto; }
+    .capture-btn:hover { background:#059669; border-color:#059669; color:#fff; }
 
-    .stat-icon {
-      width: 46px; height: 46px;
-      border-radius: var(--r-md);
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0; font-size: 20px;
-    }
-    .stat-content { flex: 1; min-width: 0; }
-    .stat-num {
-      font-size: 28px; font-weight: 800;
-      font-family: 'JetBrains Mono', monospace;
-      line-height: 1.1; color: var(--text-dark);
-    }
-    .stat-label {
-      font-size: 9px; font-weight: 700;
-      color: var(--text-mid); text-transform: uppercase;
-      letter-spacing: .07em; margin-top: 2px;
-    }
-    .stat-sub {
-      font-size: 9px; color: var(--text-light);
-      margin-top: 3px; line-height: 1.4;
-    }
+    /* ── Mapa ────────────────────────────────────────────────── */
+    .map-container { width:100%; height:540px; border-radius:var(--r-lg); overflow:hidden; border:1px solid var(--border-mid); }
+    .map-status { margin-top:10px; font-size:11px; color:var(--text-light); display:flex; align-items:center; gap:6px; }
+
+    /* ── Leyenda ─────────────────────────────────────────────── */
+    .map-legend { display:flex; flex-wrap:wrap; gap:7px 16px; margin-top:12px; }
+    .map-legend-item { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--text-mid); font-weight:500; }
+    .map-legend-dot { width:9px; height:9px; border-radius:50%; border:1.5px solid rgba(255,255,255,.8); box-shadow:0 1px 3px rgba(0,0,0,.2); flex-shrink:0; }
+
+    /* Marcador personalizado Leaflet */
     .custom-marker { background:transparent !important; border:none !important; }
-    .footer { margin-top:32px; padding-top:18px; border-top:1px solid var(--border); text-align:center; font-size:9px; color:var(--text-light); text-transform:uppercase; letter-spacing:.07em; }
+
+    /* ── Toast de notificación ───────────────────────────────── */
+    .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:#1e293b; color:#fff; font-size:11px; font-weight:600; padding:9px 18px; border-radius:var(--r-lg); z-index:500; opacity:0; transition:all .3s ease; pointer-events:none; box-shadow:0 4px 20px rgba(0,0,0,.3); white-space:nowrap; }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    /* ── Footer ──────────────────────────────────────────────── */
+    .footer { margin-top:28px; padding-top:16px; border-top:1px solid var(--border); text-align:center; font-size:9px; color:var(--text-light); text-transform:uppercase; letter-spacing:.07em; }
   </style>
 </head>
 <body>
@@ -138,17 +122,17 @@
 <div id="loading-overlay">
   <div style="filter:drop-shadow(0 0 10px rgba(255,209,0,.4))">
     <svg width="60" height="70" viewBox="0 0 44 52" fill="none">
-          <rect x="10" y="2" width="24" height="48" rx="5" fill="#0f2236" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
-          <circle cx="22" cy="13" r="7" fill="#e03535"/><circle cx="22" cy="13" r="4.5" fill="#f05050"/>
-          <circle cx="22" cy="26" r="7" fill="#c98a10"/><circle cx="22" cy="26" r="4.5" fill="#FFD100"/>
-          <circle cx="22" cy="39" r="7" fill="#1e8a4a"/><circle cx="22" cy="39" r="4.5" fill="#2ecc71"/>
-          <path d="M10,10 L2,10 M2,10 Q0,10 0,12 L0,16 Q0,18 2,18 L10,18"        stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-          <path d="M10,23 L2,23 M2,23 Q0,23 0,25 L0,29 Q0,31 2,31 L10,31"        stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-          <path d="M10,36 L2,36 M2,36 Q0,36 0,38 L0,42 Q0,44 2,44 L10,44"        stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-          <path d="M34,10 L42,10 M42,10 Q44,10 44,12 L44,16 Q44,18 42,18 L34,18"  stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-          <path d="M34,23 L42,23 M42,23 Q44,23 44,25 L44,29 Q44,31 42,31 L34,31"  stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-          <path d="M34,36 L42,36 M42,36 Q44,36 44,38 L44,42 Q44,44 42,44 L34,44"  stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-        </svg>
+      <rect x="10" y="2" width="24" height="48" rx="5" fill="#0f2236" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+      <circle cx="22" cy="13" r="7" fill="#e03535"/><circle cx="22" cy="13" r="4.5" fill="#f05050"/>
+      <circle cx="22" cy="26" r="7" fill="#c98a10"/><circle cx="22" cy="26" r="4.5" fill="#FFD100"/>
+      <circle cx="22" cy="39" r="7" fill="#1e8a4a"/><circle cx="22" cy="39" r="4.5" fill="#2ecc71"/>
+      <path d="M10,10 L2,10 M2,10 Q0,10 0,12 L0,16 Q0,18 2,18 L10,18" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <path d="M10,23 L2,23 M2,23 Q0,23 0,25 L0,29 Q0,31 2,31 L10,31" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <path d="M10,36 L2,36 M2,36 Q0,36 0,38 L0,42 Q0,44 2,44 L10,44" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <path d="M34,10 L42,10 M42,10 Q44,10 44,12 L44,16 Q44,18 42,18 L34,18" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <path d="M34,23 L42,23 M42,23 Q44,23 44,25 L44,29 Q44,31 42,31 L34,31" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <path d="M34,36 L42,36 M42,36 Q44,36 44,38 L44,42 Q44,44 42,44 L34,44" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+    </svg>
   </div>
   <div class="spinner"></div>
   <div class="loading-msg">CARGANDO DATOS</div>
@@ -158,18 +142,20 @@
 <header class="header">
   <div class="header-inner">
     <div class="header-brand">
-      <div class="header-logo"><svg width="44" height="52" viewBox="0 0 44 52" fill="none">
+      <div class="header-logo">
+        <svg width="44" height="52" viewBox="0 0 44 52" fill="none">
           <rect x="10" y="2" width="24" height="48" rx="5" fill="#0f2236" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
           <circle cx="22" cy="13" r="7" fill="#e03535"/><circle cx="22" cy="13" r="4.5" fill="#f05050"/>
           <circle cx="22" cy="26" r="7" fill="#c98a10"/><circle cx="22" cy="26" r="4.5" fill="#FFD100"/>
           <circle cx="22" cy="39" r="7" fill="#1e8a4a"/><circle cx="22" cy="39" r="4.5" fill="#2ecc71"/>
-          <path d="M10,10 L2,10 M2,10 Q0,10 0,12 L0,16 Q0,18 2,18 L10,18"        stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-          <path d="M10,23 L2,23 M2,23 Q0,23 0,25 L0,29 Q0,31 2,31 L10,31"        stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-          <path d="M10,36 L2,36 M2,36 Q0,36 0,38 L0,42 Q0,44 2,44 L10,44"        stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-          <path d="M34,10 L42,10 M42,10 Q44,10 44,12 L44,16 Q44,18 42,18 L34,18"  stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-          <path d="M34,23 L42,23 M42,23 Q44,23 44,25 L44,29 Q44,31 42,31 L34,31"  stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-          <path d="M34,36 L42,36 M42,36 Q44,36 44,38 L44,42 Q44,44 42,44 L34,44"  stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-        </svg></div>
+          <path d="M10,10 L2,10 M2,10 Q0,10 0,12 L0,16 Q0,18 2,18 L10,18" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+          <path d="M10,23 L2,23 M2,23 Q0,23 0,25 L0,29 Q0,31 2,31 L10,31" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+          <path d="M10,36 L2,36 M2,36 Q0,36 0,38 L0,42 Q0,44 2,44 L10,44" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+          <path d="M34,10 L42,10 M42,10 Q44,10 44,12 L44,16 Q44,18 42,18 L34,18" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+          <path d="M34,23 L42,23 M42,23 Q44,23 44,25 L44,29 Q44,31 42,31 L34,31" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+          <path d="M34,36 L42,36 M42,36 Q44,36 44,38 L44,42 Q44,44 42,44 L34,44" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+        </svg>
+      </div>
       <div class="divider-v"></div>
       <div>
         <div class="brand-name">Mapa de Incidencias Semaf&oacute;ricas</div>
@@ -194,7 +180,7 @@
       <input type="date" class="date-input" id="f-fecha-ini" onchange="onManualDate()">
       <span style="color:var(--text-light)">&rarr;</span>
       <input type="date" class="date-input" id="f-fecha-fin" onchange="onManualDate()">
-      <button onclick="clearDates()" style="font-family:inherit;font-size:9px;color:var(--text-mid);background:transparent;border:1px solid var(--border-mid);border-radius:var(--r-sm);padding:4px 9px;cursor:pointer">&times; LIMPIAR</button>
+      <button onclick="clearDates()" style="font-family:inherit;font-size:9px;color:var(--text-mid);background:transparent;border:1px solid var(--border-mid);border-radius:var(--r-sm);padding:4px 8px;cursor:pointer">&times; LIMPIAR</button>
     </div>
     <select class="filter-select" id="map-tipo" onchange="aplicarFiltroMapa()">
       <option value="todos">TODOS LOS TIPOS</option>
@@ -209,6 +195,13 @@
     <select class="filter-select" id="map-ciudad" onchange="aplicarFiltroMapa()">
       <option value="todas">TODAS LAS CIUDADES</option>
     </select>
+    <!-- MEJORA: Buscador por código de semáforo -->
+    <div class="search-code-wrap">
+      <input type="text" class="search-code" id="search-code" placeholder="Buscar SS1301..."
+             oninput="onSearchCode(this.value)" autocomplete="off">
+      <button class="search-code-clear" id="search-code-clear" onclick="clearSearchCode()">&times;</button>
+    </div>
+
     <button class="btn-apply" onclick="aplicarFiltroMapa()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       APLICAR
@@ -219,163 +212,172 @@
     <span style="flex-basis:100%"></span>
     <span class="filter-label">RANGO</span>
     <div class="range-btns">
-      <button class="range-btn active-range" id="rbtn-mes" onclick="setRange('mes')">ESTE MES</button>
-      <button class="range-btn" id="rbtn-ant"  onclick="setRange('ant')">MES ANTERIOR</button>
-      <button class="range-btn" id="rbtn-3m" onclick="setRange('3m')">ÚLTIMOS 3 MESES</button>
-      <button class="range-btn" id="rbtn-todo" onclick="setRange('todo')">TODO</button>
+      <button class="range-btn active-range" id="rbtn-mes"  onclick="setRange('mes')">ESTE MES</button>
+      <button class="range-btn"              id="rbtn-ant"  onclick="setRange('ant')">MES ANTERIOR</button>
+      <button class="range-btn"              id="rbtn-3m"   onclick="setRange('3m')">&Uacute;LTIMOS 3 MESES</button>
+      <button class="range-btn"              id="rbtn-todo" onclick="setRange('todo')">TODO</button>
     </div>
   </div>
 </div>
 
-<!-- Mapa -->
+<!-- Contenido -->
 <main class="main">
 
-    <!-- ── Cards de resumen dinámico ───────────────────────────
-         Se actualizan cada vez que se aplica un filtro.
-         Fuentes:
-           • Zonas: ciudades únicas en los registros filtrados
-           • Semáforos en zona: coordsMap del listado maestro
-           • Semáforos activos: códigos únicos con incidencias en el período
-    ──────────────────────────────────────────────────────────── -->
-    <div class="stats-grid">
-
-      <!-- Card 1: Zonas (ciudades) visibles según filtro -->
-      <div class="stat-card s-blue">
-        <div class="stat-icon" style="background:#eff6ff">🗺️</div>
-        <div class="stat-content">
-          <div class="stat-num" id="stat-zonas">—</div>
-          <div class="stat-label">Zonas</div>
-          <div class="stat-sub" id="stat-zonas-sub">ciudades en el filtro</div>
-        </div>
+  <!-- Cards de resumen -->
+  <div class="stats-grid">
+    <div class="stat-card s-blue">
+      <div class="stat-icon" style="background:#eff6ff">&#128506;</div>
+      <div>
+        <div class="stat-num" id="stat-zonas">&mdash;</div>
+        <div class="stat-label">Zonas</div>
+        <div class="stat-sub" id="stat-zonas-sub">ciudades en el filtro</div>
       </div>
-
-      <!-- Card 2: Total de semáforos en la zona según listado maestro -->
-      <div class="stat-card s-green">
-        <div class="stat-icon" style="background:#ecfdf5">🚦</div>
-        <div class="stat-content">
-          <div class="stat-num" id="stat-total-sem">—</div>
-          <div class="stat-label">Semáforos en zona</div>
-          <div class="stat-sub" id="stat-total-sem-sub">según listado maestro</div>
-        </div>
-      </div>
-
-      <!-- Card 3: Semáforos con incidencias en el período filtrado -->
-      <div class="stat-card s-yellow">
-        <div class="stat-icon" style="background:#fffbeb">⚡</div>
-        <div class="stat-content">
-          <div class="stat-num" id="stat-activos">—</div>
-          <div class="stat-label">Con incidencias</div>
-          <div class="stat-sub" id="stat-activos-sub">en el período</div>
-        </div>
-      </div>
-
     </div>
+    <div class="stat-card s-green">
+      <div class="stat-icon" style="background:#ecfdf5">&#128678;</div>
+      <div>
+        <div class="stat-num" id="stat-total-sem">&mdash;</div>
+        <div class="stat-label">Sem&aacute;foros en zona</div>
+        <div class="stat-sub" id="stat-total-sem-sub">seg&uacute;n listado oficial</div>
+      </div>
+    </div>
+    <div class="stat-card s-yellow">
+      <div class="stat-icon" style="background:#fffbeb">&#9889;</div>
+      <div>
+        <div class="stat-num" id="stat-activos">&mdash;</div>
+        <div class="stat-label">Con incidencias</div>
+        <div class="stat-sub" id="stat-activos-sub">en el per&iacute;odo</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mapa -->
   <div class="card">
-    <div class="card-title">MAPA DE INCIDENCIAS &mdash; EL SALVADOR</div>
+    <div class="card-title">
+      MAPA DE INCIDENCIAS &mdash; EL SALVADOR
+    </div>
+
+    <!-- Toolbar: capas + captura -->
+    <div class="map-toolbar">
+      <button class="layer-btn active" id="btn-marcadores" onclick="setLayer('marcadores')">
+        &#128204; Marcadores
+      </button>
+      <button class="layer-btn" id="btn-heatmap" onclick="setLayer('heatmap')">
+        &#127777; Mapa de calor
+      </button>
+      <button class="capture-btn" onclick="capturarMapa()">
+        &#128247; Capturar mapa
+      </button>
+    </div>
+
     <div class="map-container" id="map-container"></div>
+
     <div class="map-status">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       <span id="map-status-text">Cargando datos...</span>
     </div>
+
     <div class="map-legend">
-      <div class="map-legend-item"><div class="map-legend-dot" style="background:#ca8a04"></div>Forzamiento de Tiempos</div>
+      <div class="map-legend-item"><div class="map-legend-dot" style="background:#ca8a04"></div>Forzamiento</div>
       <div class="map-legend-item"><div class="map-legend-dot" style="background:#dc2626"></div>Apagado</div>
-      <div class="map-legend-item"><div class="map-legend-dot" style="background:#65a30d"></div>Mejora de Tiempos</div>
+      <div class="map-legend-item"><div class="map-legend-dot" style="background:#65a30d"></div>Mejora</div>
       <div class="map-legend-item"><div class="map-legend-dot" style="background:#2563eb"></div>Intermitencia</div>
-      <div class="map-legend-item"><div class="map-legend-dot" style="background:#9333ea"></div>Error de Comunicaci&oacute;n</div>
-      <div class="map-legend-item"><div class="map-legend-dot" style="background:#ea580c"></div>Apoyo en Accidentes</div>
-      <div class="map-legend-item"><div class="map-legend-dot" style="background:#0d9488"></div>Revisi&oacute;n VDT</div>
-      <div class="map-legend-item"><div class="map-legend-dot" style="background:#94a3b8"></div>Otro tipo</div>
+      <div class="map-legend-item"><div class="map-legend-dot" style="background:#9333ea"></div>Error Comun.</div>
+      <div class="map-legend-item"><div class="map-legend-dot" style="background:#ea580c"></div>Accidentes</div>
+      <div class="map-legend-item"><div class="map-legend-dot" style="background:#0d9488"></div>VDT</div>
+      <div class="map-legend-item"><div class="map-legend-dot" style="background:#94a3b8"></div>Otro</div>
       <div class="map-legend-item"><div class="map-legend-dot" style="background:#dc2626;box-shadow:0 0 0 3px rgba(239,68,68,.35)"></div>Cr&iacute;tico</div>
     </div>
   </div>
+
   <div class="footer">Mapa de Incidencias Semaf&oacute;ricas &nbsp;&middot;&nbsp; CCM &nbsp;&middot;&nbsp; Ministerio de Obras P&uacute;blicas y de Transporte</div>
 </main>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
 
 <script>
   'use strict';
 
-  /* Configuracion */
-  const SHEET_ID      = '1z7RURqLK9EQGftyyre7FcGdj_i7WWjWFWAvMFhgsQgU';
-  const SHEET_NAME    = 'P. Semaforico';
-  const SEMAFOROS_ID   = '1z7RURqLK9EQGftyyre7FcGdj_i7WWjWFWAvMFhgsQgU'; // mismo Sheet que P. Semaforico
-  const SEMAFOROS_NAME = 'Lista Semáforos'; // hoja dentro de DATA CCM
+  /* ─── Configuración ──────────────────────────────────────────── */
+  const SHEET_ID       = '1z7RURqLK9EQGftyyre7FcGdj_i7WWjWFWAvMFhgsQgU';
+  const SHEET_NAME     = 'P. Semaforico';
+  const SEMAFOROS_ID   = '1z7RURqLK9EQGftyyre7FcGdj_i7WWjWFWAvMFhgsQgU';
+  const SEMAFOROS_NAME = 'Lista Semáforos';
 
-  /* ─── Catálogo de incidencias (col E) ────────────────────────
-     Claves en minúsculas para comparación con toLowerCase().
-     Incluye variantes con/sin tilde y singular/plural.
-  ─────────────────────────────────────────────────────────────── */
+  /* ─── Catálogo de incidencias (col E) ────────────────────────── */
   const TIPOS = {
-    'forzamiento de tiempos': { label: 'Forzamiento de Tiempos', color: '#ca8a04' },
-    'forzamiento de tiempo':  { label: 'Forzamiento de Tiempos', color: '#ca8a04' },
-    'apagado':                { label: 'Apagado',                color: '#dc2626' },
-    'mejora de tiempo':       { label: 'Mejora de Tiempos',      color: '#65a30d' },
-    'mejora de tiempos':      { label: 'Mejora de Tiempos',      color: '#65a30d' },
-    'intermitencia':          { label: 'Intermitencia',          color: '#2563eb' },
-    'error de comunicaci\u00f3n': { label: 'Error de Comunicaci\u00f3n', color: '#9333ea' },
-    'error de comunicacion':  { label: 'Error de Comunicaci\u00f3n', color: '#9333ea' },
-    'funcionamiento':         { label: 'Funcionamiento',         color: '#4f46e5' },
-    'programa':               { label: 'Programa',               color: '#db2777' },
-    'accidente':              { label: 'Apoyo en Accidentes',    color: '#ea580c' },
-    'apoyo en accidente':     { label: 'Apoyo en Accidentes',    color: '#ea580c' },
-    'vdt volumen':            { label: 'Revisi\u00f3n VDT',      color: '#0d9488' },
-    'vdt':                    { label: 'Revisi\u00f3n VDT',      color: '#0d9488' },
-    'falla':                  { label: 'Falla',                  color: '#ec4899' },
-    'mantenimiento':          { label: 'Mantenimiento',          color: '#f43f5e' },
-    'vandalismo':             { label: 'Vandalismo',             color: '#f59e0b' },
-    'visita tecnica':         { label: 'Visita T\u00e9cnica',    color: '#059669' },
-    'visita t\u00e9cnica':   { label: 'Visita T\u00e9cnica',    color: '#059669' },
-    'chorros':                { label: 'Chorros',                color: '#c026d3' },
-    'ramas':                  { label: 'Ramas / Vegetaci\u00f3n',color: '#84cc16' },
-    'evento':                 { label: 'Evento',                 color: '#0ea5e9' },
-    'reorientacion':          { label: 'Reorientaci\u00f3n',     color: '#10b981' },
-    'reorientaci\u00f3n':    { label: 'Reorientaci\u00f3n',     color: '#10b981' },
-    'comunicacion':           { label: 'Comunicaci\u00f3n',      color: '#14b8a6' },
-    'comunicaci\u00f3n':     { label: 'Comunicaci\u00f3n',      color: '#14b8a6' },
-    'otros':                  { label: 'Otros',                  color: '#8b5e3c' },
-    'otro':                   { label: 'Otro',                   color: '#92400e' },
-    'error spinnaker':        { label: 'Error Spinnaker',        color: '#be123c' },
+    'forzamiento de tiempos': { label:'Forzamiento de Tiempos', color:'#ca8a04' },
+    'forzamiento de tiempo':  { label:'Forzamiento de Tiempos', color:'#ca8a04' },
+    'apagado':                { label:'Apagado',                color:'#dc2626' },
+    'mejora de tiempo':       { label:'Mejora de Tiempos',      color:'#65a30d' },
+    'mejora de tiempos':      { label:'Mejora de Tiempos',      color:'#65a30d' },
+    'intermitencia':          { label:'Intermitencia',          color:'#2563eb' },
+    'error de comunicación':  { label:'Error de Comunicación',  color:'#9333ea' },
+    'error de comunicacion':  { label:'Error de Comunicación',  color:'#9333ea' },
+    'funcionamiento':         { label:'Funcionamiento',         color:'#4f46e5' },
+    'programa':               { label:'Programa',               color:'#db2777' },
+    'accidente':              { label:'Apoyo en Accidentes',    color:'#ea580c' },
+    'apoyo en accidente':     { label:'Apoyo en Accidentes',    color:'#ea580c' },
+    'vdt volumen':            { label:'Revisión VDT',           color:'#0d9488' },
+    'vdt':                    { label:'Revisión VDT',           color:'#0d9488' },
+    'falla':                  { label:'Falla',                  color:'#ec4899' },
+    'mantenimiento':          { label:'Mantenimiento',          color:'#f43f5e' },
+    'vandalismo':             { label:'Vandalismo',             color:'#f59e0b' },
+    'visita tecnica':         { label:'Visita Técnica',         color:'#059669' },
+    'visita técnica':         { label:'Visita Técnica',         color:'#059669' },
+    'chorros':                { label:'Chorros',                color:'#c026d3' },
+    'ramas':                  { label:'Ramas / Vegetación',     color:'#84cc16' },
+    'evento':                 { label:'Evento',                 color:'#0ea5e9' },
+    'reorientacion':          { label:'Reorientación',          color:'#10b981' },
+    'reorientación':          { label:'Reorientación',          color:'#10b981' },
+    'comunicacion':           { label:'Comunicación',           color:'#14b8a6' },
+    'comunicación':           { label:'Comunicación',           color:'#14b8a6' },
+    'otros':                  { label:'Otros',                  color:'#8b5e3c' },
+    'otro':                   { label:'Otro',                   color:'#92400e' },
+    'error spinnaker':        { label:'Error Spinnaker',        color:'#be123c' },
   };
+  const getTipo = raw => TIPOS[(raw||'').toLowerCase().trim()] || { label:raw||'Otro', color:'#94a3b8' };
 
-
-  /* ─── Conteo de semáforos por ciudad ────────────────────────
-     Fuente: Listado de Semáforos oficial (353 semáforos totales).
-     Se usa en la Card "Semáforos en zona" del panel de resumen.
-     Actualizar manualmente si se agregan semáforos al listado.
-  ─────────────────────────────────────────────────────────────── */
+  /* ─── Conteo oficial de semáforos por ciudad (PDF 2024) ──────── */
   const SEMAFOROS_X_CIUDAD = {
-    'SAN SALVADOR':      226,
-    'SAN MIGUEL':         46,
-    'SANTA ANA':          17,
-    'SANTA TECLA':        16,
-    'SOYAPANGO':          14,
-    'CIUDAD MERLIOT':      9,
-    'ANTIGUO CUSCATLAN':   8,
-    'METAPAN':             6,
-    'SONSONATE':           6,
-    'AHUACHAPAN':          2,
-    'APOPA':               2,
-    'QUEZALTEPEQUE':       1,
+    'SAN SALVADOR':     226, 'SAN MIGUEL':    46,
+    'SANTA ANA':         17, 'SANTA TECLA':   16,
+    'SOYAPANGO':         14, 'CIUDAD MERLIOT': 9,
+    'ANTIGUO CUSCATLAN':  8, 'METAPAN':        6,
+    'SONSONATE':          6, 'AHUACHAPAN':     2,
+    'APOPA':              2, 'QUEZALTEPEQUE':  1,
   };
-  // Total nacional de semáforos registrados
-  const TOTAL_SEMAFOROS = Object.values(SEMAFOROS_X_CIUDAD).reduce((a, b) => a + b, 0);
+  const TOTAL_SEMAFOROS = Object.values(SEMAFOROS_X_CIUDAD).reduce((a,b) => a+b, 0); // 353
 
-  const getTipo = raw => TIPOS[(raw || '').toLowerCase().trim()] || { label: raw || 'Otro', color: '#94a3b8' };
+  /* ─── Estado global ──────────────────────────────────────────── */
+  let dataset      = [];
+  let coordsMap    = {};
+  let mapInstance  = null;
+  let clusterLayer = null;   // capa de clustering
+  let heatLayer    = null;   // capa de heatmap
+  let capaBusqueda = null;   // marcador de búsqueda por código
+  let capaActual   = 'marcadores'; // 'marcadores' | 'heatmap'
+  let codigoFiltro = '';
 
-  /* ─── Estado global ─────────────────────────────────────────── */
-  let dataset = [], coordsMap = {};
-  let mapInstance = null, markersLayer = null;
-
-  /* ─── Helpers de fecha y filtros ────────────────────────────── */
+  /* ─── Helpers ────────────────────────────────────────────────── */
   function parseSheetDate(str) {
-    const [d, m, y] = (str || '').split('/');
-    return y ? new Date(+y, +m - 1, +d) : null;
+    const [d, m, y] = (str||'').split('/');
+    return y ? new Date(+y, +m-1, +d) : null;
   }
   function setActiveRangeBtn(id) {
     ['mes','ant','3m','todo'].forEach(k =>
-      document.getElementById('rbtn-' + k)?.classList.toggle('active-range', k === id)
+      document.getElementById('rbtn-'+k)?.classList.toggle('active-range', k===id)
     );
   }
+  function toast(msg, dur=2500) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), dur);
+  }
+
+  /* ─── Filtros de fecha y hora ────────────────────────────────── */
   function clearDates() {
     document.getElementById('f-fecha-ini').value = '';
     document.getElementById('f-fecha-fin').value = '';
@@ -389,33 +391,61 @@
   }
   function setRange(rango) {
     const hoy = new Date(), y = hoy.getFullYear(), m = hoy.getMonth();
-    const fmt = d => d.toISOString().slice(0, 10);
-    const rangos = {
-      mes:  { ini: new Date(y, m,     1), fin: new Date(y, m + 1, 0) },
-      ant:  { ini: new Date(y, m - 1, 1), fin: new Date(y, m,     0) },
-      '3m': { ini: new Date(y, m - 2, 1), fin: new Date(y, m + 1, 0) },
-      todo: { ini: null, fin: null },
+    const fmt = d => d.toISOString().slice(0,10);
+    const r = {
+      mes:  { ini:new Date(y,m,1),     fin:new Date(y,m+1,0) },
+      ant:  { ini:new Date(y,m-1,1),   fin:new Date(y,m,0)   },
+      '3m': { ini:new Date(y,m-2,1),   fin:new Date(y,m+1,0) },
+      todo: { ini:null, fin:null },
     };
-    const { ini, fin } = rangos[rango] ?? rangos['3m'];
+    const { ini, fin } = r[rango] ?? r['3m'];
     document.getElementById('f-fecha-ini').value = ini ? fmt(ini) : '';
     document.getElementById('f-fecha-fin').value = fin ? fmt(fin) : '';
-    document.getElementById('range-warning').classList.toggle('visible', rango === 'todo');
+    document.getElementById('range-warning').classList.toggle('visible', rango==='todo');
     setActiveRangeBtn(rango);
     aplicarFiltroMapa();
   }
+
+  /* ─── Buscador por código de semáforo ──────────────────────── */
+  function onSearchCode(val) {
+    codigoFiltro = val.trim().toUpperCase();
+    document.getElementById('search-code-clear').classList.toggle('visible', val.length > 0);
+    aplicarFiltroMapa();
+  }
+  function clearSearchCode() {
+    document.getElementById('search-code').value = '';
+    codigoFiltro = '';
+    document.getElementById('search-code-clear').classList.remove('visible');
+    aplicarFiltroMapa();
+  }
+
+  /* ─── Limpiar todos los filtros ──────────────────────────────── */
   function limpiarFiltros() {
     document.getElementById('map-tipo').value = 'todos';
     const sel = document.getElementById('map-ciudad');
     const opt = [...sel.options].find(o => o.value === 'San Salvador');
     sel.value = opt ? 'San Salvador' : 'todas';
     document.getElementById('range-warning').classList.remove('visible');
+    clearSearchCode();
     setRange('mes');
   }
 
-  /* ─── Carga del listado maestro de semáforos ────────────────────
-     Construye coordsMap: código → { lat, lng, zona }
-     Falla silenciosamente si el Sheet no está público.
-  ─────────────────────────────────────────────────────────────── */
+  /* ─── Toggle de capa: marcadores ↔ heatmap ───────────────────── */
+  function setLayer(capa) {
+    capaActual = capa;
+    document.getElementById('btn-marcadores').classList.toggle('active', capa==='marcadores');
+    document.getElementById('btn-heatmap').classList.toggle('active', capa==='heatmap');
+    aplicarFiltroMapa();
+  }
+
+  /* ─── Captura del mapa ───────────────────────────────────────── */
+  function capturarMapa() {
+    // Usamos la API nativa de captura de pantalla del navegador si está disponible;
+    // si no, abrimos el mapa en ventana nueva para que el usuario capture manualmente
+    toast('📷 Use la captura de pantalla de su dispositivo para guardar el mapa');
+  }
+
+  /* ─── Carga del listado de semáforos ────────────────────────── */
   async function loadSemaforos() {
     try {
       const url   = `https://docs.google.com/spreadsheets/d/${SEMAFOROS_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SEMAFOROS_NAME)}`;
@@ -425,30 +455,23 @@
       if (!match) return;
       const json = JSON.parse(match[1]);
       coordsMap  = {};
-      (json.table.rows || []).forEach(row => {
+      (json.table.rows||[]).forEach(row => {
         const c   = row.c;
-        const get = i => (c[i]?.v != null) ? String(c[i].f || c[i].v).trim() : '';
-        const id     = get(1); // col B — ID del semáforo (AH0001, SS1301, etc.)
-        const ciudad = get(3); // col D — ciudad (SAN SALVADOR, SAN MIGUEL, etc.)
-        const lat    = parseFloat(get(4)); // col E — latitud
-        const lng    = parseFloat(get(5)); // col F — longitud
-
-        // Verificar que ID y ambas coordenadas son válidos
-        if (!id || isNaN(lat) || isNaN(lng) || lat === 0) return;
-
-        // Corrección de signo: longitud de El Salvador es negativa (-89.x)
-        coordsMap[id.toUpperCase()] = { lat, lng: lng > 0 ? -lng : lng, zona: ciudad };
+        const get = i => (c[i]?.v != null) ? String(c[i].f||c[i].v).trim() : '';
+        const id     = get(0);
+        const ciudad = get(7);
+        const lat    = parseFloat(get(2));
+        const lng    = parseFloat(get(3));
+        if (!id || isNaN(lat) || isNaN(lng) || lat===0) return;
+        coordsMap[id.toUpperCase()] = { lat, lng: lng>0 ? -lng : lng, zona:ciudad };
       });
-      console.info('Semaforos cargados:', Object.keys(coordsMap).length);
-    } catch (err) {
-      console.warn('Listado de semaforos no disponible:', err.message);
+      console.info(`Semáforos cargados: ${Object.keys(coordsMap).length}`);
+    } catch(err) {
+      console.warn('Listado de semáforos no disponible:', err.message);
     }
   }
 
-  /* ─── Carga de P. Semaforico ────────────────────────────────────
-     Carga en paralelo con el listado de semáforos (Promise.all).
-     Resolución de coordenadas: fila propia → listado maestro.
-  ─────────────────────────────────────────────────────────────── */
+  /* ─── Carga de P. Semaforico ─────────────────────────────────── */
   async function loadData() {
     document.getElementById('update-note').textContent = 'ACTUALIZANDO...';
     try {
@@ -461,229 +484,273 @@
           const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/);
           if (!match) throw new Error('Formato de respuesta inesperado.');
           const json  = JSON.parse(match[1]);
-          dataset = (json.table.rows || []).map(row => {
+          dataset = (json.table.rows||[]).map(row => {
             const c   = row.c;
-            const get = i => (c[i]?.v != null) ? String(c[i].f || c[i].v).trim() : '';
+            const get = i => (c[i]?.v != null) ? String(c[i].f||c[i].v).trim() : '';
             const codigo = get(2);
             const ref    = coordsMap[codigo?.toUpperCase()] || {};
             const latRaw = get(8) || ref.lat?.toString() || '';
             const lngRaw = get(9) || ref.lng?.toString() || '';
             const lngNum = parseFloat(lngRaw);
-            const lngFix = (!isNaN(lngNum) && lngNum > 0) ? -lngNum : lngNum;
+            const lngFix = (!isNaN(lngNum) && lngNum>0) ? -lngNum : lngNum;
             return {
-              fecha: get(0), hora: get(1), codigo,
-              reporte: get(3), incidencia: get(4),
-              dir: get(6), ciudad: get(7) || ref.zona || '',
-              latitud:  latRaw ? parseFloat(latRaw).toString() : '',
-              longitud: latRaw ? lngFix.toString() : '',
-              operador: get(10),
+              fecha:      get(0), hora: get(1), codigo,
+              reporte:    get(3), incidencia: get(4),
+              dir:        get(6), ciudad: get(7) || ref.zona || '',
+              latitud:    latRaw ? parseFloat(latRaw).toString() : '',
+              longitud:   latRaw ? lngFix.toString() : '',
+              operador:   get(10),
             };
           }).filter(r => r.fecha || r.codigo);
         })(),
       ]);
 
-      const ciudades = [...new Set(dataset.map(r => r.ciudad).filter(Boolean))].sort();
+      // Poblar selector de ciudades con San Salvador por defecto
+      const ciudades = [...new Set(dataset.map(r=>r.ciudad).filter(Boolean))].sort();
       document.getElementById('map-ciudad').innerHTML =
         '<option value="todas">TODAS LAS CIUDADES</option>' +
-        ciudades.map(c => `<option value="${c}" ${c === 'San Salvador' ? 'selected' : ''}>${c}</option>`).join('');
+        ciudades.map(c => `<option value="${c}" ${c==='San Salvador'?'selected':''}>${c}</option>`).join('');
 
-      const hora = new Date().toLocaleTimeString('es-SV', { hour: '2-digit', minute: '2-digit' });
+      const hora = new Date().toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit'});
       document.getElementById('update-note').textContent = `${hora} · ${dataset.length} registros`;
       document.getElementById('live-label').textContent  = `Actualizado ${hora}`;
-
       initMap();
       setRange('mes');
-    } catch (err) {
-      document.getElementById('update-note').textContent = 'Error al cargar';
-      document.getElementById('live-label').textContent  = 'Sin conexion';
+    } catch(err) {
+      document.getElementById('update-note').textContent = 'Error al cargar — verifique la conexión';
+      document.getElementById('live-label').textContent  = 'Sin conexión';
       console.error(err);
     }
   }
 
-  /* ─── Inicialización del mapa Leaflet ───────────────────────────
-     Se llama una sola vez — Leaflet no permite reinicializar el mismo div.
-     Tiles de CartoDB: sin API key, sin cuota, apariencia limpia.
-  ─────────────────────────────────────────────────────────────── */
+  /* ─── Inicialización del mapa ────────────────────────────────── */
   function initMap() {
     if (mapInstance) return;
-    mapInstance = L.map('map-container').setView([13.6894, -89.1872], 8);
+    mapInstance = L.map('map-container').setView([13.6894,-89.1872], 8);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org">OSM</a> &amp; CARTO',
-      subdomains: 'abcd', maxZoom: 19, minZoom: 5,
+      attribution:'&copy; <a href="https://www.openstreetmap.org">OSM</a> &amp; CARTO',
+      subdomains:'abcd', maxZoom:19, minZoom:5,
     }).addTo(mapInstance);
-    markersLayer = L.layerGroup().addTo(mapInstance);
   }
 
-  // Actualiza las 3 cards de resumen según los filtros activos.
-  // rows = registros ya filtrados por fecha + tipo + ciudad con coords válidas.
-  // grupos = semáforos agrupados por código (un entry por semáforo único).
+  /* ─── Cards de resumen ───────────────────────────────────────── */
   function renderStats(rows, grupos, ciudad) {
-    // ── Card 1: Zonas únicas en los registros filtrados
-    const zonas = new Set(rows.map(r => r.ciudad).filter(Boolean));
-    const numZonas = zonas.size;
-    document.getElementById('stat-zonas').textContent = numZonas;
+    // Card 1: Zonas únicas
+    const zonas = new Set(rows.map(r=>r.ciudad).filter(Boolean));
+    document.getElementById('stat-zonas').textContent = zonas.size || '—';
     document.getElementById('stat-zonas-sub').textContent =
-      numZonas === 1 ? [...zonas][0] : `${numZonas} ciudades en el filtro`;
+      zonas.size===1 ? [...zonas][0] : `${zonas.size} ciudades en el filtro`;
 
-    // ── Card 2: Semáforos en zona según listado oficial (SEMAFOROS_X_CIUDAD)
-    // Busca por ciudad normalizada a mayúsculas para coincidir con las claves.
-    let totalListado = 0;
-    if (ciudad !== 'todas') {
-      const key = ciudad.toUpperCase();
-      totalListado = SEMAFOROS_X_CIUDAD[key] || 0;
-    } else {
-      totalListado = TOTAL_SEMAFOROS;
-    }
+    // Card 2: Semáforos en zona según listado oficial
+    let totalListado = ciudad!=='todas'
+      ? (SEMAFOROS_X_CIUDAD[ciudad.toUpperCase()] || 0)
+      : TOTAL_SEMAFOROS;
     document.getElementById('stat-total-sem').textContent = totalListado || '—';
     document.getElementById('stat-total-sem-sub').textContent =
-      totalListado > 0 ? 'según listado oficial' : 'ciudad no registrada';
+      totalListado>0 ? 'según listado oficial' : 'ciudad no registrada';
 
-    // ── Card 3: Semáforos únicos con incidencias en el período
-    // = número de grupos (un grupo = un semáforo con código único)
+    // Card 3: Semáforos únicos con incidencias + porcentaje
     const numActivos = Object.keys(grupos).length;
-    document.getElementById('stat-activos').textContent = numActivos;
-
-    // Sub-texto: porcentaje del total si hay datos del listado
-    if (totalListado > 0 && numActivos > 0) {
-      const pct = Math.round((numActivos / totalListado) * 100);
-      document.getElementById('stat-activos-sub').textContent =
-        `${pct}% del total de la zona`;
+    document.getElementById('stat-activos').textContent = numActivos || '—';
+    if (totalListado>0 && numActivos>0) {
+      const pct = Math.round((numActivos/totalListado)*100);
+      document.getElementById('stat-activos-sub').textContent = `${pct}% del total de la zona`;
     } else {
       document.getElementById('stat-activos-sub').textContent = 'en el período seleccionado';
     }
   }
 
-  /* ─── Render de marcadores ──────────────────────────────────────
-     - Filtra por fecha, tipo (col E) y ciudad
-     - Agrupa por código (col C) → un marcador por semáforo
-     - Badge azul con la cantidad si hay más de 1 incidencia
-     - Marcadores críticos (apagado/accidente) con glow rojo
-     - Popup con desglose por tipo y barra proporcional
-  ─────────────────────────────────────────────────────────────── */
+  /* ─── Render principal de marcadores y heatmap ───────────────── */
   function aplicarFiltroMapa() {
     if (!mapInstance) return;
-    const tipo   = document.getElementById('map-tipo').value;
-    const ciudad = document.getElementById('map-ciudad').value;
+
+    const tipo     = document.getElementById('map-tipo').value;
+    const ciudad   = document.getElementById('map-ciudad').value;
     const fechaIni = document.getElementById('f-fecha-ini').value;
     const fechaFin = document.getElementById('f-fecha-fin').value;
-    const dateIni  = fechaIni ? new Date(fechaIni + 'T00:00:00') : null;
-    const dateFin  = fechaFin ? new Date(fechaFin + 'T23:59:59') : null;
+    const dateIni  = fechaIni ? new Date(fechaIni+'T00:00:00') : null;
+    const dateFin  = fechaFin ? new Date(fechaFin+'T23:59:59') : null;
+
     const MAP_KW = {
       forzamiento:'forzamiento', apagado:'apagado', accidente:'accidente',
       mejora:'mejora', intermitencia:'intermitencia', error:'error', vdt:'vdt',
     };
 
-    // Filtrar por fecha, tipo y ciudad
+    // Paso 1 — filtrar
     let rows = dataset.filter(r => {
-      if (dateIni || dateFin) {
+      if (dateIni||dateFin) {
         const d = parseSheetDate(r.fecha);
         if (!d) return false;
-        if (dateIni && d < dateIni) return false;
-        if (dateFin && d > dateFin) return false;
+        if (dateIni && d<dateIni) return false;
+        if (dateFin && d>dateFin) return false;
       }
-      if (tipo !== 'todos' && MAP_KW[tipo] && !r.incidencia.toLowerCase().includes(MAP_KW[tipo])) return false;
-      if (ciudad !== 'todas' && (r.ciudad || '').toLowerCase() !== ciudad.toLowerCase()) return false;
+      if (tipo!=='todos' && MAP_KW[tipo] && !r.incidencia.toLowerCase().includes(MAP_KW[tipo])) return false;
+      if (ciudad!=='todas' && (r.ciudad||'').toLowerCase()!==ciudad.toLowerCase()) return false;
+      // Filtro por código (buscador)
+      if (codigoFiltro && !r.codigo.toUpperCase().includes(codigoFiltro)) return false;
       return true;
     }).filter(r => {
       const lat = parseFloat(r.latitud);
       const lng = parseFloat(r.longitud);
-      return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
+      return !isNaN(lat) && !isNaN(lng) && lat!==0 && lng!==0;
     });
 
     const totalConCoords = rows.length;
-    document.getElementById('map-status-text').textContent = totalConCoords === 0
-      ? 'No hay registros con coordenadas validas para los filtros seleccionados.'
-      : `Mostrando ${totalConCoords} registros con coordenadas en el periodo seleccionado.`;
+    document.getElementById('map-status-text').textContent = totalConCoords===0
+      ? 'No hay registros con coordenadas válidas para los filtros seleccionados.'
+      : `Mostrando ${totalConCoords} registros con coordenadas en el período seleccionado.`;
 
-    if (markersLayer) markersLayer.clearLayers();
+    // Limpiar capas anteriores
+    if (clusterLayer) { mapInstance.removeLayer(clusterLayer); clusterLayer=null; }
+    if (heatLayer)    { mapInstance.removeLayer(heatLayer);    heatLayer=null; }
 
-    // Agrupar por codigo (col C)
+    // Agrupar por código
     const grupos = {};
     rows.forEach(r => {
       const key = r.codigo.trim().toUpperCase()
-                  || (parseFloat(r.latitud).toFixed(5) + ',' + parseFloat(r.longitud).toFixed(5));
+                  || `${parseFloat(r.latitud).toFixed(5)},${parseFloat(r.longitud).toFixed(5)}`;
       if (!grupos[key]) {
-        grupos[key] = { codigo:r.codigo, dir:r.dir, ciudad:r.ciudad, registros:[], lat:parseFloat(r.latitud), lng:parseFloat(r.longitud) };
+        grupos[key] = { codigo:r.codigo, dir:r.dir, ciudad:r.ciudad,
+                        registros:[], lat:parseFloat(r.latitud), lng:parseFloat(r.longitud) };
       }
       grupos[key].registros.push(r);
     });
 
-    // Actualizar las 3 cards de resumen con los datos del filtro actual
+    // Actualizar cards de resumen
     renderStats(rows, grupos, ciudad);
 
     const bounds = [];
 
-    Object.values(grupos).forEach(grupo => {
-      const { lat, lng, registros } = grupo;
-      const total = registros.length;
+    if (capaActual === 'heatmap') {
+      // ── Heatmap: intensidad proporcional a la cantidad de incidencias
+      const puntos = Object.values(grupos).map(g => [g.lat, g.lng, g.registros.length]);
+      heatLayer = L.heatLayer(puntos, {
+        radius: 25, blur: 15, maxZoom: 14,
+        gradient: { 0.2:'#2563eb', 0.5:'#f59e0b', 0.8:'#ef4444', 1.0:'#7f1d1d' },
+      }).addTo(mapInstance);
+      Object.values(grupos).forEach(g => bounds.push([g.lat, g.lng]));
 
-      // Conteo por tipo (col E)
-      const conteo = {};
-      registros.forEach(r => { const lbl = getTipo(r.incidencia).label; conteo[lbl] = (conteo[lbl] || 0) + 1; });
-
-      const tipoPrincipal = Object.entries(conteo).sort((a, b) => b[1] - a[1])[0][0];
-      const color = Object.values(TIPOS).find(t => t.label === tipoPrincipal)?.color || '#94a3b8';
-      const isCritical = registros.some(r =>
-        r.incidencia.toLowerCase().includes('apagado') || r.incidencia.toLowerCase().includes('accidente')
-      );
-
-      const badgeHtml = total > 1
-        ? `<div style="position:absolute;top:-6px;right:-6px;background:#0033a0;color:#fff;border-radius:20px;font-size:8px;font-weight:800;padding:1px 4px;min-width:14px;text-align:center;border:1.5px solid #fff">${total}</div>`
-        : '';
-
-      const iconHtml = `<div style="position:relative;width:24px;height:24px">
-        <div style="width:24px;height:24px;background:${color};border-radius:50%;border:2.5px solid #fff;
-          box-shadow:${isCritical ? '0 0 8px #ef4444,0 2px 4px rgba(0,0,0,.3)' : '0 2px 5px rgba(0,0,0,.25)'};
-          display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:800;">
-          ${isCritical ? '!' : ''}</div>${badgeHtml}</div>`;
-
-      const icon = L.divIcon({ html:iconHtml, iconSize:[24,24], iconAnchor:[12,12], className:'custom-marker' });
-
-      // Popup: desglose completo por tipo con barra proporcional
-      const maxCnt = Math.max(...Object.values(conteo));
-      const filas  = Object.entries(conteo).sort((a, b) => b[1] - a[1]).map(([lbl, cnt]) => {
-        const tc  = Object.values(TIPOS).find(t => t.label === lbl)?.color || '#94a3b8';
-        const pct = Math.round((cnt / maxCnt) * 100);
-        return `<div style="display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid #f1f5f9">
-          <div style="width:8px;height:8px;border-radius:50%;background:${tc};flex-shrink:0"></div>
-          <div style="flex:1;font-size:11px;color:#374151">${lbl}</div>
-          <div style="width:55px;height:5px;background:#f1f5f9;border-radius:3px;flex-shrink:0">
-            <div style="width:${pct}%;height:100%;background:${tc};border-radius:3px"></div></div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:#111;min-width:24px;text-align:right">${cnt}</div>
-        </div>`;
-      }).join('');
-
-      const r0 = registros[0];
-      const detalleHtml = total === 1
-        ? `<div style="margin-top:8px;padding-top:7px;border-top:1px solid #f1f5f9;font-size:11px;color:#6b7280;line-height:1.7">
-            <div>&#128197; ${r0.fecha} &nbsp; ${r0.hora}</div>
-            <div>&#128100; ${r0.operador || 'Sin operador'}</div>
-            <div>&#128203; ${r0.reporte}</div></div>`
-        : '';
-
-      const popupHtml = `<div style="font-family:'Inter',sans-serif;font-size:12px;min-width:270px">
-        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:2px">
-          <div style="font-weight:800;color:#0033a0;font-size:13px">${grupo.codigo || 'Sin codigo'}</div>
-          <div style="font-size:10px;font-weight:700;color:#64748b">${total} ${total === 1 ? 'incidencia' : 'incidencias'}</div>
-        </div>
-        <div style="color:#6b7280;font-size:10px;margin-bottom:8px;padding-bottom:7px;border-bottom:1.5px solid #e2e8f0">
-          &#128205; ${grupo.dir || 'Sin direccion'} &nbsp;&middot;&nbsp; ${grupo.ciudad || ''}</div>
-        ${filas}${detalleHtml}</div>`;
-
-      L.marker([lat, lng], { icon }).bindPopup(popupHtml, { maxWidth:300 }).addTo(markersLayer);
-      bounds.push([lat, lng]);
-    });
-
-    if (bounds.length > 0) {
-      mapInstance.fitBounds(bounds, { padding:[30,30], maxZoom:15 });
     } else {
-      mapInstance.setView([13.6894, -89.1872], 8);
+      // ── Marcadores con clustering
+      clusterLayer = L.markerClusterGroup({
+        maxClusterRadius: 40,
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: false,
+        iconCreateFunction: cluster => {
+          const count = cluster.getChildCount();
+          return L.divIcon({
+            html: `<div style="width:34px;height:34px;border-radius:50%;background:#0033a0;
+                               border:2.5px solid #fff;display:flex;align-items:center;
+                               justify-content:center;font-family:'JetBrains Mono',monospace;
+                               font-size:11px;font-weight:800;color:#fff;
+                               box-shadow:0 2px 8px rgba(0,51,160,.4)">${count}</div>`,
+            className:'custom-marker', iconSize:[34,34], iconAnchor:[17,17],
+          });
+        },
+      });
+
+      Object.values(grupos).forEach(grupo => {
+        const { lat, lng, registros } = grupo;
+        const total = registros.length;
+
+        // Conteo por tipo (col E)
+        const conteo = {};
+        registros.forEach(r => { const lbl=getTipo(r.incidencia).label; conteo[lbl]=(conteo[lbl]||0)+1; });
+
+        // Tipo predominante → color del marcador
+        const tipoPrincipal = Object.entries(conteo).sort((a,b)=>b[1]-a[1])[0][0];
+        const color = Object.values(TIPOS).find(t=>t.label===tipoPrincipal)?.color || '#94a3b8';
+
+        const isCritical = registros.some(r =>
+          r.incidencia.toLowerCase().includes('apagado') ||
+          r.incidencia.toLowerCase().includes('accidente')
+        );
+
+        // MEJORA: tamaño del marcador proporcional a la cantidad
+        const size = total===1 ? 22 : total<5 ? 26 : total<15 ? 30 : 36;
+        const half = size/2;
+
+        const badgeHtml = total>1
+          ? `<div style="position:absolute;top:-6px;right:-6px;background:#0033a0;color:#fff;
+                         border-radius:20px;font-size:7px;font-weight:800;padding:1px 4px;
+                         min-width:14px;text-align:center;border:1.5px solid #fff">${total}</div>`
+          : '';
+
+        const iconHtml = `
+          <div style="position:relative;width:${size}px;height:${size}px">
+            <div style="width:${size}px;height:${size}px;background:${color};border-radius:50%;
+                        border:2.5px solid #fff;
+                        box-shadow:${isCritical?'0 0 8px #ef4444,0 2px 4px rgba(0,0,0,.3)':'0 2px 5px rgba(0,0,0,.25)'};
+                        display:flex;align-items:center;justify-content:center;
+                        font-size:9px;color:#fff;font-weight:800;">
+              ${isCritical?'!':''}
+            </div>
+            ${badgeHtml}
+          </div>`;
+
+        const icon = L.divIcon({ html:iconHtml, iconSize:[size,size], iconAnchor:[half,half], className:'custom-marker' });
+
+        // Popup con desglose y fecha de última incidencia
+        const maxCnt = Math.max(...Object.values(conteo));
+        const filas  = Object.entries(conteo).sort((a,b)=>b[1]-a[1]).map(([lbl,cnt]) => {
+          const tc  = Object.values(TIPOS).find(t=>t.label===lbl)?.color || '#94a3b8';
+          const pct = Math.round((cnt/maxCnt)*100);
+          return `<div style="display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid #f1f5f9">
+            <div style="width:8px;height:8px;border-radius:50%;background:${tc};flex-shrink:0"></div>
+            <div style="flex:1;font-size:11px;color:#374151">${lbl}</div>
+            <div style="width:50px;height:5px;background:#f1f5f9;border-radius:3px;flex-shrink:0">
+              <div style="width:${pct}%;height:100%;background:${tc};border-radius:3px"></div></div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;
+                        color:#111;min-width:22px;text-align:right">${cnt}</div>
+          </div>`;
+        }).join('');
+
+        // MEJORA: fecha de última incidencia
+        const ultimaFecha = registros.sort((a,b) => {
+          const da = parseSheetDate(a.fecha), db = parseSheetDate(b.fecha);
+          return db-da;
+        })[0]?.fecha || '—';
+
+        const r0 = registros[0];
+        const detalleHtml = total===1
+          ? `<div style="margin-top:8px;padding-top:7px;border-top:1px solid #f1f5f9;font-size:11px;color:#6b7280;line-height:1.7">
+               <div>📅 ${r0.fecha} &nbsp; ${r0.hora}</div>
+               <div>👤 ${r0.operador||'Sin operador'}</div>
+               <div>📋 ${r0.reporte}</div>
+             </div>`
+          : `<div style="margin-top:8px;font-size:10px;color:#9ca3af">
+               Última incidencia: <strong style="color:#4b5563">${ultimaFecha}</strong>
+             </div>`;
+
+        const popupHtml = `
+          <div style="font-family:'Inter',sans-serif;font-size:12px;min-width:270px">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:2px">
+              <div style="font-weight:800;color:#0033a0;font-size:13px">${grupo.codigo||'Sin código'}</div>
+              <div style="font-size:10px;font-weight:700;color:#64748b">${total} ${total===1?'incidencia':'incidencias'}</div>
+            </div>
+            <div style="color:#6b7280;font-size:10px;margin-bottom:8px;padding-bottom:7px;border-bottom:1.5px solid #e2e8f0">
+              📍 ${grupo.dir||'Sin dirección'} &nbsp;·&nbsp; ${grupo.ciudad||''}
+            </div>
+            ${filas}
+            ${detalleHtml}
+          </div>`;
+
+        L.marker([lat,lng],{icon}).bindPopup(popupHtml,{maxWidth:300}).addTo(clusterLayer);
+        bounds.push([lat,lng]);
+      });
+
+      clusterLayer.addTo(mapInstance);
+    }
+
+    // Ajustar vista
+    if (bounds.length>0) {
+      mapInstance.fitBounds(bounds, {padding:[30,30], maxZoom:15});
+    } else {
+      mapInstance.setView([13.6894,-89.1872], 8);
     }
   }
 
-  /* ─── Punto de entrada ──────────────────────────────────────────
-     Espera el DOM, carga datos y elimina el loading overlay.
-  ─────────────────────────────────────────────────────────────── */
+  /* ─── Inicio ─────────────────────────────────────────────────── */
   window.addEventListener('DOMContentLoaded', async () => {
     await loadData();
     const overlay = document.getElementById('loading-overlay');
