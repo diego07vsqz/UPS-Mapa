@@ -77,19 +77,19 @@
        verticalmente: header + filtros (fijos) + main (flex:1).
        El mapa ocupa el espacio restante sin overflow.
     ─────────────────────────────────────────────────────────── */
-    html, body { height:100%; overflow:hidden; }
-    .page-body  { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+    html, body { height:100%; }
+    .page-body  { display:flex; flex-direction:column; min-height:100vh; }
     .header     { flex-shrink:0; }
     .filter-bar { flex-shrink:0; }
 
     .main {
-      flex:1; padding:10px 20px; overflow:hidden;
-      display:flex; flex-direction:column; gap:10px; min-height:0;
+      flex:1; padding:14px 24px 24px;
+      display:flex; flex-direction:column; gap:12px;
     }
 
-    /* Card del mapa: crece para llenar el espacio restante */
+    /* Card del mapa */
     .card-map {
-      flex:1; min-height:0; overflow:hidden;
+      flex:1;
       display:flex; flex-direction:column;
       background:var(--bg-white); border:1px solid var(--border);
       border-radius:var(--r-xl); padding:14px 18px;
@@ -119,17 +119,37 @@
     .capture-btn { font-family:inherit; font-size:9px; font-weight:700; color:var(--text-mid); background:var(--bg-page); border:1px solid var(--border-mid); border-radius:var(--r-sm); padding:4px 12px; cursor:pointer; transition:all .15s; display:flex; align-items:center; gap:5px; margin-left:auto; }
     .capture-btn:hover { background:#059669; border-color:#059669; color:#fff; }
 
-    /* ── Mapa: ocupa todo el espacio restante de card-map ─────── */
-    .map-container { flex:1; min-height:0; width:100%; border-radius:var(--r-lg); overflow:hidden; border:1px solid var(--border-mid); }
+    /* ── Mapa: altura generosa, crece con la card-map ─────────── */
+    .map-container { flex:1; min-height:520px; width:100%; border-radius:var(--r-lg); overflow:hidden; border:1px solid var(--border-mid); }
     .map-status { margin-top:10px; font-size:11px; color:var(--text-light); display:flex; align-items:center; gap:6px; }
-
-    /* ── Leyenda ─────────────────────────────────────────────── */
-    .map-legend { display:flex; flex-wrap:wrap; gap:7px 16px; margin-top:12px; }
-    .map-legend-item { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--text-mid); font-weight:500; }
-    .map-legend-dot { width:9px; height:9px; border-radius:50%; border:1.5px solid rgba(255,255,255,.8); box-shadow:0 1px 3px rgba(0,0,0,.2); flex-shrink:0; }
 
     /* Marcador personalizado Leaflet */
     .custom-marker { background:transparent !important; border:none !important; }
+
+    /* ── Leyenda dentro del mapa (control Leaflet) ──────────── */
+    .map-legend-control {
+      background: rgba(255,255,255,.96);
+      border: 1px solid var(--border-mid);
+      border-radius: var(--r-md);
+      padding: 10px 13px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.12);
+      min-width: 150px;
+    }
+    .map-legend-control h4 {
+      font-size: 9px; font-weight: 800; color: var(--text-light);
+      text-transform: uppercase; letter-spacing: .1em;
+      margin-bottom: 8px; padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .map-legend-control .leg-item {
+      display: flex; align-items: center; gap: 7px;
+      padding: 3px 0; font-size: 11px; font-weight: 500; color: var(--text-mid);
+    }
+    .map-legend-control .leg-dot {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+      border: 1.5px solid rgba(255,255,255,.8);
+      box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    }
 
     /* ── Toast de notificación ───────────────────────────────── */
     .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:#1e293b; color:#fff; font-size:11px; font-weight:600; padding:9px 18px; border-radius:var(--r-lg); z-index:500; opacity:0; transition:all .3s ease; pointer-events:none; box-shadow:0 4px 20px rgba(0,0,0,.3); white-space:nowrap; }
@@ -301,17 +321,6 @@
       <span id="map-status-text">Cargando datos...</span>
     </div>
 
-    <div class="map-legend">
-      <div class="map-legend-item"><div class="map-legend-dot" style="background:#ca8a04"></div>Forzamiento</div>
-      <div class="map-legend-item"><div class="map-legend-dot" style="background:#dc2626"></div>Apagado</div>
-      <div class="map-legend-item"><div class="map-legend-dot" style="background:#65a30d"></div>Mejora</div>
-      <div class="map-legend-item"><div class="map-legend-dot" style="background:#2563eb"></div>Intermitencia</div>
-      <div class="map-legend-item"><div class="map-legend-dot" style="background:#9333ea"></div>Error Comun.</div>
-      <div class="map-legend-item"><div class="map-legend-dot" style="background:#ea580c"></div>Accidentes</div>
-      <div class="map-legend-item"><div class="map-legend-dot" style="background:#0d9488"></div>VDT</div>
-      <div class="map-legend-item"><div class="map-legend-dot" style="background:#94a3b8"></div>Otro</div>
-      <div class="map-legend-item"><div class="map-legend-dot" style="background:#dc2626;box-shadow:0 0 0 3px rgba(239,68,68,.35)"></div>Cr&iacute;tico</div>
-    </div>
   </div>
 
   <div class="footer">Mapa de Incidencias Semaf&oacute;ricas &nbsp;&middot;&nbsp; CCM &nbsp;&middot;&nbsp; Ministerio de Obras P&uacute;blicas y de Transporte</div>
@@ -584,6 +593,27 @@
       attribution:'&copy; <a href="https://www.openstreetmap.org">OSM</a> &amp; CARTO',
       subdomains:'abcd', maxZoom:19, minZoom:5,
     }).addTo(mapInstance);
+
+    // ── Leyenda como control Leaflet (esquina inferior izquierda)
+    const legend = L.control({ position: 'bottomleft' });
+    legend.onAdd = () => {
+      const div = L.DomUtil.create('div', 'map-legend-control');
+      div.innerHTML = `
+        <h4>Tipos de incidencia</h4>
+        <div class='leg-item'><div class='leg-dot' style='background:#ca8a04'></div>Forzamiento de Tiempos</div>
+        <div class='leg-item'><div class='leg-dot' style='background:#dc2626'></div>Apágado</div>
+        <div class='leg-item'><div class='leg-dot' style='background:#65a30d'></div>Mejora de Tiempos</div>
+        <div class='leg-item'><div class='leg-dot' style='background:#2563eb'></div>Intermitencia</div>
+        <div class='leg-item'><div class='leg-dot' style='background:#9333ea'></div>Error de Comunicación</div>
+        <div class='leg-item'><div class='leg-dot' style='background:#ea580c'></div>Apoyo en Accidentes</div>
+        <div class='leg-item'><div class='leg-dot' style='background:#0d9488'></div>Revisión VDT</div>
+        <div class='leg-item'><div class='leg-dot' style='background:#94a3b8'></div>Otro tipo</div>
+        <div class='leg-item'><div class='leg-dot' style='background:#dc2626;box-shadow:0 0 0 3px rgba(239,68,68,.3)'></div>Crítico</div>
+      `;
+      L.DomEvent.disableClickPropagation(div);
+      return div;
+    };
+    legend.addTo(mapInstance);
   }
 
   /* ─── Cards de resumen ───────────────────────────────────────── */
