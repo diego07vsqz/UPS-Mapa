@@ -72,6 +72,62 @@
     .map-legend { display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:13px; }
     .map-legend-item { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-mid); font-weight:500; }
     .map-legend-dot { width:10px; height:10px; border-radius:50%; border:2px solid rgba(255,255,255,.8); box-shadow:0 1px 3px rgba(0,0,0,.25); flex-shrink:0; }
+
+    /* ── Cards de resumen (encima del mapa) ────────────────────
+       3 métricas clave que se actualizan con cada filtro aplicado.
+    ─────────────────────────────────────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    @media (max-width: 700px) {
+      .stats-grid { grid-template-columns: 1fr; }
+    }
+
+    .stat-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: relative;
+    }
+    /* Barra lateral de color por card */
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 12px; bottom: 12px;
+      width: 3px; border-radius: 0 3px 3px 0;
+    }
+    .stat-card.s-blue::before   { background: var(--blue); }
+    .stat-card.s-green::before  { background: #10b981; }
+    .stat-card.s-yellow::before { background: var(--yellow); }
+
+    .stat-icon {
+      width: 46px; height: 46px;
+      border-radius: var(--r-md);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 20px;
+    }
+    .stat-content { flex: 1; min-width: 0; }
+    .stat-num {
+      font-size: 28px; font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      line-height: 1.1; color: var(--text-dark);
+    }
+    .stat-label {
+      font-size: 9px; font-weight: 700;
+      color: var(--text-mid); text-transform: uppercase;
+      letter-spacing: .07em; margin-top: 2px;
+    }
+    .stat-sub {
+      font-size: 9px; color: var(--text-light);
+      margin-top: 3px; line-height: 1.4;
+    }
     .custom-marker { background:transparent !important; border:none !important; }
     .footer { margin-top:32px; padding-top:18px; border-top:1px solid var(--border); text-align:center; font-size:9px; color:var(--text-light); text-transform:uppercase; letter-spacing:.07em; }
   </style>
@@ -173,6 +229,47 @@
 
 <!-- Mapa -->
 <main class="main">
+
+    <!-- ── Cards de resumen dinámico ───────────────────────────
+         Se actualizan cada vez que se aplica un filtro.
+         Fuentes:
+           • Zonas: ciudades únicas en los registros filtrados
+           • Semáforos en zona: coordsMap del listado maestro
+           • Semáforos activos: códigos únicos con incidencias en el período
+    ──────────────────────────────────────────────────────────── -->
+    <div class="stats-grid">
+
+      <!-- Card 1: Zonas (ciudades) visibles según filtro -->
+      <div class="stat-card s-blue">
+        <div class="stat-icon" style="background:#eff6ff">🗺️</div>
+        <div class="stat-content">
+          <div class="stat-num" id="stat-zonas">—</div>
+          <div class="stat-label">Zonas</div>
+          <div class="stat-sub" id="stat-zonas-sub">ciudades en el filtro</div>
+        </div>
+      </div>
+
+      <!-- Card 2: Total de semáforos en la zona según listado maestro -->
+      <div class="stat-card s-green">
+        <div class="stat-icon" style="background:#ecfdf5">🚦</div>
+        <div class="stat-content">
+          <div class="stat-num" id="stat-total-sem">—</div>
+          <div class="stat-label">Semáforos en zona</div>
+          <div class="stat-sub" id="stat-total-sem-sub">según listado maestro</div>
+        </div>
+      </div>
+
+      <!-- Card 3: Semáforos con incidencias en el período filtrado -->
+      <div class="stat-card s-yellow">
+        <div class="stat-icon" style="background:#fffbeb">⚡</div>
+        <div class="stat-content">
+          <div class="stat-num" id="stat-activos">—</div>
+          <div class="stat-label">Con incidencias</div>
+          <div class="stat-sub" id="stat-activos-sub">en el período</div>
+        </div>
+      </div>
+
+    </div>
   <div class="card">
     <div class="card-title">MAPA DE INCIDENCIAS &mdash; EL SALVADOR</div>
     <div class="map-container" id="map-container"></div>
@@ -388,6 +485,48 @@
       subdomains: 'abcd', maxZoom: 19, minZoom: 5,
     }).addTo(mapInstance);
     markersLayer = L.layerGroup().addTo(mapInstance);
+  }
+
+  // Actualiza las 3 cards de resumen según los filtros activos.
+  // rows = registros ya filtrados por fecha + tipo + ciudad con coords válidas.
+  // grupos = semáforos agrupados por código (un entry por semáforo único).
+  function renderStats(rows, grupos, ciudad) {
+    // ── Card 1: Zonas únicas en los registros filtrados
+    const zonas = new Set(rows.map(r => r.ciudad).filter(Boolean));
+    const numZonas = zonas.size;
+    document.getElementById('stat-zonas').textContent = numZonas;
+    document.getElementById('stat-zonas-sub').textContent =
+      numZonas === 1 ? [...zonas][0] : `${numZonas} ciudades en el filtro`;
+
+    // ── Card 2: Semáforos en zona según listado maestro (coordsMap)
+    // Si hay ciudad seleccionada, cuenta los del listado que pertenecen a esa zona.
+    // Si es "todas", cuenta todos los del listado.
+    let totalListado = 0;
+    if (ciudad !== 'todas') {
+      // Buscar en coordsMap cuántos semáforos tienen esa zona
+      totalListado = Object.values(coordsMap)
+        .filter(s => (s.zona || '').toLowerCase() === ciudad.toLowerCase()).length;
+    } else {
+      totalListado = Object.keys(coordsMap).length;
+    }
+    document.getElementById('stat-total-sem').textContent =
+      totalListado > 0 ? totalListado : '—';
+    document.getElementById('stat-total-sem-sub').textContent =
+      totalListado > 0 ? 'según listado maestro' : 'listado no disponible';
+
+    // ── Card 3: Semáforos únicos con incidencias en el período
+    // = número de grupos (un grupo = un semáforo con código único)
+    const numActivos = Object.keys(grupos).length;
+    document.getElementById('stat-activos').textContent = numActivos;
+
+    // Sub-texto: porcentaje del total si hay datos del listado
+    if (totalListado > 0 && numActivos > 0) {
+      const pct = Math.round((numActivos / totalListado) * 100);
+      document.getElementById('stat-activos-sub').textContent =
+        `${pct}% del total de la zona`;
+    } else {
+      document.getElementById('stat-activos-sub').textContent = 'en el período seleccionado';
+    }
   }
 
   /* ─── Render de marcadores ──────────────────────────────────────
