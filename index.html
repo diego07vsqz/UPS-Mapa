@@ -309,6 +309,9 @@
       <button class="layer-btn" id="btn-heatmap" onclick="setLayer('heatmap')">
         &#127777; Mapa de calor
       </button>
+      <button class="layer-btn" onclick="compartirFiltro()" style="margin-left:8px">
+        &#128279; Compartir filtro
+      </button>
       <button class="capture-btn" onclick="capturarMapa()">
         &#128247; Capturar mapa
       </button>
@@ -572,6 +575,13 @@
       document.getElementById('map-ciudad').innerHTML =
         '<option value="todas">TODAS LAS CIUDADES</option>' +
         ciudades.map(c => `<option value="${c}" ${c==='San Salvador'?'selected':''}>${c}</option>`).join('');
+      // Aplicar ciudad del hash de URL si existe
+      if (window._hashCiudad) {
+        const sel = document.getElementById('map-ciudad');
+        const opt = [...sel.options].find(o => o.value === window._hashCiudad);
+        if (opt) sel.value = window._hashCiudad;
+        delete window._hashCiudad;
+      }
 
       const hora = new Date().toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit'});
       document.getElementById('update-note').textContent = `${hora} · ${dataset.length} registros`;
@@ -659,8 +669,8 @@
       mejora:'mejora', intermitencia:'intermitencia', error:'error', vdt:'vdt',
     };
 
-    // Paso 1 — filtrar
-    let rows = dataset.filter(r => {
+    // Paso 1 — filtrar sin restricción de coordenadas primero
+    let rowsAll = dataset.filter(r => {
       if (dateIni||dateFin) {
         const d = parseSheetDate(r.fecha);
         if (!d) return false;
@@ -669,19 +679,26 @@
       }
       if (tipo!=='todos' && MAP_KW[tipo] && !r.incidencia.toLowerCase().includes(MAP_KW[tipo])) return false;
       if (ciudad!=='todas' && (r.ciudad||'').toLowerCase()!==ciudad.toLowerCase()) return false;
-      // Filtro por código (buscador)
       if (codigoFiltro && !r.codigo.toUpperCase().includes(codigoFiltro)) return false;
       return true;
-    }).filter(r => {
+    });
+
+    // Separar registros con y sin coordenadas válidas
+    let rows = rowsAll.filter(r => {
       const lat = parseFloat(r.latitud);
       const lng = parseFloat(r.longitud);
       return !isNaN(lat) && !isNaN(lng) && lat!==0 && lng!==0;
     });
+    const sinCoords = rowsAll.length - rows.length;
 
     const totalConCoords = rows.length;
-    document.getElementById('map-status-text').textContent = totalConCoords===0
+    const statusBase = totalConCoords===0
       ? 'No hay registros con coordenadas válidas para los filtros seleccionados.'
       : `Mostrando ${totalConCoords} registros con coordenadas en el período seleccionado.`;
+    const statusExtra = sinCoords > 0
+      ? ` · <span style="color:#f59e0b;font-weight:600">${sinCoords} sin coordenadas</span>`
+      : '';
+    document.getElementById('map-status-text').innerHTML = statusBase + statusExtra;
 
     // Limpiar capas anteriores
     if (clusterLayer) { mapInstance.removeLayer(clusterLayer); clusterLayer=null; }
@@ -703,6 +720,24 @@
     renderStats(rows, grupos, ciudad);
 
     const bounds = [];
+
+    // ── MEJORA: semáforos sin incidencias como puntos grises pequeños
+    // Se muestran solo cuando hay ciudad seleccionada (para no saturar vista nacional)
+    if (capaActual === 'marcadores' && ciudad !== 'todas' && Object.keys(coordsMap).length > 0) {
+      const codigosActivos = new Set(Object.keys(grupos));
+      const iconGris = L.divIcon({
+        html: `<div style="width:8px;height:8px;border-radius:50%;background:#cbd5e1;
+                           border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.15)"></div>`,
+        className: 'custom-marker', iconSize:[8,8], iconAnchor:[4,4],
+      });
+      Object.entries(coordsMap).forEach(([id, s]) => {
+        if (codigosActivos.has(id)) return; // ya tiene marcador activo
+        if ((s.zona||'').toLowerCase() !== ciudad.toLowerCase()) return; // otra ciudad
+        L.marker([s.lat, s.lng], { icon: iconGris })
+         .bindTooltip(`${id} — Sin incidencias en el período`, { direction:'top', offset:[0,-4] })
+         .addTo(clusterLayer || mapInstance);
+      });
+    }
 
     if (capaActual === 'heatmap') {
       // ── Heatmap: intensidad proporcional a la cantidad de incidencias
@@ -754,19 +789,30 @@
         const half = size/2;
 
         const badgeHtml = total>1
-          ? `<div style="position:absolute;top:-6px;right:-6px;background:#0033a0;color:#fff;
+          ? `<div style="position:absolute;top:-5px;right:-5px;background:#0033a0;color:#fff;
                          border-radius:20px;font-size:7px;font-weight:800;padding:1px 4px;
                          min-width:14px;text-align:center;border:1.5px solid #fff">${total}</div>`
           : '';
 
+        // Ícono: pin con semáforo SVG — color del tipo en el fondo
+        const glowStyle = isCritical ? 'filter:drop-shadow(0 0 5px #ef4444)' : '';
         const iconHtml = `
-          <div style="position:relative;width:${size}px;height:${size}px">
-            <div style="width:${size}px;height:${size}px;background:${color};border-radius:50%;
-                        border:2.5px solid #fff;
-                        box-shadow:${isCritical?'0 0 8px #ef4444,0 2px 4px rgba(0,0,0,.3)':'0 2px 5px rgba(0,0,0,.25)'};
-                        display:flex;align-items:center;justify-content:center;
-                        font-size:9px;color:#fff;font-weight:800;">
-              ${isCritical?'!':''}
+          <div style="position:relative;width:${size}px;height:${size+6}px;${glowStyle}">
+            <!-- Pin circular con color del tipo -->
+            <div style="width:${size}px;height:${size}px;background:${color};
+                        border-radius:50% 50% 50% 0;transform:rotate(-45deg);
+                        border:2px solid #fff;
+                        box-shadow:0 2px 6px rgba(0,0,0,.3);
+                        display:flex;align-items:center;justify-content:center;">
+              <!-- Semáforo SVG inline -->
+              <div style="transform:rotate(45deg);display:flex;align-items:center;justify-content:center">
+                <svg width="${Math.round(size*.55)}" height="${Math.round(size*.65)}" viewBox="0 0 16 20" fill="none">
+                  <rect x="3" y="1" width="10" height="18" rx="2" fill="rgba(0,0,0,.7)"/>
+                  <circle cx="8" cy="5"  r="2.2" fill="${isCritical?'#ff4444':'#ff6b6b'}"/>
+                  <circle cx="8" cy="10" r="2.2" fill="#FFD100"/>
+                  <circle cx="8" cy="15" r="2.2" fill="#2ecc71"/>
+                </svg>
+              </div>
             </div>
             ${badgeHtml}
           </div>`;
@@ -788,21 +834,34 @@
           </div>`;
         }).join('');
 
-        // MEJORA: fecha de última incidencia
-        const ultimaFecha = registros.sort((a,b) => {
+        // Ordenar por fecha descendente para historial
+        const registrosOrdenados = [...registros].sort((a,b) => {
           const da = parseSheetDate(a.fecha), db = parseSheetDate(b.fecha);
-          return db-da;
-        })[0]?.fecha || '—';
+          return (db||0) - (da||0);
+        });
+        const ultimaFecha = registrosOrdenados[0]?.fecha || '—';
+        const r0 = registrosOrdenados[0];
 
-        const r0 = registros[0];
+        // Para 1 incidencia: detalle completo
+        // Para N: fecha última + mini historial de hasta 5 registros
         const detalleHtml = total===1
-          ? `<div style="margin-top:8px;padding-top:7px;border-top:1px solid #f1f5f9;font-size:11px;color:#6b7280;line-height:1.7">
+          ? `<div style="margin-top:8px;padding-top:7px;border-top:1px solid #f1f5f9;
+                         font-size:11px;color:#6b7280;line-height:1.7">
                <div>📅 ${r0.fecha} &nbsp; ${r0.hora}</div>
                <div>👤 ${r0.operador||'Sin operador'}</div>
                <div>📋 ${r0.reporte}</div>
              </div>`
-          : `<div style="margin-top:8px;font-size:10px;color:#9ca3af">
-               Última incidencia: <strong style="color:#4b5563">${ultimaFecha}</strong>
+          : `<div style="margin-top:8px;padding-top:7px;border-top:1px solid #f1f5f9">
+               <div style="font-size:9px;font-weight:800;color:#9ca3af;text-transform:uppercase;
+                           letter-spacing:.07em;margin-bottom:5px">Últimos registros</div>
+               ${registrosOrdenados.slice(0,5).map(r => `
+                 <div style="display:flex;gap:8px;font-size:10px;color:#6b7280;padding:3px 0;
+                             border-bottom:1px solid #f8fafc">
+                   <span style="font-family:'JetBrains Mono',monospace;color:#4b5563
+                                ">${r.fecha}</span>
+                   <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+                                ">${getTipo(r.incidencia).label}</span>
+                 </div>`).join('')}
              </div>`;
 
         const popupHtml = `
@@ -833,8 +892,49 @@
     }
   }
 
+  /* ─── Compartir filtro por URL hash ────────────────────────────
+     Al copiar el enlace se incluyen los filtros activos en el hash.
+     Al abrir el enlace se restauran automáticamente.
+     Formato: #ciudad=SAN SALVADOR&tipo=apagado&rango=mes
+  ─────────────────────────────────────────────────────────────── */
+  function compartirFiltro() {
+    const ciudad = document.getElementById('map-ciudad').value;
+    const tipo   = document.getElementById('map-tipo').value;
+    const ini    = document.getElementById('f-fecha-ini').value;
+    const fin    = document.getElementById('f-fecha-fin').value;
+    const params = new URLSearchParams();
+    if (ciudad !== 'todas')  params.set('ciudad', ciudad);
+    if (tipo   !== 'todos')  params.set('tipo',   tipo);
+    if (ini)                 params.set('ini',    ini);
+    if (fin)                 params.set('fin',    fin);
+    const url = window.location.origin + window.location.pathname + '#' + params.toString();
+    navigator.clipboard.writeText(url).then(() => {
+      toast('🔗 Enlace copiado al portapapeles');
+    }).catch(() => {
+      prompt('Copia este enlace:', url);
+    });
+  }
+
+  function leerHashFiltros() {
+    const hash = window.location.hash.slice(1);
+    if (!hash) return false;
+    const params = new URLSearchParams(hash);
+    if (params.get('ciudad')) {
+      const sel = document.getElementById('map-ciudad');
+      // El select se puebla en loadData; guardamos para aplicar después
+      window._hashCiudad = params.get('ciudad');
+    }
+    if (params.get('tipo')) {
+      document.getElementById('map-tipo').value = params.get('tipo');
+    }
+    if (params.get('ini')) document.getElementById('f-fecha-ini').value = params.get('ini');
+    if (params.get('fin')) document.getElementById('f-fecha-fin').value = params.get('fin');
+    return true;
+  }
+
   /* ─── Inicio ─────────────────────────────────────────────────── */
   window.addEventListener('DOMContentLoaded', async () => {
+    leerHashFiltros(); // restaurar filtros del hash de URL si existe
     await loadData();
     const overlay = document.getElementById('loading-overlay');
     overlay.classList.add('fade-out');
