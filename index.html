@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+here<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -607,6 +607,9 @@
       }
       grupos[key].registros.push(r);
     });
+
+    // Actualizar las 3 cards de resumen con los datos del filtro actual
+    renderStats(rows, grupos, ciudad);
 
     const bounds = [];
 
