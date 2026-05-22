@@ -102,7 +102,6 @@
       border-radius:var(--r-xl); padding:14px 18px;
     }
 
-    .card { background:var(--bg-white); border:1px solid var(--border); border-radius:var(--r-xl); padding:14px 18px; }
     .card-title { font-size:12px; font-weight:700; color:var(--text-light); text-transform:uppercase; letter-spacing:.12em; margin-bottom:10px; padding-bottom:8px; border-bottom:1.5px solid var(--border); display:flex; align-items:center; gap:8px; flex-shrink:0; }
     .card-title::before { content:''; width:4px; height:13px; background:var(--flag-blue); border-radius:3px; flex-shrink:0; }
 
@@ -367,6 +366,8 @@
 
   </div>
 
+  </div><!-- /panel-mapa -->
+
   <!-- Panel: Resumen por Tipo -->
   <div id="panel-resumen" class="secondary-panel">
     <div class="ranking-card">
@@ -387,8 +388,7 @@
   /* ─── Configuración ──────────────────────────────────────────── */
   const SHEET_ID       = '1z7RURqLK9EQGftyyre7FcGdj_i7WWjWFWAvMFhgsQgU';
   const SHEET_NAME     = 'P. Semaforico';
-  const SEMAFOROS_ID   = '1z7RURqLK9EQGftyyre7FcGdj_i7WWjWFWAvMFhgsQgU';
-  const SEMAFOROS_NAME = 'Lista Semáforos';
+  const SEMAFOROS_NAME = 'Lista Sem\u00e1foros'; // pestaña del listado de coordenadas
 
   /* ─── Catálogo de incidencias (col E) ────────────────────────── */
   const TIPOS = {
@@ -441,13 +441,11 @@
   let mapInstance  = null;
   let clusterLayer = null;   // capa de clustering
   let heatLayer    = null;   // capa de heatmap
-  let capaBusqueda = null;   // marcador de búsqueda por código
   let capaActual   = 'marcadores'; // 'marcadores' | 'heatmap'
   let codigoFiltro = '';
 
   /* ─── Filtro central: única fuente de verdad ─────────────────────
-     Todas las pestañas (mapa, ranking, hora pico) llaman aquí.
-     Garantiza que los tres vistas siempre usen los mismos filtros.
+     Mapa y Resumen llaman aquí — garantiza filtros siempre sincronizados.
   ─────────────────────────────────────────────────────────────── */
   const MAP_KW = {
     forzamiento:'forzamiento', apagado:'apagado', accidente:'accidente',
@@ -545,9 +543,7 @@
   /* ─── Limpiar todos los filtros ──────────────────────────────── */
   function limpiarFiltros() {
     document.getElementById('map-tipo').value = 'todos';
-    const sel = document.getElementById('map-ciudad');
-    const opt = [...sel.options].find(o => o.value === 'San Salvador');
-    sel.value = opt ? 'San Salvador' : 'todas';
+    document.getElementById('map-ciudad').value = 'todas';
     document.getElementById('range-warning').classList.remove('visible');
     clearSearchCode();
     setRange('mes');
@@ -626,7 +622,7 @@
   /* ─── Carga del listado de semáforos ────────────────────────── */
   async function loadSemaforos() {
     try {
-      const url   = `https://docs.google.com/spreadsheets/d/${SEMAFOROS_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SEMAFOROS_NAME)}`;
+      const url   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SEMAFOROS_NAME)}`;
       const res   = await fetch(url);
       const text  = await res.text();
       const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/);
@@ -643,7 +639,6 @@
         if (!id || isNaN(lat) || isNaN(lng) || lat===0) return;
         coordsMap[id.toUpperCase()] = { lat, lng: lng>0 ? -lng : lng, zona:ciudad };
       });
-      console.info(`Semáforos cargados: ${Object.keys(coordsMap).length}`);
     } catch(err) {
       console.warn('Listado de semáforos no disponible:', err.message);
     }
@@ -661,7 +656,6 @@
       const cached = cacheLeer();
       if (cached) {
         dataset = cached;
-        console.info('Datos desde caché — omitiendo fetch a GViz');
       } else {
         // ── Fetch real a GViz
         const url   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
@@ -743,7 +737,7 @@
       div.innerHTML = `
         <h4>Tipos de incidencia</h4>
         <div class='leg-item'><div class='leg-dot' style='background:#ca8a04'></div>Forzamiento de Tiempos</div>
-        <div class='leg-item'><div class='leg-dot' style='background:#dc2626'></div>Apágado</div>
+        <div class='leg-item'><div class='leg-dot' style='background:#dc2626'></div>Apagado</div>
         <div class='leg-item'><div class='leg-dot' style='background:#65a30d'></div>Mejora de Tiempos</div>
         <div class='leg-item'><div class='leg-dot' style='background:#2563eb'></div>Intermitencia</div>
         <div class='leg-item'><div class='leg-dot' style='background:#9333ea'></div>Error de Comunicación</div>
@@ -958,20 +952,23 @@
         const detalleHtml = total===1
           ? `<div style="margin-top:8px;padding-top:7px;border-top:1px solid #f1f5f9;
                          font-size:11px;color:#6b7280;line-height:1.7">
-               <div>📅 ${r0.fecha} &nbsp; ${r0.hora}</div>
-               <div>👤 ${r0.operador||'Sin operador'}</div>
-               <div>📋 ${r0.reporte}</div>
+               <div>📅 ${esc(r0.fecha)} &nbsp; ${esc(r0.hora)}</div>
+               <div>👤 ${esc(r0.operador)||'Sin operador'}</div>
+               <div>📋 ${esc(r0.reporte)}</div>
              </div>`
-          : `<div style="margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9;font-size:10px;color:#9ca3af">Última: <strong style="color:#4b5563">${ultimaFecha}</strong></div>`;
+          : `<div style="margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9;font-size:10px;color:#9ca3af">Última: <strong style="color:#4b5563">${esc(ultimaFecha)}</strong></div>`;
+
+        // Sanitizar campos del Sheet antes de insertar en innerHTML
+        const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
         const popupHtml = `
           <div style="font-family:'Inter',sans-serif;font-size:12px;min-width:270px">
             <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:2px">
-              <div style="font-weight:800;color:#0033a0;font-size:13px">${grupo.codigo||'Sin código'}</div>
+              <div style="font-weight:800;color:#0033a0;font-size:13px">${esc(grupo.codigo)||'Sin código'}</div>
               <div style="font-size:10px;font-weight:700;color:#64748b">${total} ${total===1?'incidencia':'incidencias'}</div>
             </div>
             <div style="color:#6b7280;font-size:10px;margin-bottom:8px;padding-bottom:7px;border-bottom:1.5px solid #e2e8f0">
-              📍 ${grupo.dir||'Sin dirección'} &nbsp;·&nbsp; ${grupo.ciudad||''}
+              📍 ${esc(grupo.dir)||'Sin dirección'} &nbsp;·&nbsp; ${esc(grupo.ciudad)||''}
             </div>
             ${filas}
             ${detalleHtml}
@@ -1095,7 +1092,7 @@
       const h = Math.round((total / maxDia) * 56);
       const label = `${d.getDate()}/${d.getMonth()+1}`;
       return `
-        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0" title="${label}: ${total}">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:14px;max-width:40px" title="${label}: ${total}">
           <div style="font-size:8px;color:var(--text-light);line-height:1">${total > 0 ? total : ''}</div>
           <div style="width:100%;height:56px;display:flex;align-items:flex-end">
             <div style="width:100%;height:${h || 1}px;background:var(--flag-blue);opacity:.75;border-radius:2px 2px 0 0"></div>
@@ -1151,7 +1148,7 @@
         <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">
           Tendencia diaria &mdash; ${totalDias} dias con incidencias
         </div>
-        <div style="display:flex;align-items:flex-end;gap:2px;height:72px;overflow:hidden">
+        <div style="display:flex;align-items:flex-end;gap:2px;height:72px;overflow-x:auto;overflow-y:hidden;min-height:72px">
           ${barrasDia}
         </div>
       </div>` : ''}
