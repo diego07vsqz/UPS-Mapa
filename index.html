@@ -170,16 +170,11 @@
     .tab-nav:hover  { color:var(--flag-blue); }
     .tab-nav.active { color:var(--flag-blue); border-bottom-color:var(--flag-blue); }
 
-    /* Panel de ranking */
-    .ranking-panel { display:none; flex:1; overflow-y:auto; }
-    .ranking-panel.active { display:block; animation:fadeIn .2s ease; }
+    /* Panel secundario genérico */
+    .secondary-panel { display:none; flex:1; overflow-y:auto; }
     @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
 
-    /* Panel hora pico */
-    .horapico-panel { display:none; flex:1; overflow-y:auto; }
-    .horapico-panel.active { display:block; animation:fadeIn .2s ease; }
-
-    /* Card del ranking */
+    /* Card del panel secundario */
     .ranking-card {
       background:var(--bg-white); border:1px solid var(--border);
       border-radius:var(--r-xl); padding:18px 22px;
@@ -304,11 +299,8 @@
     <button class="tab-nav active" id="tab-mapa" onclick="switchMainTab('mapa',this)">
       MAPA DE INCIDENCIAS
     </button>
-    <button class="tab-nav" id="tab-ranking" onclick="switchMainTab('ranking',this)">
-      SEMAFOROS CON MAS INCIDENCIAS
-    </button>
-    <button class="tab-nav" id="tab-horapico" onclick="switchMainTab('horapico',this)">
-      HORA PICO
+    <button class="tab-nav" id="tab-resumen" onclick="switchMainTab('resumen',this)">
+      RESUMEN POR TIPO
     </button>
   </div>
 </div>
@@ -375,24 +367,11 @@
 
   </div>
 
-  <!-- Panel: Ranking -->
-  <div id="panel-ranking" class="ranking-panel">
+  <!-- Panel: Resumen por Tipo -->
+  <div id="panel-resumen" class="secondary-panel">
     <div class="ranking-card">
-      <div class="card-title" style="justify-content:space-between">
-        <span>SEMAFOROS CON MAS INCIDENCIAS</span>
-        <button onclick="renderDiagnostico()" style="font-family:inherit;font-size:10px;font-weight:700;background:#fef9c3;border:1px solid #fbbf24;border-radius:var(--r-sm);padding:3px 10px;cursor:pointer;color:#92400e;text-transform:uppercase">
-          Diagnostico
-        </button>
-      </div>
-      <div id="ranking-body" style="font-size:12px;color:var(--text-light);padding:8px 0">Cargando...</div>
-    </div>
-  </div>
-
-  <!-- Panel: Hora Pico -->
-  <div id="panel-horapico" class="horapico-panel">
-    <div class="ranking-card">
-      <div class="card-title">ANALISIS DE HORA PICO</div>
-      <div id="horapico-body" style="font-size:12px;color:var(--text-light);padding:8px 0">Aplica filtros y cambia a esta pestaña para ver el análisis.</div>
+      <div class="card-title">RESUMEN DE INCIDENCIAS POR TIPO Y CIUDAD</div>
+      <div id="resumen-body" style="font-size:12px;color:var(--text-light);padding:8px 0">Cargando...</div>
     </div>
   </div>
 
@@ -497,14 +476,11 @@
     });
   }
 
-  /* Devuelve la pestaña activa: 'mapa' | 'ranking' | 'horapico' */
+  /* Devuelve la pestaña activa: 'mapa' | 'resumen' */
   function tabActiva() {
     const btn = document.querySelector('.tab-nav.active');
     if (!btn) return 'mapa';
-    const id = btn.id || '';
-    if (id.includes('ranking'))  return 'ranking';
-    if (id.includes('horapico')) return 'horapico';
-    return 'mapa';
+    return btn.id.includes('resumen') ? 'resumen' : 'mapa';
   }
 
   /* ─── Helpers ────────────────────────────────────────────────── */
@@ -731,10 +707,9 @@
       // ── Render inicial del mapa (inmediato)
       initMap();
       setRange('mes');
-      // Si una pestaña secundaria estaba activa (ej: recarga), actualizarla
+      // Si la pestaña resumen estaba activa al recargar, actualizarla
       const tab = tabActiva();
-      if (tab === 'ranking')  renderRanking();
-      if (tab === 'horapico') renderHoraPico();
+      if (tab === 'resumen') renderResumen();
 
       // ── Cargar listado de semáforos en diferido (no bloquea el mapa)
       // Se usa para los puntos grises y coordsMap; el mapa ya funcionó sin él
@@ -813,21 +788,9 @@
 
   /* ─── Render principal de marcadores y heatmap ───────────────── */
   function aplicarFiltroMapa() {
-    // Siempre refrescar pestañas secundarias si están visibles
     const tab = tabActiva();
-
-    if (tab === 'ranking') {
-      renderRanking();
-      return;
-    }
-    if (tab === 'horapico') {
-      renderHoraPico();
-      return;
-    }
-
-    // ── Pestaña MAPA activa ──────────────────────────────────────
+    if (tab === 'resumen') { renderResumen(); return; }
     if (!mapInstance) return;
-
     const ciudad  = document.getElementById('map-ciudad').value;
     const rowsAll = getFilteredRows();
 
@@ -1031,7 +994,7 @@
 
   /* ─── Tabs de navegación principal ──────────────────────────── */
   function switchMainTab(name, btn) {
-    ['mapa','ranking','horapico'].forEach(t => {
+    ['mapa','resumen'].forEach(t => {
       const panel = document.getElementById('panel-' + t);
       if (panel) panel.style.display = 'none';
     });
@@ -1041,105 +1004,20 @@
     if (panel) {
       if (name === 'mapa') {
         panel.style.display = 'flex';
-        // Forzar redibujado del mapa al volver a él
         if (mapInstance) setTimeout(() => mapInstance.invalidateSize(), 50);
       } else {
         panel.style.display = 'block';
       }
     }
-    if (name === 'ranking')  renderRanking();
-    if (name === 'horapico') renderHoraPico();
+    if (name === 'resumen') renderResumen();
   }
 
-  /* ─── Diagnóstico: muestra los primeros registros crudos del dataset ── */
-  function renderDiagnostico() {
-    const el = document.getElementById('ranking-body');
-    if (!dataset.length) {
-      el.innerHTML = `<div style="padding:16px;background:#fef9c3;border:1px solid #fbbf24;border-radius:var(--r-md);font-size:12px">
-        <strong>DIAGNOSTICO:</strong> dataset vacio. Los datos no han cargado o la URL de GViz fallo.
-      </div>`;
-      return;
-    }
-
-    const r0 = dataset[0];
-    const campos = Object.entries(r0).map(([k,v]) =>
-      `<tr><td style="padding:3px 10px;font-weight:700;color:var(--flag-blue);font-family:'JetBrains Mono',monospace">${k}</td>
-           <td style="padding:3px 10px;color:var(--text-mid);max-width:300px;word-break:break-all">${JSON.stringify(v)}</td></tr>`
-    ).join('');
-
-    // Muestra los primeros 5 valores de hora para depurar parseHora
-    const muestrasHora = dataset.slice(0, 10).map(r => {
-      const h = parseHora(r.hora);
-      return `<tr>
-        <td style="padding:2px 8px;font-family:monospace;font-size:11px">${JSON.stringify(r.hora)}</td>
-        <td style="padding:2px 8px;font-family:monospace;font-size:11px;color:${h>=0?'#059669':'#dc2626'}">${h >= 0 ? h + ':00h' : 'NO PARSEA'}</td>
-      </tr>`;
-    }).join('');
-
-    // Primeros 3 registros completos
-    const muestra3 = dataset.slice(0, 3).map((r,i) =>
-      `<tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:4px 8px;font-size:11px;color:var(--text-light)">${i+1}</td>
-        <td style="padding:4px 8px;font-family:monospace;font-size:11px">${r.fecha}</td>
-        <td style="padding:4px 8px;font-family:monospace;font-size:11px">${r.hora}</td>
-        <td style="padding:4px 8px;font-family:monospace;font-size:11px">${r.codigo}</td>
-        <td style="padding:4px 8px;font-family:monospace;font-size:11px">${r.incidencia}</td>
-        <td style="padding:4px 8px;font-family:monospace;font-size:11px">${r.ciudad}</td>
-      </tr>`
-    ).join('');
-
-    const rows = getFilteredRows();
-
-    el.innerHTML = `
-      <div style="background:#dbeafe;border:1px solid #93c5fd;border-radius:var(--r-md);padding:14px 16px;margin-bottom:14px;font-size:12px">
-        <div style="font-weight:800;color:#1e3a8a;margin-bottom:6px">PANEL DE DIAGNOSTICO</div>
-        <div>Total en dataset: <strong>${dataset.length}</strong> registros</div>
-        <div>Con filtros actuales (getFilteredRows): <strong style="color:${rows.length>0?'#059669':'#dc2626'}">${rows.length}</strong> registros</div>
-        <div>Ciudades unicas: <strong>${[...new Set(dataset.map(r=>r.ciudad).filter(Boolean))].join(', ') || 'ninguna detectada'}</strong></div>
-        <div>Ciudad seleccionada en filtro: <strong>"${document.getElementById('map-ciudad')?.value}"</strong></div>
-        <div>Fecha ini: <strong>"${document.getElementById('f-fecha-ini')?.value || 'vacía'}"</strong> — Fecha fin: <strong>"${document.getElementById('f-fecha-fin')?.value || 'vacía'}"</strong></div>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-        <div style="background:var(--bg-page);border-radius:var(--r-md);padding:12px">
-          <div style="font-size:10px;font-weight:800;color:var(--text-light);text-transform:uppercase;margin-bottom:8px">Estructura primer registro</div>
-          <table style="width:100%;border-collapse:collapse"><tbody>${campos}</tbody></table>
-        </div>
-        <div style="background:var(--bg-page);border-radius:var(--r-md);padding:12px">
-          <div style="font-size:10px;font-weight:800;color:var(--text-light);text-transform:uppercase;margin-bottom:8px">Test parseHora (primeros 10)</div>
-          <table style="width:100%;border-collapse:collapse">
-            <thead><tr>
-              <th style="text-align:left;font-size:10px;padding:2px 8px;color:var(--text-light)">Valor crudo</th>
-              <th style="text-align:left;font-size:10px;padding:2px 8px;color:var(--text-light)">Resultado</th>
-            </tr></thead>
-            <tbody>${muestrasHora}</tbody>
-          </table>
-        </div>
-      </div>
-
-      <div style="background:var(--bg-page);border-radius:var(--r-md);padding:12px">
-        <div style="font-size:10px;font-weight:800;color:var(--text-light);text-transform:uppercase;margin-bottom:8px">Primeros 3 registros completos</div>
-        <table style="width:100%;border-collapse:collapse;font-size:11px">
-          <thead><tr style="border-bottom:1.5px solid var(--border)">
-            <th style="padding:4px 8px;text-align:left;color:var(--text-light)">#</th>
-            <th style="padding:4px 8px;text-align:left;color:var(--text-light)">Fecha</th>
-            <th style="padding:4px 8px;text-align:left;color:var(--text-light)">Hora</th>
-            <th style="padding:4px 8px;text-align:left;color:var(--text-light)">Codigo</th>
-            <th style="padding:4px 8px;text-align:left;color:var(--text-light)">Incidencia</th>
-            <th style="padding:4px 8px;text-align:left;color:var(--text-light)">Ciudad</th>
-          </tr></thead>
-          <tbody>${muestra3}</tbody>
-        </table>
-      </div>
-      <div style="margin-top:10px;font-size:11px;color:var(--text-light)">
-        Comparte una captura de este panel para depurar el problema.
-      </div>`;
-  }
-  function renderRanking() {
-    const el = document.getElementById('ranking-body');
+  /* ─── Resumen por tipo y ciudad ──────────────────────────────── */
+  function renderResumen() {
+    const el = document.getElementById('resumen-body');
 
     if (!dataset.length) {
-      el.innerHTML = '<p style="color:var(--text-light);padding:20px 0">No hay datos cargados. Espera a que termine la carga o recarga la página.</p>';
+      el.innerHTML = '<p style="color:var(--text-light);padding:20px 0">Sin datos. Recarga la página.</p>';
       return;
     }
 
@@ -1150,199 +1028,134 @@
       return;
     }
 
-    // Agrupar por código de semáforo
-    const grupos = {};
+    // ── 1. Conteo por tipo ──────────────────────────────────────
+    const porTipo = {};
     rows.forEach(r => {
-      const key = (r.codigo || '').trim().toUpperCase() || r.dir || 'SIN CODIGO';
-      if (!grupos[key]) grupos[key] = { codigo: r.codigo, dir: r.dir, ciudad: r.ciudad, registros: [] };
-      grupos[key].registros.push(r);
+      const t = getTipo(r.incidencia);
+      if (!porTipo[t.label]) porTipo[t.label] = { label: t.label, color: t.color, total: 0 };
+      porTipo[t.label].total++;
     });
+    const tiposSorted = Object.values(porTipo).sort((a, b) => b.total - a.total);
+    const maxTipo = tiposSorted[0]?.total || 1;
 
-    const sorted = Object.values(grupos).sort((a, b) => b.registros.length - a.registros.length);
+    // ── 2. Conteo por ciudad ────────────────────────────────────
+    const porCiudad = {};
+    rows.forEach(r => {
+      const c = (r.ciudad || 'Sin ciudad').trim();
+      porCiudad[c] = (porCiudad[c] || 0) + 1;
+    });
+    const ciudadesSorted = Object.entries(porCiudad).sort((a, b) => b[1] - a[1]);
+    const maxCiudad = ciudadesSorted[0]?.[1] || 1;
 
-    el.innerHTML = `
-      <div style="margin-bottom:12px;font-size:12px;color:var(--text-light)">
-        ${sorted.length} semáforos · ${rows.length} incidencias en el período seleccionado
-      </div>
-      <table style="width:100%;border-collapse:collapse;font-size:12px">
-        <thead>
-          <tr style="border-bottom:1.5px solid var(--border)">
-            <th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:800;color:var(--text-light);text-transform:uppercase;letter-spacing:.08em">#</th>
-            <th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:800;color:var(--text-light);text-transform:uppercase;letter-spacing:.08em">Código</th>
-            <th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:800;color:var(--text-light);text-transform:uppercase;letter-spacing:.08em">Dirección</th>
-            <th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:800;color:var(--text-light);text-transform:uppercase;letter-spacing:.08em">Ciudad</th>
-            <th style="text-align:right;padding:8px 10px;font-size:10px;font-weight:800;color:var(--text-light);text-transform:uppercase;letter-spacing:.08em">Incidencias</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${sorted.map((g, i) => {
-            const medal = i === 0 ? '1°' : i === 1 ? '2°' : i === 2 ? '3°' : (i + 1);
-            const medalColor = i === 0 ? '#ca8a04' : i === 1 ? '#94a3b8' : i === 2 ? '#b45309' : 'var(--text-light)';
-            const barMax = sorted[0].registros.length;
-            const barW   = Math.round((g.registros.length / barMax) * 100);
-            return `
-            <tr style="border-bottom:1px solid var(--border)"
-                onmouseover="this.style.background='var(--bg-page)'"
-                onmouseout="this.style.background=''">
-              <td style="padding:9px 10px;font-weight:800;color:${medalColor};font-size:13px;min-width:28px">${medal}</td>
-              <td style="padding:9px 10px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--flag-blue)">${g.codigo || '—'}</td>
-              <td style="padding:9px 10px;color:var(--text-mid);max-width:280px">${g.dir || '—'}</td>
-              <td style="padding:9px 10px;color:var(--text-mid)">${g.ciudad || '—'}</td>
-              <td style="padding:9px 10px;text-align:right">
-                <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px">
-                  <div style="width:80px;height:5px;background:var(--bg-page);border-radius:3px;flex-shrink:0">
-                    <div style="width:${barW}%;height:100%;background:var(--flag-blue);border-radius:3px"></div>
-                  </div>
-                  <span style="font-family:'JetBrains Mono',monospace;font-weight:800;font-size:14px;color:var(--text-dark);min-width:24px">${g.registros.length}</span>
-                </div>
-              </td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>`;
-  }
+    // ── 3. Tendencia: conteo por día en el período ──────────────
+    const porDia = {};
+    rows.forEach(r => {
+      const d = parseSheetDate(r.fecha);
+      if (!d) return;
+      const key = r.fecha; // "DD/MM/YYYY"
+      porDia[key] = { d, total: (porDia[key]?.total || 0) + 1 };
+    });
+    const diasSorted = Object.values(porDia).sort((a, b) => a.d - b.d);
+    const maxDia = Math.max(...diasSorted.map(x => x.total), 1);
+    const totalDias = diasSorted.length;
 
-  /* ─── Hora Pico: AM (5-9h) y PM (15-20h) ─────────────────────── */
-  function parseHora(str) {
-    if (!str) return -1;
-    // GViz ES-SV: "2:30:00 p. m." o "2:30:00 a. m." (con espacios y puntos)
-    const m12 = str.match(/(\d+):(\d+)(?::\d+)?\s*(a\.?\s*m\.?|p\.?\s*m\.?)/i);
-    if (m12) {
-      let h = parseInt(m12[1]);
-      const ampm = m12[3].toLowerCase().replace(/[\s.]/g, '');
-      const pm = ampm === 'pm';
-      if (pm && h !== 12) h += 12;
-      if (!pm && h === 12) h = 0;
-      return h;
-    }
-    // Formato 24h: "14:30" o "14:30:00"
-    const m24 = str.match(/^(\d{1,2}):(\d{2})/);
-    if (m24) return parseInt(m24[1]);
-    // Decimal GViz (fracción del día): 0.5 = 12:00
-    const num = parseFloat(str);
-    if (!isNaN(num) && num >= 0 && num < 1) return Math.floor(num * 24);
-    return -1;
-  }
-
-  function renderHoraPico() {
-    const el = document.getElementById('horapico-body');
-
-    if (!dataset.length) {
-      el.innerHTML = '<p style="color:var(--text-light);padding:20px 0">No hay datos cargados. Espera a que termine la carga o recarga la página.</p>';
-      return;
-    }
-
-    const rows = getFilteredRows();
-
-    if (!rows.length) {
-      el.innerHTML = '<p style="color:var(--text-light);padding:20px 0">No hay incidencias en el período seleccionado. Prueba cambiando las fechas o la ciudad.</p>';
-      return;
-    }
-
-    // Franjas horarias
-    const AM_INI = 5,  AM_FIN = 9;   // 5:00–9:00
-    const PM_INI = 15, PM_FIN = 20;  // 15:00–20:00
-
-    const am    = rows.filter(r => { const h = parseHora(r.hora); return h >= AM_INI && h <= AM_FIN; });
-    const pm    = rows.filter(r => { const h = parseHora(r.hora); return h >= PM_INI && h <= PM_FIN; });
-    const otros = rows.filter(r => { const h = parseHora(r.hora); return h >= 0 && !(h >= AM_INI && h <= AM_FIN) && !(h >= PM_INI && h <= PM_FIN); });
-    const sinHora = rows.filter(r => parseHora(r.hora) < 0);
-
-    // Distribución por hora (0–23) para gráfica
-    const porHora = Array(24).fill(0);
-    rows.forEach(r => { const h = parseHora(r.hora); if (h >= 0) porHora[h]++; });
-    const maxPorHora = Math.max(...porHora, 1);
-
-    // Top N tipos por franja
-    function topTipos(arr, n = 3) {
-      const cnt = {};
-      arr.forEach(r => { const l = getTipo(r.incidencia).label; cnt[l] = (cnt[l] || 0) + 1; });
-      return Object.entries(cnt).sort((a, b) => b[1] - a[1]).slice(0, n);
-    }
-
-    function franjaCard(titulo, horario, color, datos) {
-      const pct  = rows.length > 0 ? Math.round((datos.length / rows.length) * 100) : 0;
-      const top  = topTipos(datos);
-      const maxT = top[0]?.[1] || 1;
+    // Barras de tipos
+    const barrasTipo = tiposSorted.map((t, i) => {
+      const pct   = Math.round((t.total / rows.length) * 100);
+      const barW  = Math.round((t.total / maxTipo) * 100);
       return `
-        <div style="background:var(--bg-white);border:1px solid var(--border);border-radius:var(--r-lg);
-                    padding:18px 20px;border-left:4px solid ${color}">
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:8px">
-            <div>
-              <div style="font-size:14px;font-weight:800;color:var(--text-dark)">${titulo}</div>
-              <div style="font-size:11px;color:var(--text-light);margin-top:2px">${horario}</div>
-            </div>
-            <div style="text-align:right;flex-shrink:0">
-              <span style="font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:800;color:${color}">${datos.length}</span>
-              <div style="font-size:11px;color:var(--text-light)">${pct}% del total</div>
-            </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid var(--border)">
+          <div style="width:10px;height:10px;border-radius:50%;background:${t.color};flex-shrink:0"></div>
+          <div style="flex:1;font-size:12px;color:var(--text-dark);font-weight:${i<3?'700':'400'}">${t.label}</div>
+          <div style="width:140px;height:8px;background:var(--bg-page);border-radius:4px;flex-shrink:0">
+            <div style="width:${barW}%;height:100%;background:${t.color};border-radius:4px;transition:width .3s"></div>
           </div>
-          <div style="font-size:10px;font-weight:700;color:var(--text-light);text-transform:uppercase;
-                      letter-spacing:.08em;margin-bottom:10px">Tipos más frecuentes</div>
-          ${top.length === 0
-            ? '<p style="color:var(--text-light);font-size:12px;padding:4px 0">Sin incidencias en esta franja</p>'
-            : top.map(([lbl, cnt]) => {
-                const tc   = Object.values(TIPOS).find(t => t.label === lbl)?.color || '#94a3b8';
-                const barW = Math.round((cnt / maxT) * 100);
-                return `<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--border)">
-                  <div style="width:9px;height:9px;border-radius:50%;background:${tc};flex-shrink:0"></div>
-                  <div style="flex:1;font-size:12px;color:var(--text-mid)">${lbl}</div>
-                  <div style="width:80px;height:6px;background:var(--bg-page);border-radius:3px;flex-shrink:0">
-                    <div style="width:${barW}%;height:100%;background:${tc};border-radius:3px"></div>
-                  </div>
-                  <div style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;
-                              color:var(--text-dark);min-width:28px;text-align:right">${cnt}</div>
-                </div>`;
-              }).join('')
-          }
+          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:800;color:var(--text-dark);min-width:32px;text-align:right">${t.total}</div>
+          <div style="font-size:11px;color:var(--text-light);min-width:36px;text-align:right">${pct}%</div>
         </div>`;
-    }
-
-    // Gráfica de barras por hora (0–23)
-    const HORA_LABELS = ['0h','1h','2h','3h','4h','5h','6h','7h','8h','9h','10h','11h','12h',
-                         '13h','14h','15h','16h','17h','18h','19h','20h','21h','22h','23h'];
-    const barrasHora = porHora.map((cnt, h) => {
-      const h100 = Math.round((cnt / maxPorHora) * 100);
-      const isAM = h >= AM_INI && h <= AM_FIN;
-      const isPM = h >= PM_INI && h <= PM_FIN;
-      const barColor = isAM ? '#f59e0b' : isPM ? '#3b82f6' : '#cbd5e1';
-      return `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;min-width:0">
-        <div style="font-size:9px;color:var(--text-light);font-weight:700">${cnt > 0 ? cnt : ''}</div>
-        <div style="width:100%;height:60px;display:flex;align-items:flex-end">
-          <div style="width:100%;height:${h100}%;background:${barColor};border-radius:2px 2px 0 0;min-height:${cnt>0?2:0}px"></div>
-        </div>
-        <div style="font-size:8px;color:var(--text-light);transform:rotate(-45deg);transform-origin:top left;white-space:nowrap;margin-top:6px;margin-left:4px">${HORA_LABELS[h]}</div>
-      </div>`;
     }).join('');
 
+    // Barras de ciudades
+    const barrasCiudad = ciudadesSorted.map(([ciudad, cnt]) => {
+      const pct  = Math.round((cnt / rows.length) * 100);
+      const barW = Math.round((cnt / maxCiudad) * 100);
+      return `
+        <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)">
+          <div style="flex:1;font-size:12px;color:var(--text-dark)">${ciudad}</div>
+          <div style="width:100px;height:7px;background:var(--bg-page);border-radius:4px;flex-shrink:0">
+            <div style="width:${barW}%;height:100%;background:var(--flag-blue);border-radius:4px"></div>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:800;color:var(--text-dark);min-width:30px;text-align:right">${cnt}</div>
+          <div style="font-size:11px;color:var(--text-light);min-width:34px;text-align:right">${pct}%</div>
+        </div>`;
+    }).join('');
+
+    // Mini gráfica de tendencia diaria
+    const barrasDia = diasSorted.map(({ d, total }) => {
+      const h = Math.round((total / maxDia) * 56);
+      const label = `${d.getDate()}/${d.getMonth()+1}`;
+      return `
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0" title="${label}: ${total}">
+          <div style="font-size:8px;color:var(--text-light);line-height:1">${total > 0 ? total : ''}</div>
+          <div style="width:100%;height:56px;display:flex;align-items:flex-end">
+            <div style="width:100%;height:${h || 1}px;background:var(--flag-blue);opacity:.75;border-radius:2px 2px 0 0"></div>
+          </div>
+          <div style="font-size:7px;color:var(--text-light);white-space:nowrap;overflow:hidden;max-width:100%;text-overflow:ellipsis">${label}</div>
+        </div>`;
+    }).join('');
+
+    // KPIs rápidos del período
+    const promDiario = totalDias > 0 ? (rows.length / totalDias).toFixed(1) : '—';
+    const diaMax = diasSorted.reduce((m, x) => x.total > (m?.total||0) ? x : m, null);
+    const diaMaxLabel = diaMax ? `${diaMax.d.getDate()}/${diaMax.d.getMonth()+1}/${diaMax.d.getFullYear()}` : '—';
+
     el.innerHTML = `
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-        ${franjaCard('HORA PICO AM', '5:00 – 9:00 a.m.', '#f59e0b', am)}
-        ${franjaCard('HORA PICO PM', '3:00 – 8:00 p.m.', '#3b82f6', pm)}
+      <!-- KPIs rápidos -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px">
+        ${[
+          { label:'Total incidencias', val: rows.length, sub:'en el período' },
+          { label:'Tipos diferentes', val: tiposSorted.length, sub:'tipos de incidencia' },
+          { label:'Promedio diario', val: promDiario, sub:'incidencias por día' },
+          { label:'Día con más casos', val: diaMax?.total || '—', sub: diaMaxLabel },
+        ].map(k => `
+          <div style="background:var(--bg-page);border:1px solid var(--border);border-radius:var(--r-lg);padding:12px 14px">
+            <div style="font-size:22px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--text-dark)">${k.val}</div>
+            <div style="font-size:11px;font-weight:700;color:var(--text-mid);text-transform:uppercase;letter-spacing:.05em;margin-top:2px">${k.label}</div>
+            <div style="font-size:10px;color:var(--text-light);margin-top:1px">${k.sub}</div>
+          </div>`).join('')}
       </div>
 
-      <div style="background:var(--bg-white);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 18px;margin-bottom:12px">
-        <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px">
-          Distribucion por hora del dia
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px">
+
+        <!-- Tipos de incidencia -->
+        <div style="background:var(--bg-white);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 18px">
+          <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">
+            Incidencias por tipo
+          </div>
+          ${barrasTipo}
         </div>
-        <div style="display:flex;align-items:flex-end;gap:2px;padding-bottom:20px">
-          ${barrasHora}
+
+        <!-- Por ciudad -->
+        <div style="background:var(--bg-white);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 18px">
+          <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">
+            Por ciudad
+          </div>
+          ${barrasCiudad}
         </div>
-        <div style="display:flex;gap:16px;font-size:11px;color:var(--text-mid);margin-top:4px;flex-wrap:wrap">
-          <span><span style="display:inline-block;width:10px;height:10px;background:#f59e0b;border-radius:2px;margin-right:4px"></span>Hora pico AM</span>
-          <span><span style="display:inline-block;width:10px;height:10px;background:#3b82f6;border-radius:2px;margin-right:4px"></span>Hora pico PM</span>
-          <span><span style="display:inline-block;width:10px;height:10px;background:#cbd5e1;border-radius:2px;margin-right:4px"></span>Fuera de hora pico</span>
-        </div>
+
       </div>
 
-      <div style="background:var(--bg-page);border-radius:var(--r-lg);padding:12px 16px;
-                  font-size:12px;color:var(--text-mid);display:flex;gap:20px;flex-wrap:wrap;align-items:center">
-        <span><strong style="color:var(--text-dark)">AM:</strong> ${am.length} registros</span>
-        <span><strong style="color:var(--text-dark)">PM:</strong> ${pm.length} registros</span>
-        <span><strong style="color:var(--text-dark)">Otros:</strong> ${otros.length} registros</span>
-        ${sinHora.length > 0 ? `<span style="color:#f59e0b"><strong>Sin hora:</strong> ${sinHora.length}</span>` : ''}
-        <span style="margin-left:auto;color:var(--text-light)">Total: <strong>${rows.length}</strong></span>
-      </div>`;
+      <!-- Tendencia diaria -->
+      ${totalDias > 1 ? `
+      <div style="background:var(--bg-white);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 18px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">
+          Tendencia diaria &mdash; ${totalDias} dias con incidencias
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:2px;height:72px;overflow:hidden">
+          ${barrasDia}
+        </div>
+      </div>` : ''}
+    `;
   }
 
   /* ─── Inicio ─────────────────────────────────────────────────── */
