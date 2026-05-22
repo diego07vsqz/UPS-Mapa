@@ -302,13 +302,13 @@
 <div style="background:var(--bg-white);border-bottom:1px solid var(--border);flex-shrink:0">
   <div style="max-width:1400px;margin:0 auto;padding:0 28px;display:flex;gap:4px">
     <button class="tab-nav active" id="tab-mapa" onclick="switchMainTab('mapa',this)">
-      &#128204; MAPA DE INCIDENCIAS
+      MAPA DE INCIDENCIAS
     </button>
     <button class="tab-nav" id="tab-ranking" onclick="switchMainTab('ranking',this)">
-      &#127942; SEMÁFOROS CON MÁS INCIDENCIAS
+      SEMAFOROS CON MAS INCIDENCIAS
     </button>
     <button class="tab-nav" id="tab-horapico" onclick="switchMainTab('horapico',this)">
-      &#128336; HORA PICO
+      HORA PICO
     </button>
   </div>
 </div>
@@ -378,7 +378,7 @@
   <!-- Panel: Ranking -->
   <div id="panel-ranking" class="ranking-panel">
     <div class="ranking-card">
-      <div class="card-title">SEMÁFOROS CON MÁS INCIDENCIAS</div>
+      <div class="card-title">SEMAFOROS CON MAS INCIDENCIAS</div>
       <div id="ranking-body" style="font-size:12px;color:var(--text-light);padding:8px 0">Aplica filtros y cambia a esta pestaña para ver el ranking.</div>
     </div>
   </div>
@@ -386,7 +386,7 @@
   <!-- Panel: Hora Pico -->
   <div id="panel-horapico" class="horapico-panel">
     <div class="ranking-card">
-      <div class="card-title">ANÁLISIS DE HORA PICO</div>
+      <div class="card-title">ANALISIS DE HORA PICO</div>
       <div id="horapico-body" style="font-size:12px;color:var(--text-light);padding:8px 0">Aplica filtros y cambia a esta pestaña para ver el análisis.</div>
     </div>
   </div>
@@ -460,6 +460,47 @@
   let capaBusqueda = null;   // marcador de búsqueda por código
   let capaActual   = 'marcadores'; // 'marcadores' | 'heatmap'
   let codigoFiltro = '';
+
+  /* ─── Filtro central: única fuente de verdad ─────────────────────
+     Todas las pestañas (mapa, ranking, hora pico) llaman aquí.
+     Garantiza que los tres vistas siempre usen los mismos filtros.
+  ─────────────────────────────────────────────────────────────── */
+  const MAP_KW = {
+    forzamiento:'forzamiento', apagado:'apagado', accidente:'accidente',
+    mejora:'mejora', intermitencia:'intermitencia', error:'error', vdt:'vdt',
+  };
+
+  function getFilteredRows() {
+    if (!dataset.length) return [];
+    const tipo     = document.getElementById('map-tipo').value;
+    const ciudad   = document.getElementById('map-ciudad').value;
+    const fechaIni = document.getElementById('f-fecha-ini').value;
+    const fechaFin = document.getElementById('f-fecha-fin').value;
+    const dateIni  = fechaIni ? new Date(fechaIni + 'T00:00:00') : null;
+    const dateFin  = fechaFin ? new Date(fechaFin + 'T23:59:59') : null;
+    return dataset.filter(r => {
+      if (dateIni || dateFin) {
+        const d = parseSheetDate(r.fecha);
+        if (!d) return false;
+        if (dateIni && d < dateIni) return false;
+        if (dateFin && d > dateFin) return false;
+      }
+      if (tipo !== 'todos' && MAP_KW[tipo] && !r.incidencia.toLowerCase().includes(MAP_KW[tipo])) return false;
+      if (ciudad !== 'todas' && (r.ciudad||'').toLowerCase() !== ciudad.toLowerCase()) return false;
+      if (codigoFiltro && !r.codigo.toUpperCase().includes(codigoFiltro)) return false;
+      return true;
+    });
+  }
+
+  /* Devuelve la pestaña activa: 'mapa' | 'ranking' | 'horapico' */
+  function tabActiva() {
+    const btn = document.querySelector('.tab-nav.active');
+    if (!btn) return 'mapa';
+    const id = btn.id || '';
+    if (id.includes('ranking'))  return 'ranking';
+    if (id.includes('horapico')) return 'horapico';
+    return 'mapa';
+  }
 
   /* ─── Helpers ────────────────────────────────────────────────── */
   function parseSheetDate(str) {
@@ -685,6 +726,10 @@
       // ── Render inicial del mapa (inmediato)
       initMap();
       setRange('mes');
+      // Si una pestaña secundaria estaba activa (ej: recarga), actualizarla
+      const tab = tabActiva();
+      if (tab === 'ranking')  renderRanking();
+      if (tab === 'horapico') renderHoraPico();
 
       // ── Cargar listado de semáforos en diferido (no bloquea el mapa)
       // Se usa para los puntos grises y coordsMap; el mapa ya funcionó sin él
@@ -763,44 +808,28 @@
 
   /* ─── Render principal de marcadores y heatmap ───────────────── */
   function aplicarFiltroMapa() {
+    // Si hay pestaña secundaria activa, actualizarla también
+    const tab = tabActiva();
+    if (tab === 'ranking')  { renderRanking();  return; }
+    if (tab === 'horapico') { renderHoraPico(); return; }
+
     if (!mapInstance) return;
 
-    const tipo     = document.getElementById('map-tipo').value;
     const ciudad   = document.getElementById('map-ciudad').value;
-    const fechaIni = document.getElementById('f-fecha-ini').value;
-    const fechaFin = document.getElementById('f-fecha-fin').value;
-    const dateIni  = fechaIni ? new Date(fechaIni+'T00:00:00') : null;
-    const dateFin  = fechaFin ? new Date(fechaFin+'T23:59:59') : null;
 
-    const MAP_KW = {
-      forzamiento:'forzamiento', apagado:'apagado', accidente:'accidente',
-      mejora:'mejora', intermitencia:'intermitencia', error:'error', vdt:'vdt',
-    };
-
-    // Paso 1 — filtrar sin restricción de coordenadas primero
-    let rowsAll = dataset.filter(r => {
-      if (dateIni||dateFin) {
-        const d = parseSheetDate(r.fecha);
-        if (!d) return false;
-        if (dateIni && d<dateIni) return false;
-        if (dateFin && d>dateFin) return false;
-      }
-      if (tipo!=='todos' && MAP_KW[tipo] && !r.incidencia.toLowerCase().includes(MAP_KW[tipo])) return false;
-      if (ciudad!=='todas' && (r.ciudad||'').toLowerCase()!==ciudad.toLowerCase()) return false;
-      if (codigoFiltro && !r.codigo.toUpperCase().includes(codigoFiltro)) return false;
-      return true;
-    });
+    // Usar el filtro central
+    const rowsAll = getFilteredRows();
 
     // Separar registros con y sin coordenadas válidas
-    let rows = rowsAll.filter(r => {
+    const rows = rowsAll.filter(r => {
       const lat = parseFloat(r.latitud);
       const lng = parseFloat(r.longitud);
-      return !isNaN(lat) && !isNaN(lng) && lat!==0 && lng!==0;
+      return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
     });
     const sinCoords = rowsAll.length - rows.length;
 
     const totalConCoords = rows.length;
-    const statusBase = totalConCoords===0
+    const statusBase = totalConCoords === 0
       ? 'No hay registros con coordenadas válidas para los filtros seleccionados.'
       : `Mostrando ${totalConCoords} registros con coordenadas en el período seleccionado.`;
     const statusExtra = sinCoords > 0
@@ -809,8 +838,8 @@
     document.getElementById('map-status-text').innerHTML = statusBase + statusExtra;
 
     // Limpiar capas anteriores
-    if (clusterLayer) { mapInstance.removeLayer(clusterLayer); clusterLayer=null; }
-    if (heatLayer)    { mapInstance.removeLayer(heatLayer);    heatLayer=null; }
+    if (clusterLayer) { mapInstance.removeLayer(clusterLayer); clusterLayer = null; }
+    if (heatLayer)    { mapInstance.removeLayer(heatLayer);    heatLayer    = null; }
 
     // Agrupar por código
     const grupos = {};
@@ -818,8 +847,8 @@
       const key = r.codigo.trim().toUpperCase()
                   || `${parseFloat(r.latitud).toFixed(5)},${parseFloat(r.longitud).toFixed(5)}`;
       if (!grupos[key]) {
-        grupos[key] = { codigo:r.codigo, dir:r.dir, ciudad:r.ciudad,
-                        registros:[], lat:parseFloat(r.latitud), lng:parseFloat(r.longitud) };
+        grupos[key] = { codigo: r.codigo, dir: r.dir, ciudad: r.ciudad,
+                        registros: [], lat: parseFloat(r.latitud), lng: parseFloat(r.longitud) };
       }
       grupos[key].registros.push(r);
     });
@@ -1011,67 +1040,70 @@
     if (name === 'horapico') renderHoraPico();
   }
 
-  /* ─── Ranking: todos los semáforos ordenados por incidencias ─── */
+  /* ─── Ranking: semáforos ordenados por incidencias ──────────── */
   function renderRanking() {
-    // Reutiliza los grupos del último filtro aplicado
-    const tipo     = document.getElementById('map-tipo').value;
-    const ciudad   = document.getElementById('map-ciudad').value;
-    const fechaIni = document.getElementById('f-fecha-ini').value;
-    const fechaFin = document.getElementById('f-fecha-fin').value;
-    const dateIni  = fechaIni ? new Date(fechaIni + 'T00:00:00') : null;
-    const dateFin  = fechaFin ? new Date(fechaFin + 'T23:59:59') : null;
-    const MAP_KW   = {
-      forzamiento:'forzamiento', apagado:'apagado', accidente:'accidente',
-      mejora:'mejora', intermitencia:'intermitencia', error:'error', vdt:'vdt',
-    };
+    const el = document.getElementById('ranking-body');
 
-    let rows = dataset.filter(r => {
-      if (dateIni||dateFin) {
-        const d = parseSheetDate(r.fecha);
-        if (!d||(dateIni&&d<dateIni)||(dateFin&&d>dateFin)) return false;
-      }
-      if (tipo!=='todos' && MAP_KW[tipo] && !r.incidencia.toLowerCase().includes(MAP_KW[tipo])) return false;
-      if (ciudad!=='todas' && (r.ciudad||'').toLowerCase()!==ciudad.toLowerCase()) return false;
-      return true;
-    });
-
-    // Agrupar por código
-    const grupos = {};
-    rows.forEach(r => {
-      const key = r.codigo.trim().toUpperCase() || r.dir;
-      if (!grupos[key]) grupos[key] = { codigo:r.codigo, dir:r.dir, ciudad:r.ciudad, registros:[] };
-      grupos[key].registros.push(r);
-    });
-
-    const sorted = Object.values(grupos).sort((a,b) => b.registros.length - a.registros.length);
-
-    if (sorted.length === 0) {
-      document.getElementById('ranking-body').innerHTML =
-        '<p style="color:var(--text-light);padding:20px 0">Sin datos para el filtro actual.</p>';
+    if (!dataset.length) {
+      el.innerHTML = '<p style="color:var(--text-light);padding:20px 0">No hay datos cargados. Espera a que termine la carga o recarga la página.</p>';
       return;
     }
 
-    const rankIcon = ['🥇','🥈','🥉'];
-    document.getElementById('ranking-body').innerHTML = `
+    const rows = getFilteredRows();
+
+    if (!rows.length) {
+      el.innerHTML = '<p style="color:var(--text-light);padding:20px 0">No hay incidencias en el período seleccionado. Prueba cambiando las fechas o la ciudad.</p>';
+      return;
+    }
+
+    // Agrupar por código de semáforo
+    const grupos = {};
+    rows.forEach(r => {
+      const key = (r.codigo || '').trim().toUpperCase() || r.dir || 'SIN CODIGO';
+      if (!grupos[key]) grupos[key] = { codigo: r.codigo, dir: r.dir, ciudad: r.ciudad, registros: [] };
+      grupos[key].registros.push(r);
+    });
+
+    const sorted = Object.values(grupos).sort((a, b) => b.registros.length - a.registros.length);
+
+    el.innerHTML = `
+      <div style="margin-bottom:12px;font-size:12px;color:var(--text-light)">
+        ${sorted.length} semáforos · ${rows.length} incidencias en el período seleccionado
+      </div>
       <table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead>
           <tr style="border-bottom:1.5px solid var(--border)">
             <th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:800;color:var(--text-light);text-transform:uppercase;letter-spacing:.08em">#</th>
-            <th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:800;color:var(--text-light);text-transform:uppercase;letter-spacing:.08em">CÓDIGO</th>
-            <th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:800;color:var(--text-light);text-transform:uppercase;letter-spacing:.08em">DIRECCIÓN</th>
-            <th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:800;color:var(--text-light);text-transform:uppercase;letter-spacing:.08em">CIUDAD</th>
-            <th style="text-align:right;padding:8px 10px;font-size:10px;font-weight:800;color:var(--text-light);text-transform:uppercase;letter-spacing:.08em">INCIDENCIAS</th>
+            <th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:800;color:var(--text-light);text-transform:uppercase;letter-spacing:.08em">Código</th>
+            <th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:800;color:var(--text-light);text-transform:uppercase;letter-spacing:.08em">Dirección</th>
+            <th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:800;color:var(--text-light);text-transform:uppercase;letter-spacing:.08em">Ciudad</th>
+            <th style="text-align:right;padding:8px 10px;font-size:10px;font-weight:800;color:var(--text-light);text-transform:uppercase;letter-spacing:.08em">Incidencias</th>
           </tr>
         </thead>
         <tbody>
-          ${sorted.map((g,i) => `
-            <tr style="border-bottom:1px solid var(--border)" onmouseover="this.style.background='var(--bg-page)'" onmouseout="this.style.background=''">
-              <td style="padding:9px 10px;font-size:14px">${rankIcon[i] || (i+1)}</td>
-              <td style="padding:9px 10px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--flag-blue)">${g.codigo}</td>
-              <td style="padding:9px 10px;color:var(--text-mid)">${g.dir || '—'}</td>
+          ${sorted.map((g, i) => {
+            const medal = i === 0 ? '1°' : i === 1 ? '2°' : i === 2 ? '3°' : (i + 1);
+            const medalColor = i === 0 ? '#ca8a04' : i === 1 ? '#94a3b8' : i === 2 ? '#b45309' : 'var(--text-light)';
+            const barMax = sorted[0].registros.length;
+            const barW   = Math.round((g.registros.length / barMax) * 100);
+            return `
+            <tr style="border-bottom:1px solid var(--border)"
+                onmouseover="this.style.background='var(--bg-page)'"
+                onmouseout="this.style.background=''">
+              <td style="padding:9px 10px;font-weight:800;color:${medalColor};font-size:13px;min-width:28px">${medal}</td>
+              <td style="padding:9px 10px;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--flag-blue)">${g.codigo || '—'}</td>
+              <td style="padding:9px 10px;color:var(--text-mid);max-width:280px">${g.dir || '—'}</td>
               <td style="padding:9px 10px;color:var(--text-mid)">${g.ciudad || '—'}</td>
-              <td style="padding:9px 10px;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:800;font-size:14px;color:var(--text-dark)">${g.registros.length}</td>
-            </tr>`).join('')}
+              <td style="padding:9px 10px;text-align:right">
+                <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px">
+                  <div style="width:80px;height:5px;background:var(--bg-page);border-radius:3px;flex-shrink:0">
+                    <div style="width:${barW}%;height:100%;background:var(--flag-blue);border-radius:3px"></div>
+                  </div>
+                  <span style="font-family:'JetBrains Mono',monospace;font-weight:800;font-size:14px;color:var(--text-dark);min-width:24px">${g.registros.length}</span>
+                </div>
+              </td>
+            </tr>`;
+          }).join('')}
         </tbody>
       </table>`;
   }
@@ -1079,11 +1111,11 @@
   /* ─── Hora Pico: AM (5-9h) y PM (15-20h) ─────────────────────── */
   function parseHora(str) {
     if (!str) return -1;
-    // Formato GViz ES-SV: "2:30:00 p. m." o "2:30:00 a. m." (con espacios y puntos)
+    // GViz ES-SV: "2:30:00 p. m." o "2:30:00 a. m." (con espacios y puntos)
     const m12 = str.match(/(\d+):(\d+)(?::\d+)?\s*(a\.?\s*m\.?|p\.?\s*m\.?)/i);
     if (m12) {
       let h = parseInt(m12[1]);
-      const ampm = m12[3].toLowerCase().replace(/[\s.]/g,'');
+      const ampm = m12[3].toLowerCase().replace(/[\s.]/g, '');
       const pm = ampm === 'pm';
       if (pm && h !== 12) h += 12;
       if (!pm && h === 12) h = 0;
@@ -1092,77 +1124,77 @@
     // Formato 24h: "14:30" o "14:30:00"
     const m24 = str.match(/^(\d{1,2}):(\d{2})/);
     if (m24) return parseInt(m24[1]);
-    // Valor numérico decimal de GViz (fracción del día): 0.5 = 12:00
+    // Decimal GViz (fracción del día): 0.5 = 12:00
     const num = parseFloat(str);
     if (!isNaN(num) && num >= 0 && num < 1) return Math.floor(num * 24);
     return -1;
   }
 
   function renderHoraPico() {
-    const fechaIni = document.getElementById('f-fecha-ini').value;
-    const fechaFin = document.getElementById('f-fecha-fin').value;
-    const dateIni  = fechaIni ? new Date(fechaIni + 'T00:00:00') : null;
-    const dateFin  = fechaFin ? new Date(fechaFin + 'T23:59:59') : null;
-    const ciudad   = document.getElementById('map-ciudad').value;
-    const tipo     = document.getElementById('map-tipo').value;
-    const MAP_KW   = {
-      forzamiento:'forzamiento', apagado:'apagado', accidente:'accidente',
-      mejora:'mejora', intermitencia:'intermitencia', error:'error', vdt:'vdt',
-    };
+    const el = document.getElementById('horapico-body');
 
-    let rows = dataset.filter(r => {
-      if (dateIni||dateFin) {
-        const d = parseSheetDate(r.fecha);
-        if (!d||(dateIni&&d<dateIni)||(dateFin&&d>dateFin)) return false;
-      }
-      if (tipo!=='todos' && MAP_KW[tipo] && !r.incidencia.toLowerCase().includes(MAP_KW[tipo])) return false;
-      if (ciudad!=='todas' && (r.ciudad||'').toLowerCase()!==ciudad.toLowerCase()) return false;
-      if (codigoFiltro && !r.codigo.toUpperCase().includes(codigoFiltro)) return false;
-      return true;
-    });
-
-    // Clasificar por franja horaria
-    const AM_INI = 5, AM_FIN = 9;   // 5:00 - 9:00 a.m.
-    const PM_INI = 15, PM_FIN = 20; // 3:00 - 8:00 p.m.
-
-    const am = rows.filter(r => { const h = parseHora(r.hora); return h >= AM_INI && h <= AM_FIN; });
-    const pm = rows.filter(r => { const h = parseHora(r.hora); return h >= PM_INI && h <= PM_FIN; });
-    const otros = rows.filter(r => { const h = parseHora(r.hora); return h >= 0 && !(h >= AM_INI && h <= AM_FIN) && !(h >= PM_INI && h <= PM_FIN); });
-
-    // Top 5 tipos por franja
-    function topTipos(arr, n=5) {
-      const cnt = {};
-      arr.forEach(r => { const l = getTipo(r.incidencia).label; cnt[l] = (cnt[l]||0)+1; });
-      return Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,n);
+    if (!dataset.length) {
+      el.innerHTML = '<p style="color:var(--text-light);padding:20px 0">No hay datos cargados. Espera a que termine la carga o recarga la página.</p>';
+      return;
     }
 
-    function franjaHtml(titulo, emoji, color, datos, total) {
-      const pct = total > 0 ? Math.round((datos.length/total)*100) : 0;
+    const rows = getFilteredRows();
+
+    if (!rows.length) {
+      el.innerHTML = '<p style="color:var(--text-light);padding:20px 0">No hay incidencias en el período seleccionado. Prueba cambiando las fechas o la ciudad.</p>';
+      return;
+    }
+
+    // Franjas horarias
+    const AM_INI = 5,  AM_FIN = 9;   // 5:00–9:00
+    const PM_INI = 15, PM_FIN = 20;  // 15:00–20:00
+
+    const am    = rows.filter(r => { const h = parseHora(r.hora); return h >= AM_INI && h <= AM_FIN; });
+    const pm    = rows.filter(r => { const h = parseHora(r.hora); return h >= PM_INI && h <= PM_FIN; });
+    const otros = rows.filter(r => { const h = parseHora(r.hora); return h >= 0 && !(h >= AM_INI && h <= AM_FIN) && !(h >= PM_INI && h <= PM_FIN); });
+    const sinHora = rows.filter(r => parseHora(r.hora) < 0);
+
+    // Distribución por hora (0–23) para gráfica
+    const porHora = Array(24).fill(0);
+    rows.forEach(r => { const h = parseHora(r.hora); if (h >= 0) porHora[h]++; });
+    const maxPorHora = Math.max(...porHora, 1);
+
+    // Top N tipos por franja
+    function topTipos(arr, n = 3) {
+      const cnt = {};
+      arr.forEach(r => { const l = getTipo(r.incidencia).label; cnt[l] = (cnt[l] || 0) + 1; });
+      return Object.entries(cnt).sort((a, b) => b[1] - a[1]).slice(0, n);
+    }
+
+    function franjaCard(titulo, horario, color, datos) {
+      const pct  = rows.length > 0 ? Math.round((datos.length / rows.length) * 100) : 0;
       const top  = topTipos(datos);
       const maxT = top[0]?.[1] || 1;
       return `
         <div style="background:var(--bg-white);border:1px solid var(--border);border-radius:var(--r-lg);
                     padding:18px 20px;border-left:4px solid ${color}">
-          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px">
-            <div style="font-size:15px;font-weight:800;color:var(--text-dark)">${emoji} ${titulo}</div>
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:8px">
             <div>
+              <div style="font-size:14px;font-weight:800;color:var(--text-dark)">${titulo}</div>
+              <div style="font-size:11px;color:var(--text-light);margin-top:2px">${horario}</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
               <span style="font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:800;color:${color}">${datos.length}</span>
-              <span style="font-size:11px;color:var(--text-light);margin-left:6px">incidencias (${pct}%)</span>
+              <div style="font-size:11px;color:var(--text-light)">${pct}% del total</div>
             </div>
           </div>
           <div style="font-size:10px;font-weight:700;color:var(--text-light);text-transform:uppercase;
                       letter-spacing:.08em;margin-bottom:10px">Tipos más frecuentes</div>
           ${top.length === 0
-            ? '<p style="color:var(--text-light);font-size:12px">Sin registros en esta franja</p>'
+            ? '<p style="color:var(--text-light);font-size:12px;padding:4px 0">Sin incidencias en esta franja</p>'
             : top.map(([lbl, cnt]) => {
-                const tipoColor = Object.values(TIPOS).find(t=>t.label===lbl)?.color || '#94a3b8';
-                const barW = Math.round((cnt/maxT)*100);
-                return `<div style="display:flex;align-items:center;gap:10px;padding:5px 0;
-                                    border-bottom:1px solid var(--border)">
-                  <div style="width:9px;height:9px;border-radius:50%;background:${tipoColor};flex-shrink:0"></div>
+                const tc   = Object.values(TIPOS).find(t => t.label === lbl)?.color || '#94a3b8';
+                const barW = Math.round((cnt / maxT) * 100);
+                return `<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--border)">
+                  <div style="width:9px;height:9px;border-radius:50%;background:${tc};flex-shrink:0"></div>
                   <div style="flex:1;font-size:12px;color:var(--text-mid)">${lbl}</div>
                   <div style="width:80px;height:6px;background:var(--bg-page);border-radius:3px;flex-shrink:0">
-                    <div style="width:${barW}%;height:100%;background:${tipoColor};border-radius:3px"></div>
+                    <div style="width:${barW}%;height:100%;background:${tc};border-radius:3px"></div>
                   </div>
                   <div style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;
                               color:var(--text-dark);min-width:28px;text-align:right">${cnt}</div>
@@ -1172,24 +1204,51 @@
         </div>`;
     }
 
-    document.getElementById('horapico-body').innerHTML = `
+    // Gráfica de barras por hora (0–23)
+    const HORA_LABELS = ['0h','1h','2h','3h','4h','5h','6h','7h','8h','9h','10h','11h','12h',
+                         '13h','14h','15h','16h','17h','18h','19h','20h','21h','22h','23h'];
+    const barrasHora = porHora.map((cnt, h) => {
+      const h100 = Math.round((cnt / maxPorHora) * 100);
+      const isAM = h >= AM_INI && h <= AM_FIN;
+      const isPM = h >= PM_INI && h <= PM_FIN;
+      const barColor = isAM ? '#f59e0b' : isPM ? '#3b82f6' : '#cbd5e1';
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;min-width:0">
+        <div style="font-size:9px;color:var(--text-light);font-weight:700">${cnt > 0 ? cnt : ''}</div>
+        <div style="width:100%;height:60px;display:flex;align-items:flex-end">
+          <div style="width:100%;height:${h100}%;background:${barColor};border-radius:2px 2px 0 0;min-height:${cnt>0?2:0}px"></div>
+        </div>
+        <div style="font-size:8px;color:var(--text-light);transform:rotate(-45deg);transform-origin:top left;white-space:nowrap;margin-top:6px;margin-left:4px">${HORA_LABELS[h]}</div>
+      </div>`;
+    }).join('');
+
+    el.innerHTML = `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-        ${franjaHtml('HORA PICO AM', '🌅', '#f59e0b', am, rows.length)}
-        ${franjaHtml('HORA PICO PM', '🌆', '#3b82f6', pm, rows.length)}
+        ${franjaCard('HORA PICO AM', '5:00 – 9:00 a.m.', '#f59e0b', am)}
+        ${franjaCard('HORA PICO PM', '3:00 – 8:00 p.m.', '#3b82f6', pm)}
       </div>
-      <div style="background:var(--bg-page);border-radius:var(--r-lg);padding:14px 18px;
-                  font-size:12px;color:var(--text-mid);display:flex;gap:24px;flex-wrap:wrap">
-        <span>🌅 <strong>AM:</strong> 5:00 – 9:00 a.m. &nbsp;·&nbsp; ${am.length} registros</span>
-        <span>🌆 <strong>PM:</strong> 3:00 – 8:00 p.m. &nbsp;·&nbsp; ${pm.length} registros</span>
-        <span>🌙 <strong>Otros:</strong> fuera de hora pico &nbsp;·&nbsp; ${otros.length} registros</span>
-        <span style="margin-left:auto;color:var(--text-light)">Total filtrado: <strong>${rows.length}</strong></span>
+
+      <div style="background:var(--bg-white);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 18px;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px">
+          Distribucion por hora del dia
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:2px;padding-bottom:20px">
+          ${barrasHora}
+        </div>
+        <div style="display:flex;gap:16px;font-size:11px;color:var(--text-mid);margin-top:4px;flex-wrap:wrap">
+          <span><span style="display:inline-block;width:10px;height:10px;background:#f59e0b;border-radius:2px;margin-right:4px"></span>Hora pico AM</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#3b82f6;border-radius:2px;margin-right:4px"></span>Hora pico PM</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#cbd5e1;border-radius:2px;margin-right:4px"></span>Fuera de hora pico</span>
+        </div>
       </div>
-      ${rows.length === 0 ? `<div style="margin-top:12px;padding:16px;background:#fff3cd;border:1px solid #ffc107;border-radius:var(--r-md);font-size:13px;color:#856404">
-        ⚠️ No hay registros para los filtros seleccionados. Prueba cambiando el rango de fechas o ciudad.
-      </div>` : ''}
-      ${rows.length > 0 && am.length === 0 && pm.length === 0 ? `<div style="margin-top:12px;padding:16px;background:#e8f4f8;border:1px solid #bee3f8;border-radius:var(--r-md);font-size:13px;color:#2c5282">
-        ℹ️ Los ${rows.length} registros encontrados están fuera de las franjas horarias pico (todos clasificados en "Otros").
-      </div>` : ''}`;
+
+      <div style="background:var(--bg-page);border-radius:var(--r-lg);padding:12px 16px;
+                  font-size:12px;color:var(--text-mid);display:flex;gap:20px;flex-wrap:wrap;align-items:center">
+        <span><strong style="color:var(--text-dark)">AM:</strong> ${am.length} registros</span>
+        <span><strong style="color:var(--text-dark)">PM:</strong> ${pm.length} registros</span>
+        <span><strong style="color:var(--text-dark)">Otros:</strong> ${otros.length} registros</span>
+        ${sinHora.length > 0 ? `<span style="color:#f59e0b"><strong>Sin hora:</strong> ${sinHora.length}</span>` : ''}
+        <span style="margin-left:auto;color:var(--text-light)">Total: <strong>${rows.length}</strong></span>
+      </div>`;
   }
 
   /* ─── Inicio ─────────────────────────────────────────────────── */
