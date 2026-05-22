@@ -17,6 +17,7 @@
       --bg-page:#f5f7fb; --bg-white:#ffffff; --bg-header:#0b1120;
       --text-dark:#111827; --text-mid:#4b5563; --text-light:#9ca3af;
       --yellow:#f59e0b; --blue:#3b82f6; --flag-blue:#0033a0;
+      --flag-blue-soft:#e6ebf5;
       --border:#f1f5f9; --border-mid:#e2e8f0;
       --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:20px;
     }
@@ -54,25 +55,123 @@
 
     /* ── Filtros ── */
     .filter-bar { background:var(--bg-white); border-bottom:1px solid var(--border); flex-shrink:0; }
-    .filter-bar-inner { max-width:1400px; margin:0 auto; padding:9px 28px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-    .filter-label { font-size:11px; font-weight:700; color:var(--text-light); text-transform:uppercase; letter-spacing:.1em; background:var(--bg-page); padding:3px 8px; border-radius:20px; white-space:nowrap; }
-    .filter-select, .date-input { font-family:'Inter',sans-serif; font-size:13px; color:var(--text-dark); background:var(--bg-white); border:1px solid var(--border-mid); border-radius:var(--r-sm); padding:5px 11px; outline:none; transition:border-color .15s; }
-    .filter-select:focus, .date-input:focus { border-color:var(--flag-blue); }
+    .filter-bar-inner { max-width:1400px; margin:0 auto; padding:10px 28px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+
+    .filter-label { font-size:10px; font-weight:800; color:var(--text-light); text-transform:uppercase; letter-spacing:.12em; background:var(--bg-page); padding:3px 10px; border-radius:20px; white-space:nowrap; }
+
+    /* ── Inputs de fecha ── */
+    .date-input {
+      font-family:'Inter',sans-serif; font-size:12px; font-weight:500;
+      color:var(--text-dark); background:var(--bg-white);
+      border:1.5px solid var(--border-mid); border-radius:var(--r-sm);
+      padding:6px 11px; outline:none;
+      transition:border-color .15s, box-shadow .15s, background .15s;
+      cursor:pointer;
+    }
+    .date-input:hover  { border-color:var(--flag-blue); background:var(--flag-blue-soft,#e6ebf5); }
+    .date-input:focus  { border-color:var(--flag-blue); box-shadow:0 0 0 3px rgba(0,51,160,.1); }
+
+    /* ── Selects (tipo e ciudad) ── */
+    .filter-select {
+      font-family:'Inter',sans-serif; font-size:12px; font-weight:600;
+      color:var(--text-dark); background:var(--bg-white);
+      border:1.5px solid var(--border-mid); border-radius:var(--r-sm);
+      padding:6px 32px 6px 13px; outline:none; cursor:pointer;
+      transition:border-color .15s, box-shadow .15s, background .15s, color .15s;
+      appearance:none; -webkit-appearance:none;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 10px center;
+    }
+    .filter-select:hover {
+      border-color:var(--flag-blue);
+      background-color:#e6ebf5;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%230033a0' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    }
+    .filter-select:focus {
+      border-color:var(--flag-blue); box-shadow:0 0 0 3px rgba(0,51,160,.1);
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%230033a0' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    }
+    /* Estado activo — filtro aplicado */
+    .filter-select.is-active {
+      border-color:var(--flag-blue); background-color:#e6ebf5;
+      color:var(--flag-blue); font-weight:700;
+      box-shadow:0 0 0 3px rgba(0,51,160,.08);
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%230033a0' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    }
+
     .date-range-group { display:flex; align-items:center; gap:6px; }
+
+    /* ── Botón × Limpiar fechas ── */
+    .btn-clear-dates {
+      font-family:inherit; font-size:10px; font-weight:700;
+      color:var(--text-mid); background:transparent;
+      border:1px solid var(--border-mid); border-radius:var(--r-sm);
+      padding:5px 10px; cursor:pointer; transition:all .15s;
+      text-transform:uppercase; letter-spacing:.04em;
+    }
+    .btn-clear-dates:hover { background:#fee2e2; border-color:#fca5a5; color:#dc2626; }
+
+    /* ── Botones de rango ── */
     .range-btns { display:flex; gap:4px; }
-    .range-btn { font-family:inherit; font-size:11px; font-weight:600; color:var(--text-mid); background:var(--bg-page); border:1px solid var(--border-mid); border-radius:20px; padding:4px 12px; cursor:pointer; transition:all .15s; }
-    .range-btn:hover, .range-btn.active-range { background:var(--flag-blue); border-color:var(--flag-blue); color:#fff; }
+    .range-btn {
+      font-family:inherit; font-size:10px; font-weight:700;
+      color:var(--text-mid); background:var(--bg-page);
+      border:1.5px solid var(--border-mid); border-radius:20px;
+      padding:5px 13px; cursor:pointer; transition:all .18s;
+      text-transform:uppercase; letter-spacing:.04em;
+    }
+    .range-btn:hover {
+      background:#e6ebf5; border-color:var(--flag-blue);
+      color:var(--flag-blue); transform:translateY(-1px);
+      box-shadow:0 2px 8px rgba(0,51,160,.12);
+    }
+    .range-btn.active-range {
+      background:var(--flag-blue); border-color:var(--flag-blue);
+      color:#fff; box-shadow:0 2px 10px rgba(0,51,160,.3);
+    }
+    .range-btn.active-range:hover { background:#002280; transform:translateY(-1px); }
+
     .range-warning { font-size:11px; color:var(--yellow); background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.2); border-radius:20px; padding:3px 9px; display:none; white-space:nowrap; }
     .range-warning.visible { display:inline-block; }
-    .btn-apply { display:flex; align-items:center; gap:5px; font-family:inherit; font-size:12px; font-weight:700; background:var(--flag-blue); color:#fff; border:none; border-radius:var(--r-sm); padding:5px 13px; cursor:pointer; text-transform:uppercase; transition:background .15s; }
-    .btn-apply:hover { background:#002280; }
-    .btn-limpiar { font-family:inherit; font-size:11px; font-weight:600; color:var(--text-mid); background:transparent; border:1px solid var(--border-mid); border-radius:var(--r-sm); padding:4px 10px; cursor:pointer; transition:all .15s; }
-    .btn-limpiar:hover { background:var(--flag-blue); color:#fff; border-color:var(--flag-blue); }
+
+    /* ── Botón APLICAR ── */
+    .btn-apply {
+      display:flex; align-items:center; gap:6px;
+      font-family:inherit; font-size:12px; font-weight:700;
+      background:var(--flag-blue); color:#fff; border:none;
+      border-radius:var(--r-sm); padding:6px 16px; cursor:pointer;
+      text-transform:uppercase; letter-spacing:.05em;
+      transition:background .15s, transform .15s, box-shadow .15s;
+      box-shadow:0 2px 8px rgba(0,51,160,.25);
+    }
+    .btn-apply:hover { background:#002280; transform:translateY(-1px); box-shadow:0 4px 14px rgba(0,51,160,.35); }
+    .btn-apply:active { transform:translateY(0); box-shadow:0 1px 4px rgba(0,51,160,.2); }
+
+    /* ── Botón LIMPIAR TODO ── */
+    .btn-limpiar {
+      font-family:inherit; font-size:11px; font-weight:600;
+      color:#dc2626; background:#fef2f2;
+      border:1.5px solid #fecaca; border-radius:var(--r-sm);
+      padding:5px 12px; cursor:pointer; transition:all .15s;
+      text-transform:uppercase; letter-spacing:.04em;
+    }
+    .btn-limpiar:hover { background:#fee2e2; border-color:#f87171; box-shadow:0 2px 6px rgba(220,38,38,.15); }
+
     .update-note { font-size:11px; color:var(--text-light); background:var(--bg-page); padding:3px 9px; border-radius:20px; white-space:nowrap; }
+
+    /* ── Búsqueda por código ── */
     .search-code-wrap { position:relative; }
-    .search-code { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-dark); background:var(--bg-white); border:1px solid var(--border-mid); border-radius:var(--r-sm); padding:5px 30px 5px 11px; outline:none; width:130px; transition:border-color .15s; }
-    .search-code:focus { border-color:var(--flag-blue); }
-    .search-code-clear { position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--text-light); font-size:13px; line-height:1; display:none; }
+    .search-code {
+      font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:500;
+      color:var(--text-dark); background:var(--bg-white);
+      border:1.5px solid var(--border-mid); border-radius:var(--r-sm);
+      padding:6px 30px 6px 11px; outline:none; width:140px;
+      transition:border-color .15s, box-shadow .15s, width .2s;
+    }
+    .search-code:focus  { border-color:var(--flag-blue); box-shadow:0 0 0 3px rgba(0,51,160,.1); width:170px; }
+    .search-code:hover  { border-color:var(--flag-blue); }
+    .search-code.is-active { border-color:var(--flag-blue); background:#e6ebf5; color:var(--flag-blue); font-weight:700; }
+    .search-code-clear  { position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--text-light); font-size:13px; line-height:1; display:none; }
     .search-code-clear.visible { display:block; }
 
     /* ── Main flex ── */
@@ -273,7 +372,7 @@
       <input type="date" class="date-input" id="f-fecha-ini" onchange="onManualDate()">
       <span style="color:var(--text-light)">&rarr;</span>
       <input type="date" class="date-input" id="f-fecha-fin" onchange="onManualDate()">
-      <button onclick="clearDates()" style="font-family:inherit;font-size:9px;color:var(--text-mid);background:transparent;border:1px solid var(--border-mid);border-radius:var(--r-sm);padding:4px 8px;cursor:pointer">&times; LIMPIAR</button>
+      <button onclick="clearDates()" class="btn-clear-dates">&times; LIMPIAR</button>
     </div>
     <select class="filter-select" id="map-tipo" onchange="aplicarFiltros()">
       <option value="todos">TODOS LOS TIPOS</option>
@@ -513,7 +612,18 @@ function clearSearchCode() {
   document.getElementById('search-code').value = '';
   codigoFiltro = '';
   document.getElementById('search-code-clear').classList.remove('visible');
+  document.getElementById('search-code').classList.remove('is-active');
   aplicarFiltros();
+}
+
+/* ── Estado visual activo en selects y búsqueda ─────────────── */
+function updateSelectStates() {
+  const tipo   = document.getElementById('map-tipo');
+  const ciudad = document.getElementById('map-ciudad');
+  if (tipo)   tipo.classList.toggle('is-active', tipo.value   !== 'todos');
+  if (ciudad) ciudad.classList.toggle('is-active', ciudad.value !== 'todas');
+  const sc = document.getElementById('search-code');
+  if (sc) sc.classList.toggle('is-active', sc.value.trim() !== '');
 }
 function limpiarFiltros() {
   document.getElementById('map-tipo').value   = 'todos';
@@ -978,6 +1088,7 @@ function aplicarFiltros() {
     mapInstance.setView([13.6894,-89.1872], 8);
   }
   progressDone();
+  updateSelectStates();
 }
 
 /* ── [5] Pantalla completa ──────────────────────────────────── */
