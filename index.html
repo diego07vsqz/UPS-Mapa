@@ -826,24 +826,6 @@
 
     const bounds = [];
 
-    // ── MEJORA: semáforos sin incidencias como puntos grises pequeños
-    // Se muestran solo cuando hay ciudad seleccionada (para no saturar vista nacional)
-    if (capaActual === 'marcadores' && ciudad !== 'todas' && Object.keys(coordsMap).length > 0) {
-      const codigosActivos = new Set(Object.keys(grupos));
-      const iconGris = L.divIcon({
-        html: `<div style="width:8px;height:8px;border-radius:50%;background:#cbd5e1;
-                           border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.15)"></div>`,
-        className: 'custom-marker', iconSize:[8,8], iconAnchor:[4,4],
-      });
-      Object.entries(coordsMap).forEach(([id, s]) => {
-        if (codigosActivos.has(id)) return; // ya tiene marcador activo
-        if ((s.zona||'').toLowerCase() !== ciudad.toLowerCase()) return; // otra ciudad
-        L.marker([s.lat, s.lng], { icon: iconGris })
-         .bindTooltip(`${id} — Sin incidencias en el período`, { direction:'top', offset:[0,-4] })
-         .addTo(clusterLayer || mapInstance);
-      });
-    }
-
     if (capaActual === 'heatmap') {
       // ── Heatmap: intensidad proporcional a la cantidad de incidencias
       const puntos = Object.values(grupos).map(g => [g.lat, g.lng, g.registros.length]);
@@ -871,6 +853,24 @@
           });
         },
       });
+
+      // ── Puntos grises: semáforos SIN incidencias en el período
+      // Se agregan al clusterLayer ya creado (debe ir antes de los marcadores activos)
+      if (ciudad !== 'todas' && Object.keys(coordsMap).length > 0) {
+        const codigosActivos = new Set(Object.keys(grupos));
+        const iconGris = L.divIcon({
+          html: `<div style="width:8px;height:8px;border-radius:50%;background:#cbd5e1;
+                             border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.15)"></div>`,
+          className: 'custom-marker', iconSize:[8,8], iconAnchor:[4,4],
+        });
+        Object.entries(coordsMap).forEach(([id, s]) => {
+          if (codigosActivos.has(id)) return;
+          if ((s.zona||'').toLowerCase() !== ciudad.toLowerCase()) return;
+          L.marker([s.lat, s.lng], { icon: iconGris })
+           .bindTooltip(`${id} — Sin incidencias en el período`, { direction:'top', offset:[0,-4] })
+           .addTo(clusterLayer);
+        });
+      }
 
       Object.values(grupos).forEach(grupo => {
         const { lat, lng, registros } = grupo;
