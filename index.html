@@ -11,51 +11,49 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
-  <!-- html2canvas: captura el mapa como imagen PNG descargable -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
-    /* ── Variables globales ──────────────────────────────────── */
     :root {
-      --bg-page:    #f5f7fb; --bg-white:  #ffffff; --bg-header: #0b1120;
-      --text-dark:  #111827; --text-mid:  #4b5563; --text-light: #9ca3af;
-      --yellow: #f59e0b; --blue: #3b82f6; --flag-blue: #0033a0;
-      --border: #f1f5f9; --border-mid: #e2e8f0;
+      --bg-page:#f5f7fb; --bg-white:#ffffff; --bg-header:#0b1120;
+      --text-dark:#111827; --text-mid:#4b5563; --text-light:#9ca3af;
+      --yellow:#f59e0b; --blue:#3b82f6; --flag-blue:#0033a0;
+      --border:#f1f5f9; --border-mid:#e2e8f0;
       --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:20px;
     }
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:'Inter',sans-serif; background:var(--bg-page); color:var(--text-dark); -webkit-font-smoothing:antialiased; font-size:14px; }
-    @keyframes spin      { to { transform:rotate(360deg); } }
-    @keyframes pulse     { 0%,100%{ opacity:.4 } 50%{ opacity:1 } }
-    /* Pulso para marcadores críticos (apagado / accidente) */
+    html, body { height:100%; }
+    body { font-family:'Inter',sans-serif; background:var(--bg-page); color:var(--text-dark); -webkit-font-smoothing:antialiased; font-size:14px; display:flex; flex-direction:column; }
+
+    @keyframes spin  { to { transform:rotate(360deg); } }
+    @keyframes pulse { 0%,100%{ opacity:.4 } 50%{ opacity:1 } }
     @keyframes ring-pulse {
-      0%   { box-shadow:0 0 0 0   rgba(239,68,68,.6), 0 2px 6px rgba(0,0,0,.25); }
-      70%  { box-shadow:0 0 0 10px rgba(239,68,68,0), 0 2px 6px rgba(0,0,0,.25); }
-      100% { box-shadow:0 0 0 0   rgba(239,68,68,0), 0 2px 6px rgba(0,0,0,.25); }
+      0%   { box-shadow:0 0 0 0   rgba(239,68,68,.7), 0 2px 8px rgba(0,0,0,.3); }
+      70%  { box-shadow:0 0 0 12px rgba(239,68,68,0), 0 2px 8px rgba(0,0,0,.3); }
+      100% { box-shadow:0 0 0 0   rgba(239,68,68,0), 0 2px 8px rgba(0,0,0,.3); }
     }
     .marker-critical { animation:ring-pulse 1.6s ease-out infinite; }
 
-    /* ── Loading ─────────────────────────────────────────────── */
+    /* ── Loading ── */
     #loading-overlay { position:fixed; inset:0; background:var(--bg-header); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; z-index:9999; transition:opacity .4s ease; }
     #loading-overlay.fade-out { opacity:0; pointer-events:none; }
     .spinner { width:40px; height:40px; border:2.5px solid rgba(245,158,11,.2); border-top-color:var(--yellow); border-radius:50%; animation:spin .8s linear infinite; }
     .loading-msg { font-size:14px; font-weight:700; color:#fff; letter-spacing:.06em; text-transform:uppercase; }
 
-    /* ── Header ──────────────────────────────────────────────── */
-    .header { background:var(--bg-header); border-bottom:2px solid var(--yellow); position:sticky; top:0; z-index:100; }
+    /* ── Header ── */
+    .header { background:var(--bg-header); border-bottom:2px solid var(--yellow); flex-shrink:0; }
     .header-inner { max-width:1400px; margin:0 auto; padding:0 28px; display:flex; align-items:center; justify-content:space-between; height:64px; }
     .header-brand { display:flex; align-items:center; gap:13px; }
-    .header-logo  { width:44px; height:52px; flex-shrink:0; }
-    .divider-v    { width:1px; height:30px; background:rgba(255,255,255,.12); flex-shrink:0; }
-    .brand-name   { font-size:15px; font-weight:700; color:#fff; letter-spacing:.07em; text-transform:uppercase; line-height:1.2; }
-    .brand-sub    { font-size:10px; color:var(--yellow); letter-spacing:.1em; text-transform:uppercase; margin-top:3px; }
+    .divider-v { width:1px; height:30px; background:rgba(255,255,255,.12); }
+    .brand-name { font-size:15px; font-weight:700; color:#fff; letter-spacing:.07em; text-transform:uppercase; line-height:1.2; }
+    .brand-sub  { font-size:10px; color:var(--yellow); letter-spacing:.1em; text-transform:uppercase; margin-top:3px; }
     .header-right { display:flex; align-items:center; gap:10px; }
     .live-pill { display:flex; align-items:center; gap:7px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); border-radius:40px; padding:5px 12px; font-size:12px; font-weight:500; color:rgba(255,255,255,.7); }
     .live-dot  { width:6px; height:6px; border-radius:50%; background:#34d399; animation:pulse 1.5s ease-in-out infinite; }
     .btn-refresh { display:flex; align-items:center; gap:6px; background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.25); border-radius:var(--r-sm); color:var(--yellow); font-size:12px; font-weight:600; padding:6px 14px; cursor:pointer; transition:background .2s; font-family:inherit; text-transform:uppercase; letter-spacing:.05em; }
     .btn-refresh:hover { background:rgba(245,158,11,.2); }
 
-    /* ── Filtros ─────────────────────────────────────────────── */
-    .filter-bar { background:var(--bg-white); border-bottom:1px solid var(--border); }
+    /* ── Filtros ── */
+    .filter-bar { background:var(--bg-white); border-bottom:1px solid var(--border); flex-shrink:0; }
     .filter-bar-inner { max-width:1400px; margin:0 auto; padding:9px 28px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
     .filter-label { font-size:11px; font-weight:700; color:var(--text-light); text-transform:uppercase; letter-spacing:.1em; background:var(--bg-page); padding:3px 8px; border-radius:20px; white-space:nowrap; }
     .filter-select, .date-input { font-family:'Inter',sans-serif; font-size:13px; color:var(--text-dark); background:var(--bg-white); border:1px solid var(--border-mid); border-radius:var(--r-sm); padding:5px 11px; outline:none; transition:border-color .15s; }
@@ -71,41 +69,16 @@
     .btn-limpiar { font-family:inherit; font-size:11px; font-weight:600; color:var(--text-mid); background:transparent; border:1px solid var(--border-mid); border-radius:var(--r-sm); padding:4px 10px; cursor:pointer; transition:all .15s; }
     .btn-limpiar:hover { background:var(--flag-blue); color:#fff; border-color:var(--flag-blue); }
     .update-note { font-size:11px; color:var(--text-light); background:var(--bg-page); padding:3px 9px; border-radius:20px; white-space:nowrap; }
-
-    /* ── Buscador por código ─────────────────────────────────── */
     .search-code-wrap { position:relative; }
     .search-code { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-dark); background:var(--bg-white); border:1px solid var(--border-mid); border-radius:var(--r-sm); padding:5px 30px 5px 11px; outline:none; width:130px; transition:border-color .15s; }
     .search-code:focus { border-color:var(--flag-blue); }
     .search-code-clear { position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--text-light); font-size:13px; line-height:1; display:none; }
     .search-code-clear.visible { display:block; }
 
-    /* ── Layout viewport — todo en pantalla sin scroll ──────────
-       html/body = 100% viewport. page-body distribuye el espacio
-       verticalmente: header + filtros (fijos) + main (flex:1).
-       El mapa ocupa el espacio restante sin overflow.
-    ─────────────────────────────────────────────────────────── */
-    html, body { height:100%; }
-    .page-body  { display:flex; flex-direction:column; min-height:100vh; }
-    .header     { flex-shrink:0; }
-    .filter-bar { flex-shrink:0; }
+    /* ── Main flex ── */
+    .main { flex:1; padding:14px 24px 14px; display:flex; flex-direction:column; gap:12px; min-height:0; }
 
-    .main {
-      flex:1; padding:14px 24px 24px;
-      display:flex; flex-direction:column; gap:12px;
-    }
-
-    /* Card del mapa */
-    .card-map {
-      flex:1;
-      display:flex; flex-direction:column;
-      background:var(--bg-white); border:1px solid var(--border);
-      border-radius:var(--r-xl); padding:14px 18px;
-    }
-
-    .card-title { font-size:12px; font-weight:700; color:var(--text-light); text-transform:uppercase; letter-spacing:.12em; margin-bottom:10px; padding-bottom:8px; border-bottom:1.5px solid var(--border); display:flex; align-items:center; gap:8px; flex-shrink:0; }
-    .card-title::before { content:''; width:4px; height:13px; background:var(--flag-blue); border-radius:3px; flex-shrink:0; }
-
-    /* ── Cards de resumen ────────────────────────────────────── */
+    /* ── KPI cards ── */
     .stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; flex-shrink:0; }
     @media(max-width:700px){ .stats-grid { grid-template-columns:1fr; } }
     .stat-card { background:var(--bg-white); border:1px solid var(--border); border-radius:var(--r-lg); padding:10px 14px; display:flex; align-items:center; gap:10px; position:relative; }
@@ -114,81 +87,38 @@
     .stat-card.s-green::before  { background:#10b981; }
     .stat-card.s-yellow::before { background:var(--yellow); }
     .stat-icon { width:44px; height:44px; border-radius:var(--r-md); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:20px; }
-    .stat-num { font-size:26px; font-weight:800; font-family:'JetBrains Mono',monospace; line-height:1.1; color:var(--text-dark); }
-    .stat-label { font-size:11px; font-weight:700; color:var(--text-mid); text-transform:uppercase; letter-spacing:.07em; margin-top:2px; }
-    .stat-sub { font-size:11px; color:var(--text-light); margin-top:3px; line-height:1.4; }
+    .stat-num  { font-size:26px; font-weight:800; font-family:'JetBrains Mono',monospace; line-height:1.1; color:var(--text-dark); }
+    .stat-label{ font-size:11px; font-weight:700; color:var(--text-mid); text-transform:uppercase; letter-spacing:.07em; margin-top:2px; }
+    .stat-sub  { font-size:11px; color:var(--text-light); margin-top:3px; line-height:1.4; }
 
-    /* ── Toolbar del mapa ────────────────────────────────────── */
-    .map-toolbar { display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+    /* ── Card mapa ── */
+    .card-map { flex:1; display:flex; flex-direction:column; background:var(--bg-white); border:1px solid var(--border); border-radius:var(--r-xl); padding:14px 18px; min-height:0; }
+    .card-title { font-size:12px; font-weight:700; color:var(--text-light); text-transform:uppercase; letter-spacing:.12em; margin-bottom:10px; padding-bottom:8px; border-bottom:1.5px solid var(--border); display:flex; align-items:center; gap:8px; flex-shrink:0; }
+    .card-title::before { content:''; width:4px; height:13px; background:var(--flag-blue); border-radius:3px; flex-shrink:0; }
+    .map-toolbar { display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap; flex-shrink:0; }
     .layer-btn { font-family:inherit; font-size:11px; font-weight:700; color:var(--text-mid); background:var(--bg-page); border:1px solid var(--border-mid); border-radius:20px; padding:4px 12px; cursor:pointer; transition:all .15s; display:flex; align-items:center; gap:5px; }
     .layer-btn:hover, .layer-btn.active { background:var(--flag-blue); border-color:var(--flag-blue); color:#fff; }
     .capture-btn { font-family:inherit; font-size:11px; font-weight:700; color:var(--text-mid); background:var(--bg-page); border:1px solid var(--border-mid); border-radius:var(--r-sm); padding:4px 12px; cursor:pointer; transition:all .15s; display:flex; align-items:center; gap:5px; margin-left:auto; }
     .capture-btn:hover { background:#059669; border-color:#059669; color:#fff; }
-
-    /* ── Mapa: altura generosa, crece con la card-map ─────────── */
-    .map-container { flex:1; min-height:520px; width:100%; border-radius:var(--r-lg); overflow:hidden; border:1px solid var(--border-mid); }
-    .map-status { margin-top:10px; font-size:13px; color:var(--text-light); display:flex; align-items:center; gap:6px; }
-
-    /* Marcador personalizado Leaflet */
+    #map-container { flex:1; min-height:400px; border-radius:var(--r-lg); overflow:hidden; border:1px solid var(--border-mid); }
+    .map-status { margin-top:8px; font-size:12px; color:var(--text-light); display:flex; align-items:center; gap:6px; flex-shrink:0; }
     .custom-marker { background:transparent !important; border:none !important; }
 
-    /* ── Leyenda dentro del mapa (control Leaflet) ──────────── */
-    .map-legend-control {
-      background: rgba(255,255,255,.96);
-      border: 1px solid var(--border-mid);
-      border-radius: var(--r-md);
-      padding: 10px 13px;
-      box-shadow: 0 2px 10px rgba(0,0,0,.12);
-      min-width: 150px;
-    }
-    .map-legend-control h4 {
-      font-size: 11px; font-weight: 800; color: var(--text-light);
-      text-transform: uppercase; letter-spacing: .1em;
-      margin-bottom: 8px; padding-bottom: 6px;
-      border-bottom: 1px solid var(--border);
-    }
-    .map-legend-control .leg-item {
-      display: flex; align-items: center; gap: 7px;
-      padding: 3px 0; font-size: 12px; font-weight: 500; color: var(--text-mid);
-    }
-    .map-legend-control .leg-dot {
-      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
-      border: 1.5px solid rgba(255,255,255,.8);
-      box-shadow: 0 1px 3px rgba(0,0,0,.2);
-    }
+    /* ── Leyenda mapa ── */
+    .map-legend-control { background:rgba(255,255,255,.96); border:1px solid var(--border-mid); border-radius:var(--r-md); padding:10px 13px; box-shadow:0 2px 10px rgba(0,0,0,.12); min-width:155px; }
+    .map-legend-control h4 { font-size:10px; font-weight:800; color:var(--text-light); text-transform:uppercase; letter-spacing:.1em; margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid var(--border); }
+    .map-legend-control .leg-item { display:flex; align-items:center; gap:7px; padding:3px 0; font-size:11px; font-weight:500; color:var(--text-mid); }
+    .map-legend-control .leg-dot  { width:10px; height:10px; border-radius:50%; flex-shrink:0; border:1.5px solid rgba(255,255,255,.8); box-shadow:0 1px 3px rgba(0,0,0,.2); }
 
-    /* ── Tabs de navegación principal ───────────────────────── */
-    .tab-nav {
-      font-family:inherit; font-size:11px; font-weight:700;
-      color:var(--text-mid); background:transparent;
-      border:none; border-bottom:2.5px solid transparent;
-      padding:11px 20px; cursor:pointer;
-      text-transform:uppercase; letter-spacing:.05em;
-      transition:all .15s; display:flex; align-items:center; gap:7px;
-    }
-    .tab-nav:hover  { color:var(--flag-blue); }
-    .tab-nav.active { color:var(--flag-blue); border-bottom-color:var(--flag-blue); }
-
-    /* Panel secundario genérico */
-    .secondary-panel { display:none; flex:1; overflow-y:auto; }
-    @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
-
-    /* Card del panel secundario */
-    .ranking-card {
-      background:var(--bg-white); border:1px solid var(--border);
-      border-radius:var(--r-xl); padding:18px 22px;
-    }
-
-    /* ── Toast de notificación ───────────────────────────────── */
+    /* ── Toast ── */
     .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:#1e293b; color:#fff; font-size:11px; font-weight:600; padding:9px 18px; border-radius:var(--r-lg); z-index:500; opacity:0; transition:all .3s ease; pointer-events:none; box-shadow:0 4px 20px rgba(0,0,0,.3); white-space:nowrap; }
     .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
-    /* ── Footer ──────────────────────────────────────────────── */
-    .footer { margin-top:28px; padding-top:16px; border-top:1px solid var(--border); text-align:center; font-size:11px; color:var(--text-light); text-transform:uppercase; letter-spacing:.07em; }
+    /* ── Footer ── */
+    .footer { padding:12px 0 4px; text-align:center; font-size:11px; color:var(--text-light); text-transform:uppercase; letter-spacing:.07em; flex-shrink:0; }
   </style>
 </head>
 <body>
-<div class="page-body">
 
 <!-- Loading -->
 <div id="loading-overlay">
@@ -198,12 +128,12 @@
       <circle cx="22" cy="13" r="7" fill="#e03535"/><circle cx="22" cy="13" r="4.5" fill="#f05050"/>
       <circle cx="22" cy="26" r="7" fill="#c98a10"/><circle cx="22" cy="26" r="4.5" fill="#FFD100"/>
       <circle cx="22" cy="39" r="7" fill="#1e8a4a"/><circle cx="22" cy="39" r="4.5" fill="#2ecc71"/>
-      <path d="M10,10 L2,10 M2,10 Q0,10 0,12 L0,16 Q0,18 2,18 L10,18" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-      <path d="M10,23 L2,23 M2,23 Q0,23 0,25 L0,29 Q0,31 2,31 L10,31" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-      <path d="M10,36 L2,36 M2,36 Q0,36 0,38 L0,42 Q0,44 2,44 L10,44" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-      <path d="M34,10 L42,10 M42,10 Q44,10 44,12 L44,16 Q44,18 42,18 L34,18" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-      <path d="M34,23 L42,23 M42,23 Q44,23 44,25 L44,29 Q44,31 42,31 L34,31" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-      <path d="M34,36 L42,36 M42,36 Q44,36 44,38 L44,42 Q44,44 42,44 L34,44" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <path d="M10,10 L2,10 Q0,10 0,12 L0,16 Q0,18 2,18 L10,18" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" fill="none"/>
+      <path d="M10,23 L2,23 Q0,23 0,25 L0,29 Q0,31 2,31 L10,31" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" fill="none"/>
+      <path d="M10,36 L2,36 Q0,36 0,38 L0,42 Q0,44 2,44 L10,44" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" fill="none"/>
+      <path d="M34,10 L42,10 Q44,10 44,12 L44,16 Q44,18 42,18 L34,18" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" fill="none"/>
+      <path d="M34,23 L42,23 Q44,23 44,25 L44,29 Q44,31 42,31 L34,31" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" fill="none"/>
+      <path d="M34,36 L42,36 Q44,36 44,38 L44,42 Q44,44 42,44 L34,44" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" fill="none"/>
     </svg>
   </div>
   <div class="spinner"></div>
@@ -214,20 +144,12 @@
 <header class="header">
   <div class="header-inner">
     <div class="header-brand">
-      <div class="header-logo">
-        <svg width="44" height="52" viewBox="0 0 44 52" fill="none">
-          <rect x="10" y="2" width="24" height="48" rx="5" fill="#0f2236" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
-          <circle cx="22" cy="13" r="7" fill="#e03535"/><circle cx="22" cy="13" r="4.5" fill="#f05050"/>
-          <circle cx="22" cy="26" r="7" fill="#c98a10"/><circle cx="22" cy="26" r="4.5" fill="#FFD100"/>
-          <circle cx="22" cy="39" r="7" fill="#1e8a4a"/><circle cx="22" cy="39" r="4.5" fill="#2ecc71"/>
-          <path d="M10,10 L2,10 M2,10 Q0,10 0,12 L0,16 Q0,18 2,18 L10,18" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-          <path d="M10,23 L2,23 M2,23 Q0,23 0,25 L0,29 Q0,31 2,31 L10,31" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-          <path d="M10,36 L2,36 M2,36 Q0,36 0,38 L0,42 Q0,44 2,44 L10,44" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-          <path d="M34,10 L42,10 M42,10 Q44,10 44,12 L44,16 Q44,18 42,18 L34,18" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-          <path d="M34,23 L42,23 M42,23 Q44,23 44,25 L44,29 Q44,31 42,31 L34,31" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-          <path d="M34,36 L42,36 M42,36 Q44,36 44,38 L44,42 Q44,44 42,44 L34,44" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-        </svg>
-      </div>
+      <svg width="44" height="52" viewBox="0 0 44 52" fill="none">
+        <rect x="10" y="2" width="24" height="48" rx="5" fill="#0f2236" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+        <circle cx="22" cy="13" r="7" fill="#e03535"/><circle cx="22" cy="13" r="4.5" fill="#f05050"/>
+        <circle cx="22" cy="26" r="7" fill="#c98a10"/><circle cx="22" cy="26" r="4.5" fill="#FFD100"/>
+        <circle cx="22" cy="39" r="7" fill="#1e8a4a"/><circle cx="22" cy="39" r="4.5" fill="#2ecc71"/>
+      </svg>
       <div class="divider-v"></div>
       <div>
         <div class="brand-name">Mapa de Incidencias Semaf&oacute;ricas</div>
@@ -236,7 +158,7 @@
     </div>
     <div class="header-right">
       <div class="live-pill"><div class="live-dot"></div><span id="live-label">EN L&Iacute;NEA</span></div>
-      <button class="btn-refresh" onclick="loadData()">
+      <button class="btn-refresh" onclick="refrescarDatos()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
         ACTUALIZAR
       </button>
@@ -254,7 +176,7 @@
       <input type="date" class="date-input" id="f-fecha-fin" onchange="onManualDate()">
       <button onclick="clearDates()" style="font-family:inherit;font-size:9px;color:var(--text-mid);background:transparent;border:1px solid var(--border-mid);border-radius:var(--r-sm);padding:4px 8px;cursor:pointer">&times; LIMPIAR</button>
     </div>
-    <select class="filter-select" id="map-tipo" onchange="aplicarFiltroMapa()">
+    <select class="filter-select" id="map-tipo" onchange="aplicarFiltros()">
       <option value="todos">TODOS LOS TIPOS</option>
       <option value="forzamiento">Forzamiento de Tiempos</option>
       <option value="apagado">Apagado</option>
@@ -264,17 +186,15 @@
       <option value="error">Error de Comunicaci&oacute;n</option>
       <option value="vdt">Revisi&oacute;n VDT</option>
     </select>
-    <select class="filter-select" id="map-ciudad" onchange="aplicarFiltroMapa()">
+    <select class="filter-select" id="map-ciudad" onchange="aplicarFiltros()">
       <option value="todas">TODAS LAS CIUDADES</option>
     </select>
-    <!-- MEJORA: Buscador por código de semáforo -->
     <div class="search-code-wrap">
       <input type="text" class="search-code" id="search-code" placeholder="Buscar SS1301..."
              oninput="onSearchCode(this.value)" autocomplete="off">
       <button class="search-code-clear" id="search-code-clear" onclick="clearSearchCode()">&times;</button>
     </div>
-
-    <button class="btn-apply" onclick="aplicarFiltroMapa()">
+    <button class="btn-apply" onclick="aplicarFiltros()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       APLICAR
     </button>
@@ -292,25 +212,10 @@
   </div>
 </div>
 
-<!-- Tabs de navegación -->
-<div style="background:var(--bg-white);border-bottom:1px solid var(--border);flex-shrink:0">
-  <div style="max-width:1400px;margin:0 auto;padding:0 28px;display:flex;gap:4px">
-    <button class="tab-nav active" id="tab-mapa" onclick="switchMainTab('mapa',this)">
-      MAPA DE INCIDENCIAS
-    </button>
-    <button class="tab-nav" id="tab-resumen" onclick="switchMainTab('resumen',this)">
-      RESUMEN POR TIPO
-    </button>
-  </div>
-</div>
-
-<!-- Contenido -->
+<!-- Contenido principal -->
 <main class="main">
 
-  <!-- Panel: Mapa (pestaña principal) -->
-  <div id="panel-mapa" style="display:flex;flex-direction:column;flex:1;gap:12px;min-height:0">
-
-  <!-- Cards de resumen -->
+  <!-- KPIs -->
   <div class="stats-grid">
     <div class="stat-card s-blue">
       <div class="stat-icon" style="background:#eff6ff">&#128506;</div>
@@ -340,829 +245,572 @@
 
   <!-- Mapa -->
   <div class="card-map">
-    <div class="card-title">
-      MAPA DE INCIDENCIAS &mdash; EL SALVADOR
-    </div>
-
-    <!-- Toolbar: capas + captura -->
+    <div class="card-title">MAPA DE INCIDENCIAS &mdash; EL SALVADOR</div>
     <div class="map-toolbar">
-      <button class="layer-btn active" id="btn-marcadores" onclick="setLayer('marcadores')">
-        &#128204; Marcadores
-      </button>
-      <button class="layer-btn" id="btn-heatmap" onclick="setLayer('heatmap')">
-        &#127777; Mapa de calor
-      </button>
-      <button class="capture-btn" onclick="capturarMapa()">
-        &#128247; Capturar mapa
-      </button>
+      <button class="layer-btn active" id="btn-marcadores" onclick="setLayer('marcadores')">&#128204; Marcadores</button>
+      <button class="layer-btn"        id="btn-heatmap"    onclick="setLayer('heatmap')">&#127777; Mapa de calor</button>
+      <button class="capture-btn"                          onclick="capturarMapa()">&#128247; Capturar mapa</button>
     </div>
-
-    <div class="map-container" id="map-container"></div>
-
+    <div id="map-container"></div>
     <div class="map-status">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       <span id="map-status-text">Cargando datos...</span>
-    </div>
-
-  </div>
-
-  </div><!-- /panel-mapa -->
-
-  <!-- Panel: Resumen por Tipo -->
-  <div id="panel-resumen" class="secondary-panel">
-    <div class="ranking-card">
-      <div class="card-title">RESUMEN DE INCIDENCIAS POR TIPO Y CIUDAD</div>
-      <div id="resumen-body" style="font-size:12px;color:var(--text-light);padding:8px 0">Cargando...</div>
     </div>
   </div>
 
   <div class="footer">Mapa de Incidencias Semaf&oacute;ricas &nbsp;&middot;&nbsp; CCM &nbsp;&middot;&nbsp; Ministerio de Obras P&uacute;blicas y de Transporte</div>
 </main>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
-  'use strict';
+'use strict';
 
-  /* ─── Configuración ──────────────────────────────────────────── */
-  const SHEET_ID       = '1z7RURqLK9EQGftyyre7FcGdj_i7WWjWFWAvMFhgsQgU';
-  const SHEET_NAME     = 'P. Semaforico';
-  const SEMAFOROS_NAME = 'Lista Sem\u00e1foros'; // pestaña del listado de coordenadas
+/* ── Configuración ─────────────────────────────────────────── */
+const SHEET_ID       = '1z7RURqLK9EQGftyyre7FcGdj_i7WWjWFWAvMFhgsQgU';
+const SHEET_NAME     = 'P. Semaforico';
+const SEMAFOROS_NAME = 'Lista Sem\u00e1foros';
+const CACHE_KEY      = 'ccm_mapa_v3';
+const CACHE_TTL      = 10 * 60 * 1000; // 10 min
 
-  /* ─── Catálogo de incidencias (col E) ────────────────────────── */
-  const TIPOS = {
-    'forzamiento de tiempos': { label:'Forzamiento de Tiempos', color:'#ca8a04' },
-    'forzamiento de tiempo':  { label:'Forzamiento de Tiempos', color:'#ca8a04' },
-    'apagado':                { label:'Apagado',                color:'#dc2626' },
-    'mejora de tiempo':       { label:'Mejora de Tiempos',      color:'#65a30d' },
-    'mejora de tiempos':      { label:'Mejora de Tiempos',      color:'#65a30d' },
-    'intermitencia':          { label:'Intermitencia',          color:'#2563eb' },
-    'error de comunicación':  { label:'Error de Comunicación',  color:'#9333ea' },
-    'error de comunicacion':  { label:'Error de Comunicación',  color:'#9333ea' },
-    'funcionamiento':         { label:'Funcionamiento',         color:'#4f46e5' },
-    'programa':               { label:'Programa',               color:'#db2777' },
-    'accidente':              { label:'Apoyo en Accidentes',    color:'#ea580c' },
-    'apoyo en accidente':     { label:'Apoyo en Accidentes',    color:'#ea580c' },
-    'vdt volumen':            { label:'Revisión VDT',           color:'#0d9488' },
-    'vdt':                    { label:'Revisión VDT',           color:'#0d9488' },
-    'falla':                  { label:'Falla',                  color:'#ec4899' },
-    'mantenimiento':          { label:'Mantenimiento',          color:'#f43f5e' },
-    'vandalismo':             { label:'Vandalismo',             color:'#f59e0b' },
-    'visita tecnica':         { label:'Visita Técnica',         color:'#059669' },
-    'visita técnica':         { label:'Visita Técnica',         color:'#059669' },
-    'chorros':                { label:'Chorros',                color:'#c026d3' },
-    'ramas':                  { label:'Ramas / Vegetación',     color:'#84cc16' },
-    'evento':                 { label:'Evento',                 color:'#0ea5e9' },
-    'reorientacion':          { label:'Reorientación',          color:'#10b981' },
-    'reorientación':          { label:'Reorientación',          color:'#10b981' },
-    'comunicacion':           { label:'Comunicación',           color:'#14b8a6' },
-    'comunicación':           { label:'Comunicación',           color:'#14b8a6' },
-    'otros':                  { label:'Otros',                  color:'#8b5e3c' },
-    'otro':                   { label:'Otro',                   color:'#92400e' },
-    'error spinnaker':        { label:'Error Spinnaker',        color:'#be123c' },
+/* ── Catálogo de tipos ──────────────────────────────────────── */
+const TIPOS = {
+  'forzamiento de tiempos':{ label:'Forzamiento de Tiempos', color:'#ca8a04' },
+  'forzamiento de tiempo': { label:'Forzamiento de Tiempos', color:'#ca8a04' },
+  'apagado':               { label:'Apagado',                color:'#dc2626' },
+  'mejora de tiempo':      { label:'Mejora de Tiempos',      color:'#65a30d' },
+  'mejora de tiempos':     { label:'Mejora de Tiempos',      color:'#65a30d' },
+  'intermitencia':         { label:'Intermitencia',          color:'#2563eb' },
+  'error de comunicaci\u00f3n':{ label:'Error de Comunicaci\u00f3n', color:'#9333ea' },
+  'error de comunicacion': { label:'Error de Comunicaci\u00f3n', color:'#9333ea' },
+  'funcionamiento':        { label:'Funcionamiento',         color:'#4f46e5' },
+  'programa':              { label:'Programa',               color:'#db2777' },
+  'accidente':             { label:'Apoyo en Accidentes',    color:'#ea580c' },
+  'apoyo en accidente':    { label:'Apoyo en Accidentes',    color:'#ea580c' },
+  'vdt volumen':           { label:'Revisi\u00f3n VDT',      color:'#0d9488' },
+  'vdt':                   { label:'Revisi\u00f3n VDT',      color:'#0d9488' },
+  'falla':                 { label:'Falla',                  color:'#ec4899' },
+  'mantenimiento':         { label:'Mantenimiento',          color:'#f43f5e' },
+  'vandalismo':            { label:'Vandalismo',             color:'#f59e0b' },
+  'visita tecnica':        { label:'Visita T\u00e9cnica',    color:'#059669' },
+  'visita t\u00e9cnica':  { label:'Visita T\u00e9cnica',    color:'#059669' },
+  'chorros':               { label:'Chorros',                color:'#c026d3' },
+  'ramas':                 { label:'Ramas / Vegetaci\u00f3n',color:'#84cc16' },
+  'evento':                { label:'Evento',                 color:'#0ea5e9' },
+  'reorientacion':         { label:'Reorientaci\u00f3n',     color:'#10b981' },
+  'reorientaci\u00f3n':   { label:'Reorientaci\u00f3n',     color:'#10b981' },
+  'comunicacion':          { label:'Comunicaci\u00f3n',      color:'#14b8a6' },
+  'comunicaci\u00f3n':    { label:'Comunicaci\u00f3n',      color:'#14b8a6' },
+  'otros':                 { label:'Otros',                  color:'#8b5e3c' },
+  'otro':                  { label:'Otro',                   color:'#92400e' },
+  'error spinnaker':       { label:'Error Spinnaker',        color:'#be123c' },
+};
+const getTipo = raw => TIPOS[(raw||'').toLowerCase().trim()] || { label: raw || 'Otro', color: '#94a3b8' };
+
+const SEMAFOROS_X_CIUDAD = {
+  'SAN SALVADOR':226,'SAN MIGUEL':46,'SANTA ANA':17,'SANTA TECLA':16,
+  'SOYAPANGO':14,'CIUDAD MERLIOT':9,'ANTIGUO CUSCATLAN':8,'METAPAN':6,
+  'SONSONATE':6,'AHUACHAPAN':2,'APOPA':2,'QUEZALTEPEQUE':1,
+};
+const TOTAL_SEMAFOROS = Object.values(SEMAFOROS_X_CIUDAD).reduce((a,b)=>a+b,0);
+
+const MAP_KW = {
+  forzamiento:'forzamiento', apagado:'apagado', accidente:'accidente',
+  mejora:'mejora', intermitencia:'intermitencia', error:'error', vdt:'vdt',
+};
+
+/* ── Estado global ─────────────────────────────────────────── */
+let dataset      = [];
+let coordsMap    = {};
+let mapInstance  = null;
+let clusterLayer = null;
+let heatLayer    = null;
+let capaActual   = 'marcadores';
+let codigoFiltro = '';
+
+/* ── Escape HTML (XSS) ─────────────────────────────────────── */
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+/* ── Helpers ────────────────────────────────────────────────── */
+function parseSheetDate(str) {
+  const [d,m,y] = (str||'').split('/');
+  return y ? new Date(+y,+m-1,+d) : null;
+}
+function setActiveRangeBtn(id) {
+  ['mes','ant','3m','todo'].forEach(k =>
+    document.getElementById('rbtn-'+k)?.classList.toggle('active-range', k===id)
+  );
+}
+function toast(msg, dur=2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), dur);
+}
+
+/* ── Filtro central ─────────────────────────────────────────── */
+function getFilteredRows() {
+  if (!dataset.length) return [];
+  const tipo     = document.getElementById('map-tipo').value;
+  const ciudad   = document.getElementById('map-ciudad').value;
+  const fechaIni = document.getElementById('f-fecha-ini').value;
+  const fechaFin = document.getElementById('f-fecha-fin').value;
+  const dateIni  = fechaIni ? new Date(fechaIni+'T00:00:00') : null;
+  const dateFin  = fechaFin ? new Date(fechaFin+'T23:59:59') : null;
+  return dataset.filter(r => {
+    if (dateIni||dateFin) {
+      const d = parseSheetDate(r.fecha);
+      if (!d) return false;
+      if (dateIni && d<dateIni) return false;
+      if (dateFin && d>dateFin) return false;
+    }
+    if (tipo!=='todos' && MAP_KW[tipo] && !r.incidencia.toLowerCase().includes(MAP_KW[tipo])) return false;
+    if (ciudad!=='todas' && (r.ciudad||'').toLowerCase()!==ciudad.toLowerCase()) return false;
+    if (codigoFiltro && !r.codigo.toUpperCase().includes(codigoFiltro)) return false;
+    return true;
+  });
+}
+
+/* ── Controles de filtro ────────────────────────────────────── */
+function clearDates() {
+  document.getElementById('f-fecha-ini').value = '';
+  document.getElementById('f-fecha-fin').value = '';
+  setActiveRangeBtn(null);
+  aplicarFiltros();
+}
+function onManualDate() {
+  setActiveRangeBtn(null);
+  document.getElementById('range-warning').classList.remove('visible');
+  aplicarFiltros();
+}
+function setRange(rango) {
+  const hoy = new Date(), y = hoy.getFullYear(), m = hoy.getMonth();
+  const fmt = d => d.toISOString().slice(0,10);
+  const r = {
+    mes: { ini:new Date(y,m,1),   fin:new Date(y,m+1,0) },
+    ant: { ini:new Date(y,m-1,1), fin:new Date(y,m,0)   },
+    '3m':{ ini:new Date(y,m-2,1), fin:new Date(y,m+1,0) },
+    todo:{ ini:null, fin:null },
   };
-  const getTipo = raw => TIPOS[(raw||'').toLowerCase().trim()] || { label:raw||'Otro', color:'#94a3b8' };
+  const { ini, fin } = r[rango] ?? r['mes'];
+  document.getElementById('f-fecha-ini').value = ini ? fmt(ini) : '';
+  document.getElementById('f-fecha-fin').value = fin ? fmt(fin) : '';
+  document.getElementById('range-warning').classList.toggle('visible', rango==='todo');
+  setActiveRangeBtn(rango);
+  aplicarFiltros();
+}
+function onSearchCode(val) {
+  codigoFiltro = val.trim().toUpperCase();
+  document.getElementById('search-code-clear').classList.toggle('visible', val.length>0);
+  aplicarFiltros();
+}
+function clearSearchCode() {
+  document.getElementById('search-code').value = '';
+  codigoFiltro = '';
+  document.getElementById('search-code-clear').classList.remove('visible');
+  aplicarFiltros();
+}
+function limpiarFiltros() {
+  document.getElementById('map-tipo').value   = 'todos';
+  document.getElementById('map-ciudad').value = 'todas';
+  document.getElementById('range-warning').classList.remove('visible');
+  clearSearchCode();
+  setRange('mes');
+}
+function setLayer(capa) {
+  capaActual = capa;
+  document.getElementById('btn-marcadores').classList.toggle('active', capa==='marcadores');
+  document.getElementById('btn-heatmap').classList.toggle('active', capa==='heatmap');
+  aplicarFiltros();
+}
 
-  /* ─── Conteo oficial de semáforos por ciudad (PDF 2024) ──────── */
-  const SEMAFOROS_X_CIUDAD = {
-    'SAN SALVADOR':     226, 'SAN MIGUEL':    46,
-    'SANTA ANA':         17, 'SANTA TECLA':   16,
-    'SOYAPANGO':         14, 'CIUDAD MERLIOT': 9,
-    'ANTIGUO CUSCATLAN':  8, 'METAPAN':        6,
-    'SONSONATE':          6, 'AHUACHAPAN':     2,
-    'APOPA':              2, 'QUEZALTEPEQUE':  1,
-  };
-  const TOTAL_SEMAFOROS = Object.values(SEMAFOROS_X_CIUDAD).reduce((a,b) => a+b, 0); // 353
+/* ── Caché ──────────────────────────────────────────────────── */
+function cacheGuardar(data) {
+  try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ts:Date.now(), data})); } catch(e) {}
+}
+function cacheLeer() {
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const {ts, data} = JSON.parse(raw);
+    if (Date.now()-ts > CACHE_TTL) { sessionStorage.removeItem(CACHE_KEY); return null; }
+    return data;
+  } catch(e) { return null; }
+}
 
-  /* ─── Estado global ──────────────────────────────────────────── */
-  let dataset      = [];
-  let coordsMap    = {};
-  let mapInstance  = null;
-  let clusterLayer = null;   // capa de clustering
-  let heatLayer    = null;   // capa de heatmap
-  let capaActual   = 'marcadores'; // 'marcadores' | 'heatmap'
-  let codigoFiltro = '';
-
-  /* ─── Filtro central: única fuente de verdad ─────────────────────
-     Mapa y Resumen llaman aquí — garantiza filtros siempre sincronizados.
-  ─────────────────────────────────────────────────────────────── */
-  const MAP_KW = {
-    forzamiento:'forzamiento', apagado:'apagado', accidente:'accidente',
-    mejora:'mejora', intermitencia:'intermitencia', error:'error', vdt:'vdt',
-  };
-
-  function getFilteredRows() {
-    if (!dataset.length) return [];
-    const tipo     = document.getElementById('map-tipo').value;
-    const ciudad   = document.getElementById('map-ciudad').value;
-    const fechaIni = document.getElementById('f-fecha-ini').value;
-    const fechaFin = document.getElementById('f-fecha-fin').value;
-    const dateIni  = fechaIni ? new Date(fechaIni + 'T00:00:00') : null;
-    const dateFin  = fechaFin ? new Date(fechaFin + 'T23:59:59') : null;
-    return dataset.filter(r => {
-      if (dateIni || dateFin) {
-        const d = parseSheetDate(r.fecha);
-        if (!d) return false;
-        if (dateIni && d < dateIni) return false;
-        if (dateFin && d > dateFin) return false;
-      }
-      if (tipo !== 'todos' && MAP_KW[tipo] && !r.incidencia.toLowerCase().includes(MAP_KW[tipo])) return false;
-      if (ciudad !== 'todas' && (r.ciudad||'').toLowerCase() !== ciudad.toLowerCase()) return false;
-      if (codigoFiltro && !r.codigo.toUpperCase().includes(codigoFiltro)) return false;
-      return true;
+/* ── Carga de semáforos (coordenadas) ───────────────────────── */
+async function loadSemaforos() {
+  try {
+    const url   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SEMAFOROS_NAME)}`;
+    const res   = await fetch(url);
+    const text  = await res.text();
+    const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/);
+    if (!match) return;
+    const json = JSON.parse(match[1]);
+    coordsMap = {};
+    (json.table.rows||[]).forEach(row => {
+      const c   = row.c;
+      const get = i => (c[i]?.v != null) ? String(c[i].f||c[i].v).trim() : '';
+      const id  = get(0);
+      const lat = parseFloat(get(2));
+      const lng = parseFloat(get(3));
+      if (!id || isNaN(lat) || isNaN(lng) || lat===0) return;
+      coordsMap[id.toUpperCase()] = { lat, lng: lng>0 ? -lng : lng, zona: get(7) };
     });
+  } catch(err) {
+    console.warn('Semáforos no disponibles:', err.message);
   }
+}
 
-  /* Devuelve la pestaña activa: 'mapa' | 'resumen' */
-  function tabActiva() {
-    const btn = document.querySelector('.tab-nav.active');
-    if (!btn) return 'mapa';
-    return btn.id.includes('resumen') ? 'resumen' : 'mapa';
-  }
-
-  /* ─── Helpers ────────────────────────────────────────────────── */
-  function parseSheetDate(str) {
-    const [d, m, y] = (str||'').split('/');
-    return y ? new Date(+y, +m-1, +d) : null;
-  }
-  function setActiveRangeBtn(id) {
-    ['mes','ant','3m','todo'].forEach(k =>
-      document.getElementById('rbtn-'+k)?.classList.toggle('active-range', k===id)
-    );
-  }
-  function toast(msg, dur=2500) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), dur);
-  }
-
-  /* ─── Filtros de fecha y hora ────────────────────────────────── */
-  function clearDates() {
-    document.getElementById('f-fecha-ini').value = '';
-    document.getElementById('f-fecha-fin').value = '';
-    setActiveRangeBtn(null);
-    aplicarFiltroMapa();
-  }
-  function onManualDate() {
-    setActiveRangeBtn(null);
-    document.getElementById('range-warning').classList.remove('visible');
-    aplicarFiltroMapa();
-  }
-  function setRange(rango) {
-    const hoy = new Date(), y = hoy.getFullYear(), m = hoy.getMonth();
-    const fmt = d => d.toISOString().slice(0,10);
-    const r = {
-      mes:  { ini:new Date(y,m,1),     fin:new Date(y,m+1,0) },
-      ant:  { ini:new Date(y,m-1,1),   fin:new Date(y,m,0)   },
-      '3m': { ini:new Date(y,m-2,1),   fin:new Date(y,m+1,0) },
-      todo: { ini:null, fin:null },
-    };
-    const { ini, fin } = r[rango] ?? r['3m'];
-    document.getElementById('f-fecha-ini').value = ini ? fmt(ini) : '';
-    document.getElementById('f-fecha-fin').value = fin ? fmt(fin) : '';
-    document.getElementById('range-warning').classList.toggle('visible', rango==='todo');
-    setActiveRangeBtn(rango);
-    aplicarFiltroMapa();
-  }
-
-  /* ─── Buscador por código de semáforo ──────────────────────── */
-  function onSearchCode(val) {
-    codigoFiltro = val.trim().toUpperCase();
-    document.getElementById('search-code-clear').classList.toggle('visible', val.length > 0);
-    aplicarFiltroMapa();
-  }
-  function clearSearchCode() {
-    document.getElementById('search-code').value = '';
-    codigoFiltro = '';
-    document.getElementById('search-code-clear').classList.remove('visible');
-    aplicarFiltroMapa();
-  }
-
-  /* ─── Limpiar todos los filtros ──────────────────────────────── */
-  function limpiarFiltros() {
-    document.getElementById('map-tipo').value = 'todos';
-    document.getElementById('map-ciudad').value = 'todas';
-    document.getElementById('range-warning').classList.remove('visible');
-    clearSearchCode();
-    setRange('mes');
-  }
-
-  /* ─── Toggle de capa: marcadores ↔ heatmap ───────────────────── */
-  function setLayer(capa) {
-    capaActual = capa;
-    document.getElementById('btn-marcadores').classList.toggle('active', capa==='marcadores');
-    document.getElementById('btn-heatmap').classList.toggle('active', capa==='heatmap');
-    aplicarFiltroMapa();
-  }
-
-  /* ─── Captura del mapa ───────────────────────────────────────── */
-  /* Captura el mapa como PNG y lo descarga automáticamente.
-     html2canvas renderiza el contenedor de Leaflet a un canvas
-     y lo convierte en imagen con resolución doble (scale:2). */
-  function capturarMapa() {
-    const btn = document.querySelector('.capture-btn');
-    btn.textContent = '⏳ Capturando...';
-    btn.disabled = true;
-
-    const mapEl = document.getElementById('map-container');
-    const ahora = new Date();
-    const fecha = ahora.toLocaleDateString('es-SV').replace(/\//g, '-');
-    const hora  = ahora.toLocaleTimeString('es-SV', { hour:'2-digit', minute:'2-digit' })
-                       .replace(/:/g, '-').replace(/\s/g, '');
-    const ts    = fecha + '_' + hora;
-
-    html2canvas(mapEl, {
-      useCORS:  true,   // permite tiles de CartoDB
-      allowTaint: true,
-      scale:    2,      // resolución doble para mayor nitidez
-      logging:  false,
-    }).then(canvas => {
-      const link    = document.createElement('a');
-      link.download = 'CCM_Mapa_' + ts + '.png';
-      link.href     = canvas.toDataURL('image/png');
-      link.click();
-      toast('✅ Imagen descargada: CCM_Mapa_' + ts + '.png');
-    }).catch(err => {
-      console.error('Error al capturar:', err);
-      toast('❌ No se pudo capturar. Use la captura de pantalla del dispositivo.');
-    }).finally(() => {
-      btn.innerHTML = '&#128247; Capturar mapa';
-      btn.disabled  = false;
-    });
-  }
-
-  /* ─── Caché con sessionStorage (10 minutos) ─────────────────────
-     Evita llamadas repetidas a GViz si el usuario recarga la página.
-     La clave incluye la URL para invalidar si cambia el Sheet.
-  ─────────────────────────────────────────────────────────────── */
-  const CACHE_TTL = 10 * 60 * 1000; // 10 minutos en ms
-  const CACHE_KEY = 'ccm_mapa_dataset_v1';
-
-  function cacheGuardar(data) {
-    try {
-      sessionStorage.setItem(CACHE_KEY, JSON.stringify({
-        ts: Date.now(),
-        data,
-      }));
-    } catch(e) { /* sessionStorage lleno o deshabilitado */ }
-  }
-
-  function cacheLeer() {
-    try {
-      const raw = sessionStorage.getItem(CACHE_KEY);
-      if (!raw) return null;
-      const { ts, data } = JSON.parse(raw);
-      if (Date.now() - ts > CACHE_TTL) { sessionStorage.removeItem(CACHE_KEY); return null; }
-      return data;
-    } catch(e) { return null; }
-  }
-
-  /* ─── Carga del listado de semáforos ────────────────────────── */
-  async function loadSemaforos() {
-    try {
-      const url   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SEMAFOROS_NAME)}`;
+/* ── Carga de datos principal ───────────────────────────────── */
+async function loadData() {
+  document.getElementById('update-note').textContent = 'ACTUALIZANDO...';
+  try {
+    const cached = cacheLeer();
+    if (cached) {
+      dataset = cached;
+    } else {
+      const url   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
       const res   = await fetch(url);
       const text  = await res.text();
       const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/);
-      if (!match) return;
+      if (!match) throw new Error('Respuesta GViz inesperada');
       const json = JSON.parse(match[1]);
-      coordsMap  = {};
-      (json.table.rows||[]).forEach(row => {
+      dataset = (json.table.rows||[]).map(row => {
         const c   = row.c;
         const get = i => (c[i]?.v != null) ? String(c[i].f||c[i].v).trim() : '';
-        const id     = get(0);
-        const ciudad = get(7);
-        const lat    = parseFloat(get(2));
-        const lng    = parseFloat(get(3));
-        if (!id || isNaN(lat) || isNaN(lng) || lat===0) return;
-        coordsMap[id.toUpperCase()] = { lat, lng: lng>0 ? -lng : lng, zona:ciudad };
-      });
-    } catch(err) {
-      console.warn('Listado de semáforos no disponible:', err.message);
+        const codigo = get(2);
+        const ref    = coordsMap[codigo?.toUpperCase()] || {};
+        const latRaw = get(8) || ref.lat?.toString() || '';
+        const lngRaw = get(9) || ref.lng?.toString() || '';
+        const lngNum = parseFloat(lngRaw);
+        const lngFix = (!isNaN(lngNum) && lngNum>0) ? -lngNum : lngNum;
+        return {
+          fecha:     get(0), hora: get(1), codigo,
+          reporte:   get(3), incidencia: get(4),
+          dir:       get(6), ciudad: get(7) || ref.zona || '',
+          latitud:   latRaw ? parseFloat(latRaw).toString() : '',
+          longitud:  latRaw ? lngFix.toString() : '',
+          operador:  get(10),
+        };
+      }).filter(r => r.fecha || r.codigo);
+      cacheGuardar(dataset);
     }
-  }
 
-  /* ─── Carga de P. Semaforico con caché ──────────────────────────
-     1. Intenta leer del sessionStorage (caché de 10 min)
-     2. Si no hay caché, hace fetch a GViz
-     3. loadSemaforos() se ejecuta en diferido (no bloquea el mapa)
-  ─────────────────────────────────────────────────────────────── */
-  async function loadData() {
-    document.getElementById('update-note').textContent = 'ACTUALIZANDO...';
-    try {
-      // ── Intentar caché primero
-      const cached = cacheLeer();
-      if (cached) {
-        dataset = cached;
-      } else {
-        // ── Fetch real a GViz
-        const url   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
-        const res   = await fetch(url);
-        const text  = await res.text();
-        const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/);
-        if (!match) throw new Error('Formato de respuesta inesperado.');
-        const json  = JSON.parse(match[1]);
-        dataset = (json.table.rows||[]).map(row => {
-          const c   = row.c;
-          const get = i => (c[i]?.v != null) ? String(c[i].f||c[i].v).trim() : '';
-          const codigo = get(2);
-          // coordsMap puede estar vacío en primera carga; se rellena tras loadSemaforos
-          const ref    = coordsMap[codigo?.toUpperCase()] || {};
-          const latRaw = get(8) || ref.lat?.toString() || '';
-          const lngRaw = get(9) || ref.lng?.toString() || '';
-          const lngNum = parseFloat(lngRaw);
-          const lngFix = (!isNaN(lngNum) && lngNum>0) ? -lngNum : lngNum;
-          return {
-            fecha:      get(0), hora: get(1), codigo,
-            reporte:    get(3), incidencia: get(4),
-            dir:        get(6), ciudad: get(7) || ref.zona || '',
-            latitud:    latRaw ? parseFloat(latRaw).toString() : '',
-            longitud:   latRaw ? lngFix.toString() : '',
-            operador:   get(10),
-          };
-        }).filter(r => r.fecha || r.codigo);
-        // Guardar en caché para las próximas 10 min
-        cacheGuardar(dataset);
-      }
+    // Poblar ciudades
+    const ciudades = [...new Set(dataset.map(r=>r.ciudad).filter(Boolean))].sort();
+    document.getElementById('map-ciudad').innerHTML =
+      '<option value="todas">TODAS LAS CIUDADES</option>' +
+      ciudades.map(c => `<option value="${c}" ${c==='San Salvador'?'selected':''}>${c}</option>`).join('');
 
-      // Poblar selector de ciudades con San Salvador por defecto
-      const ciudades = [...new Set(dataset.map(r=>r.ciudad).filter(Boolean))].sort();
-      document.getElementById('map-ciudad').innerHTML =
-        '<option value="todas">TODAS LAS CIUDADES</option>' +
-        ciudades.map(c => `<option value="${c}" ${c==='San Salvador'?'selected':''}>${c}</option>`).join('');
+    const hora = new Date().toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('update-note').textContent = `${hora} · ${dataset.length} registros${cached?' (cach\u00e9)':''}`;
+    document.getElementById('live-label').textContent  = `Actualizado ${hora}`;
 
-      const hora = new Date().toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit'});
-      const desdCache = !!cached ? ' (caché)' : '';
-      document.getElementById('update-note').textContent = `${hora} · ${dataset.length} registros${desdCache}`;
-      document.getElementById('live-label').textContent  = `Actualizado ${hora}`;
+    initMap();
+    setRange('mes');
 
-      // ── Render inicial del mapa (inmediato)
-      initMap();
-      setRange('mes');
-      // Si la pestaña resumen estaba activa al recargar, actualizarla
-      const tab = tabActiva();
-      if (tab === 'resumen') renderResumen();
-
-      // ── Cargar listado de semáforos en diferido (no bloquea el mapa)
-      // Se usa para los puntos grises y coordsMap; el mapa ya funcionó sin él
-      if (!cached) {
-        loadSemaforos().then(() => {
-          // Volver a aplicar filtro para que los puntos grises aparezcan
-          aplicarFiltroMapa();
-        });
-      }
-
-    } catch(err) {
-      document.getElementById('update-note').textContent = 'Error al cargar — verifique la conexión';
-      document.getElementById('live-label').textContent  = 'Sin conexión';
-      console.error(err);
+    if (!cached) {
+      loadSemaforos().then(() => aplicarFiltros());
     }
+  } catch(err) {
+    document.getElementById('update-note').textContent = 'Error al cargar \u2014 verifique la conexi\u00f3n';
+    document.getElementById('live-label').textContent  = 'Sin conexi\u00f3n';
+    console.error(err);
   }
+}
 
-  /* ─── Inicialización del mapa ────────────────────────────────── */
-  function initMap() {
-    if (mapInstance) return;
-    mapInstance = L.map('map-container').setView([13.6894,-89.1872], 8);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution:'&copy; <a href="https://www.openstreetmap.org">OSM</a> &amp; CARTO',
-      subdomains:'abcd', maxZoom:19, minZoom:5,
+function refrescarDatos() {
+  sessionStorage.removeItem(CACHE_KEY);
+  loadData();
+}
+
+/* ── Inicializar mapa Leaflet ───────────────────────────────── */
+function initMap() {
+  if (mapInstance) return;
+  mapInstance = L.map('map-container', { zoomControl:true }).setView([13.6894,-89.1872], 8);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution:'&copy; <a href="https://www.openstreetmap.org">OSM</a> &amp; CARTO',
+    subdomains:'abcd', maxZoom:19, minZoom:5,
+  }).addTo(mapInstance);
+
+  // Leyenda
+  const legend = L.control({ position:'bottomleft' });
+  legend.onAdd = () => {
+    const div = L.DomUtil.create('div','map-legend-control');
+    div.innerHTML = `
+      <h4>Tipos de incidencia</h4>
+      <div class='leg-item'><div class='leg-dot' style='background:#ca8a04'></div>Forzamiento de Tiempos</div>
+      <div class='leg-item'><div class='leg-dot' style='background:#dc2626'></div>Apagado</div>
+      <div class='leg-item'><div class='leg-dot' style='background:#65a30d'></div>Mejora de Tiempos</div>
+      <div class='leg-item'><div class='leg-dot' style='background:#2563eb'></div>Intermitencia</div>
+      <div class='leg-item'><div class='leg-dot' style='background:#9333ea'></div>Error de Comunicaci\u00f3n</div>
+      <div class='leg-item'><div class='leg-dot' style='background:#ea580c'></div>Apoyo en Accidentes</div>
+      <div class='leg-item'><div class='leg-dot' style='background:#0d9488'></div>Revisi\u00f3n VDT</div>
+      <div class='leg-item'><div class='leg-dot' style='background:#94a3b8'></div>Otro tipo</div>
+      <div class='leg-item'><div class='leg-dot' style='background:#dc2626;box-shadow:0 0 0 3px rgba(239,68,68,.3)'></div>Cr\u00edtico (pulso)</div>`;
+    L.DomEvent.disableClickPropagation(div);
+    return div;
+  };
+  legend.addTo(mapInstance);
+}
+
+/* ── KPI cards ──────────────────────────────────────────────── */
+function renderStats(rows, grupos, ciudad) {
+  const zonas = new Set(rows.map(r=>r.ciudad).filter(Boolean));
+  document.getElementById('stat-zonas').textContent     = zonas.size || '\u2014';
+  document.getElementById('stat-zonas-sub').textContent = zonas.size===1 ? [...zonas][0] : `${zonas.size} ciudades`;
+  const tot = ciudad!=='todas' ? (SEMAFOROS_X_CIUDAD[ciudad.toUpperCase()]||0) : TOTAL_SEMAFOROS;
+  document.getElementById('stat-total-sem').textContent     = tot || '\u2014';
+  document.getElementById('stat-total-sem-sub').textContent = tot>0 ? 'seg\u00fan listado oficial' : 'ciudad no registrada';
+  const nAct = Object.keys(grupos).length;
+  document.getElementById('stat-activos').textContent     = nAct || '\u2014';
+  document.getElementById('stat-activos-sub').textContent = tot>0 && nAct>0 ? `${Math.round(nAct/tot*100)}% del total` : 'en el per\u00edodo';
+}
+
+/* ── Render principal ───────────────────────────────────────── */
+function aplicarFiltros() {
+  if (!mapInstance) return;
+
+  const ciudad  = document.getElementById('map-ciudad').value;
+  const rowsAll = getFilteredRows();
+
+  // Solo los que tienen coordenadas válidas van al mapa
+  const rows = rowsAll.filter(r => {
+    const lat = parseFloat(r.latitud);
+    const lng = parseFloat(r.longitud);
+    return !isNaN(lat) && !isNaN(lng) && lat!==0 && lng!==0;
+  });
+  const sinCoords = rowsAll.length - rows.length;
+
+  document.getElementById('map-status-text').innerHTML =
+    rows.length===0
+      ? 'No hay registros con coordenadas v\u00e1lidas para los filtros seleccionados.'
+      : `Mostrando ${rows.length} registros` +
+        (sinCoords>0 ? ` &nbsp;&middot;&nbsp; <span style="color:#f59e0b;font-weight:600">${sinCoords} sin coordenadas</span>` : '');
+
+  // Limpiar capas
+  if (clusterLayer) { mapInstance.removeLayer(clusterLayer); clusterLayer = null; }
+  if (heatLayer)    { mapInstance.removeLayer(heatLayer);    heatLayer    = null; }
+
+  // Agrupar por código
+  const grupos = {};
+  rows.forEach(r => {
+    const key = (r.codigo||'').trim().toUpperCase()
+                || `${parseFloat(r.latitud).toFixed(5)},${parseFloat(r.longitud).toFixed(5)}`;
+    if (!grupos[key]) {
+      grupos[key] = { codigo:r.codigo, dir:r.dir, ciudad:r.ciudad,
+                      registros:[], lat:parseFloat(r.latitud), lng:parseFloat(r.longitud) };
+    }
+    grupos[key].registros.push(r);
+  });
+
+  renderStats(rows, grupos, ciudad);
+
+  const bounds = [];
+
+  /* ── HEATMAP ── */
+  if (capaActual === 'heatmap') {
+    const puntos = Object.values(grupos).map(g => [g.lat, g.lng, g.registros.length]);
+    heatLayer = L.heatLayer(puntos, {
+      radius:25, blur:15, maxZoom:14,
+      gradient:{ 0.2:'#2563eb', 0.5:'#f59e0b', 0.8:'#ef4444', 1.0:'#7f1d1d' },
     }).addTo(mapInstance);
+    Object.values(grupos).forEach(g => bounds.push([g.lat,g.lng]));
 
-    // ── Leyenda como control Leaflet (esquina inferior izquierda)
-    const legend = L.control({ position: 'bottomleft' });
-    legend.onAdd = () => {
-      const div = L.DomUtil.create('div', 'map-legend-control');
-      div.innerHTML = `
-        <h4>Tipos de incidencia</h4>
-        <div class='leg-item'><div class='leg-dot' style='background:#ca8a04'></div>Forzamiento de Tiempos</div>
-        <div class='leg-item'><div class='leg-dot' style='background:#dc2626'></div>Apagado</div>
-        <div class='leg-item'><div class='leg-dot' style='background:#65a30d'></div>Mejora de Tiempos</div>
-        <div class='leg-item'><div class='leg-dot' style='background:#2563eb'></div>Intermitencia</div>
-        <div class='leg-item'><div class='leg-dot' style='background:#9333ea'></div>Error de Comunicación</div>
-        <div class='leg-item'><div class='leg-dot' style='background:#ea580c'></div>Apoyo en Accidentes</div>
-        <div class='leg-item'><div class='leg-dot' style='background:#0d9488'></div>Revisión VDT</div>
-        <div class='leg-item'><div class='leg-dot' style='background:#94a3b8'></div>Otro tipo</div>
-        <div class='leg-item'><div class='leg-dot' style='background:#dc2626;box-shadow:0 0 0 3px rgba(239,68,68,.3)'></div>Crítico</div>
-      `;
-      L.DomEvent.disableClickPropagation(div);
-      return div;
-    };
-    legend.addTo(mapInstance);
-  }
+  /* ── MARCADORES ── */
+  } else {
+    // Cluster con número de incidencias visible desde lejos
+    clusterLayer = L.markerClusterGroup({
+      maxClusterRadius: 60,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      iconCreateFunction: cluster => {
+        const count = cluster.getChildCount();
+        const size  = count<10 ? 36 : count<50 ? 42 : 50;
+        return L.divIcon({
+          html:`<div style="
+            width:${size}px;height:${size}px;border-radius:50%;
+            background:#0033a0;border:3px solid #fff;
+            display:flex;align-items:center;justify-content:center;
+            font-family:'JetBrains Mono',monospace;
+            font-size:${count<100?13:11}px;font-weight:800;color:#fff;
+            box-shadow:0 3px 10px rgba(0,51,160,.5)">${count}</div>`,
+          className:'custom-marker', iconSize:[size,size], iconAnchor:[size/2,size/2],
+        });
+      },
+    });
 
-  /* ─── Cards de resumen ───────────────────────────────────────── */
-  function renderStats(rows, grupos, ciudad) {
-    // Card 1: Zonas únicas
-    const zonas = new Set(rows.map(r=>r.ciudad).filter(Boolean));
-    document.getElementById('stat-zonas').textContent = zonas.size || '—';
-    document.getElementById('stat-zonas-sub').textContent =
-      zonas.size===1 ? [...zonas][0] : `${zonas.size} ciudades en el filtro`;
-
-    // Card 2: Semáforos en zona según listado oficial
-    let totalListado = ciudad!=='todas'
-      ? (SEMAFOROS_X_CIUDAD[ciudad.toUpperCase()] || 0)
-      : TOTAL_SEMAFOROS;
-    document.getElementById('stat-total-sem').textContent = totalListado || '—';
-    document.getElementById('stat-total-sem-sub').textContent =
-      totalListado>0 ? 'según listado oficial' : 'ciudad no registrada';
-
-    // Card 3: Semáforos únicos con incidencias + porcentaje
-    const numActivos = Object.keys(grupos).length;
-    document.getElementById('stat-activos').textContent = numActivos || '—';
-    if (totalListado>0 && numActivos>0) {
-      const pct = Math.round((numActivos/totalListado)*100);
-      document.getElementById('stat-activos-sub').textContent = `${pct}% del total de la zona`;
-    } else {
-      document.getElementById('stat-activos-sub').textContent = 'en el período seleccionado';
+    // Puntos grises (sin incidencias) — solo si hay ciudad seleccionada
+    if (ciudad!=='todas' && Object.keys(coordsMap).length>0) {
+      const activos = new Set(Object.keys(grupos));
+      const iconGris = L.divIcon({
+        html:`<div style="width:8px;height:8px;border-radius:50%;background:#cbd5e1;border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.15)"></div>`,
+        className:'custom-marker', iconSize:[8,8], iconAnchor:[4,4],
+      });
+      Object.entries(coordsMap).forEach(([id,s]) => {
+        if (activos.has(id)) return;
+        if ((s.zona||'').toLowerCase()!==ciudad.toLowerCase()) return;
+        L.marker([s.lat,s.lng],{icon:iconGris})
+         .bindTooltip(`${id} \u2014 Sin incidencias en el per\u00edodo`,{direction:'top',offset:[0,-4]})
+         .addTo(clusterLayer);
+      });
     }
 
-  }
+    // Marcadores activos
+    Object.values(grupos).forEach(grupo => {
+      const { lat, lng, registros } = grupo;
+      const total = registros.length;
 
-  /* ─── Render principal de marcadores y heatmap ───────────────── */
-  function aplicarFiltroMapa() {
-    const tab = tabActiva();
-    if (tab === 'resumen') { renderResumen(); return; }
-    if (!mapInstance) return;
-    const ciudad  = document.getElementById('map-ciudad').value;
-    const rowsAll = getFilteredRows();
-
-    // Separar registros con y sin coordenadas válidas
-    const rows = rowsAll.filter(r => {
-      const lat = parseFloat(r.latitud);
-      const lng = parseFloat(r.longitud);
-      return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
-    });
-    const sinCoords = rowsAll.length - rows.length;
-
-    const totalConCoords = rows.length;
-    const statusBase = totalConCoords === 0
-      ? 'No hay registros con coordenadas válidas para los filtros seleccionados.'
-      : `Mostrando ${totalConCoords} registros con coordenadas en el período seleccionado.`;
-    const statusExtra = sinCoords > 0
-      ? ` · <span style="color:#f59e0b;font-weight:600">${sinCoords} sin coordenadas</span>`
-      : '';
-    document.getElementById('map-status-text').innerHTML = statusBase + statusExtra;
-
-    // Limpiar capas anteriores
-    if (clusterLayer) { mapInstance.removeLayer(clusterLayer); clusterLayer = null; }
-    if (heatLayer)    { mapInstance.removeLayer(heatLayer);    heatLayer    = null; }
-
-    // Agrupar por código
-    const grupos = {};
-    rows.forEach(r => {
-      const key = r.codigo.trim().toUpperCase()
-                  || `${parseFloat(r.latitud).toFixed(5)},${parseFloat(r.longitud).toFixed(5)}`;
-      if (!grupos[key]) {
-        grupos[key] = { codigo: r.codigo, dir: r.dir, ciudad: r.ciudad,
-                        registros: [], lat: parseFloat(r.latitud), lng: parseFloat(r.longitud) };
-      }
-      grupos[key].registros.push(r);
-    });
-
-    // Actualizar cards de resumen
-    renderStats(rows, grupos, ciudad);
-
-    const bounds = [];
-
-    if (capaActual === 'heatmap') {
-      // ── Heatmap: intensidad proporcional a la cantidad de incidencias
-      const puntos = Object.values(grupos).map(g => [g.lat, g.lng, g.registros.length]);
-      heatLayer = L.heatLayer(puntos, {
-        radius: 25, blur: 15, maxZoom: 14,
-        gradient: { 0.2:'#2563eb', 0.5:'#f59e0b', 0.8:'#ef4444', 1.0:'#7f1d1d' },
-      }).addTo(mapInstance);
-      Object.values(grupos).forEach(g => bounds.push([g.lat, g.lng]));
-
-    } else {
-      // ── Marcadores con clustering
-      clusterLayer = L.markerClusterGroup({
-        maxClusterRadius: 40,
-        spiderfyOnMaxZoom: true,
-        showCoverageOnHover: false,
-        iconCreateFunction: cluster => {
-          const count = cluster.getChildCount();
-          return L.divIcon({
-            html: `<div style="width:34px;height:34px;border-radius:50%;background:#0033a0;
-                               border:2.5px solid #fff;display:flex;align-items:center;
-                               justify-content:center;font-family:'JetBrains Mono',monospace;
-                               font-size:11px;font-weight:800;color:#fff;
-                               box-shadow:0 2px 8px rgba(0,51,160,.4)">${count}</div>`,
-            className:'custom-marker', iconSize:[34,34], iconAnchor:[17,17],
-          });
-        },
+      // Conteo por tipo
+      const conteo = {};
+      registros.forEach(r => {
+        const lbl = getTipo(r.incidencia).label;
+        conteo[lbl] = (conteo[lbl]||0) + 1;
       });
 
-      // ── Puntos grises: semáforos SIN incidencias en el período
-      // Se agregan al clusterLayer ya creado (debe ir antes de los marcadores activos)
-      if (ciudad !== 'todas' && Object.keys(coordsMap).length > 0) {
-        const codigosActivos = new Set(Object.keys(grupos));
-        const iconGris = L.divIcon({
-          html: `<div style="width:8px;height:8px;border-radius:50%;background:#cbd5e1;
-                             border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.15)"></div>`,
-          className: 'custom-marker', iconSize:[8,8], iconAnchor:[4,4],
-        });
-        Object.entries(coordsMap).forEach(([id, s]) => {
-          if (codigosActivos.has(id)) return;
-          if ((s.zona||'').toLowerCase() !== ciudad.toLowerCase()) return;
-          L.marker([s.lat, s.lng], { icon: iconGris })
-           .bindTooltip(`${id} — Sin incidencias en el período`, { direction:'top', offset:[0,-4] })
-           .addTo(clusterLayer);
-        });
-      }
+      // Tipo predominante → color del círculo
+      const tipoPrincipal = Object.entries(conteo).sort((a,b)=>b[1]-a[1])[0][0];
+      const color = Object.values(TIPOS).find(t=>t.label===tipoPrincipal)?.color || '#94a3b8';
 
-      Object.values(grupos).forEach(grupo => {
-        const { lat, lng, registros } = grupo;
-        const total = registros.length;
+      const isCritical = registros.some(r =>
+        r.incidencia.toLowerCase().includes('apagado') ||
+        r.incidencia.toLowerCase().includes('accidente')
+      );
 
-        // Conteo por tipo (col E)
-        const conteo = {};
-        registros.forEach(r => { const lbl=getTipo(r.incidencia).label; conteo[lbl]=(conteo[lbl]||0)+1; });
+      // Tamaño proporcional a cantidad
+      const size = total===1 ? 30 : total<5 ? 34 : total<15 ? 38 : 44;
+      const half = Math.round(size/2);
 
-        // Tipo predominante → color del marcador
-        const tipoPrincipal = Object.entries(conteo).sort((a,b)=>b[1]-a[1])[0][0];
-        const color = Object.values(TIPOS).find(t=>t.label===tipoPrincipal)?.color || '#94a3b8';
+      // Badge con número SIEMPRE visible (no solo cuando >1)
+      const badgeHtml = `<div style="
+        position:absolute;top:-6px;right:-6px;
+        background:#0033a0;color:#fff;
+        border-radius:20px;font-size:8px;font-weight:800;
+        padding:1px 5px;min-width:16px;text-align:center;
+        border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3);
+        font-family:'JetBrains Mono',monospace">${total}</div>`;
 
-        const isCritical = registros.some(r =>
-          r.incidencia.toLowerCase().includes('apagado') ||
-          r.incidencia.toLowerCase().includes('accidente')
-        );
+      const criticalClass = isCritical ? 'marker-critical' : '';
+      const svgSize = Math.round(size*.52);
+      const iconHtml = `
+        <div style="position:relative;width:${size}px;height:${size}px">
+          <div class="${criticalClass}" style="
+            width:${size}px;height:${size}px;background:${color};
+            border-radius:50%;border:3px solid #fff;
+            box-shadow:0 3px 8px rgba(0,0,0,.3);
+            display:flex;align-items:center;justify-content:center;">
+            <svg width="${svgSize}" height="${Math.round(svgSize*1.25)}" viewBox="0 0 16 20" fill="none">
+              <rect x="3" y="1" width="10" height="18" rx="2" fill="rgba(0,0,0,.8)"/>
+              <circle cx="8" cy="5"  r="2.4" fill="${isCritical?'#ff2222':'#ff6b6b'}"/>
+              <circle cx="8" cy="10" r="2.4" fill="#FFD100"/>
+              <circle cx="8" cy="15" r="2.4" fill="#2ecc71"/>
+            </svg>
+          </div>
+          ${badgeHtml}
+        </div>`;
 
-        // MEJORA: tamaño del marcador proporcional a la cantidad
-        const size = total===1 ? 26 : total<5 ? 28 : total<15 ? 32 : 36;
+      const icon = L.divIcon({
+        html: iconHtml,
+        iconSize: [size, size],
+        iconAnchor: [half, half],
+        className: 'custom-marker',
+      });
 
-        const badgeHtml = total>1
-          ? `<div style="position:absolute;top:-5px;right:-5px;background:#0033a0;color:#fff;
-                         border-radius:20px;font-size:7px;font-weight:800;padding:1px 4px;
-                         min-width:14px;text-align:center;border:1.5px solid #fff">${total}</div>`
-          : '';
-
-        // Ícono: círculo con semáforo SVG centrado
-        // iconAnchor=[half,half] alinea el centro del círculo
-        // exactamente con las coordenadas del semáforo
-        // Críticos: clase CSS ring-pulse para animación de anillo rojo
-        const criticalClass = isCritical ? 'marker-critical' : '';
-        const iconHtml = `
-          <div style="position:relative;width:${size}px;height:${size}px">
-            <div class="${criticalClass}"
-                 style="width:${size}px;height:${size}px;background:${color};
-                        border-radius:50%;border:2.5px solid #fff;
-                        box-shadow:0 2px 6px rgba(0,0,0,.25);
-                        display:flex;align-items:center;justify-content:center;">
-              <svg width="${Math.round(size*.5)}" height="${Math.round(size*.62)}"
-                   viewBox="0 0 16 20" fill="none">
-                <rect x="3" y="1" width="10" height="18" rx="2" fill="rgba(0,0,0,.75)"/>
-                <circle cx="8" cy="5"  r="2.2" fill="${isCritical?'#ff4444':'#ff6b6b'}"/>
-                <circle cx="8" cy="10" r="2.2" fill="#FFD100"/>
-                <circle cx="8" cy="15" r="2.2" fill="#2ecc71"/>
-              </svg>
-            </div>
-            ${badgeHtml}
-          </div>`;
-
-        const half2 = Math.round(size/2);
-        const icon = L.divIcon({ html:iconHtml, iconSize:[size,size], iconAnchor:[half2,half2], className:'custom-marker' });
-
-        // Popup con desglose y fecha de última incidencia
-        const maxCnt = Math.max(...Object.values(conteo));
-        const filas  = Object.entries(conteo).sort((a,b)=>b[1]-a[1]).map(([lbl,cnt]) => {
+      // ── Popup: tablita de incidencias por tipo ──────────────
+      const maxCnt = Math.max(...Object.values(conteo));
+      const filasTipo = Object.entries(conteo)
+        .sort((a,b)=>b[1]-a[1])
+        .map(([lbl,cnt]) => {
           const tc  = Object.values(TIPOS).find(t=>t.label===lbl)?.color || '#94a3b8';
-          const pct = Math.round((cnt/maxCnt)*100);
-          return `<div style="display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid #f1f5f9">
-            <div style="width:8px;height:8px;border-radius:50%;background:${tc};flex-shrink:0"></div>
-            <div style="flex:1;font-size:11px;color:#374151">${lbl}</div>
-            <div style="width:50px;height:5px;background:#f1f5f9;border-radius:3px;flex-shrink:0">
-              <div style="width:${pct}%;height:100%;background:${tc};border-radius:3px"></div></div>
-            <div style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;
-                        color:#111;min-width:22px;text-align:right">${cnt}</div>
-          </div>`;
+          const barW= Math.round(cnt/maxCnt*100);
+          return `
+          <tr style="border-bottom:1px solid #f1f5f9">
+            <td style="padding:5px 8px;display:flex;align-items:center;gap:6px;white-space:nowrap">
+              <div style="width:8px;height:8px;border-radius:50%;background:${tc};flex-shrink:0"></div>
+              <span style="font-size:11px;color:#374151">${esc(lbl)}</span>
+            </td>
+            <td style="padding:5px 8px;">
+              <div style="width:70px;height:5px;background:#f1f5f9;border-radius:3px">
+                <div style="width:${barW}%;height:100%;background:${tc};border-radius:3px"></div>
+              </div>
+            </td>
+            <td style="padding:5px 8px;font-family:'JetBrains Mono',monospace;font-weight:800;font-size:12px;color:#111;text-align:right">${cnt}</td>
+          </tr>`;
         }).join('');
 
-        // Ordenar por fecha descendente para historial
-        const registrosOrdenados = [...registros].sort((a,b) => {
-          const da = parseSheetDate(a.fecha), db = parseSheetDate(b.fecha);
-          return (db||0) - (da||0);
-        });
-        const ultimaFecha = registrosOrdenados[0]?.fecha || '—';
-        const r0 = registrosOrdenados[0];
-
-        // Para 1 incidencia: detalle completo
-        // Para N: fecha última + mini historial de hasta 5 registros
-        const detalleHtml = total===1
-          ? `<div style="margin-top:8px;padding-top:7px;border-top:1px solid #f1f5f9;
-                         font-size:11px;color:#6b7280;line-height:1.7">
-               <div>📅 ${esc(r0.fecha)} &nbsp; ${esc(r0.hora)}</div>
-               <div>👤 ${esc(r0.operador)||'Sin operador'}</div>
-               <div>📋 ${esc(r0.reporte)}</div>
-             </div>`
-          : `<div style="margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9;font-size:10px;color:#9ca3af">Última: <strong style="color:#4b5563">${esc(ultimaFecha)}</strong></div>`;
-
-        // Sanitizar campos del Sheet antes de insertar en innerHTML
-        const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-
-        const popupHtml = `
-          <div style="font-family:'Inter',sans-serif;font-size:12px;min-width:270px">
-            <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:2px">
-              <div style="font-weight:800;color:#0033a0;font-size:13px">${esc(grupo.codigo)||'Sin código'}</div>
-              <div style="font-size:10px;font-weight:700;color:#64748b">${total} ${total===1?'incidencia':'incidencias'}</div>
-            </div>
-            <div style="color:#6b7280;font-size:10px;margin-bottom:8px;padding-bottom:7px;border-bottom:1.5px solid #e2e8f0">
-              📍 ${esc(grupo.dir)||'Sin dirección'} &nbsp;·&nbsp; ${esc(grupo.ciudad)||''}
-            </div>
-            ${filas}
-            ${detalleHtml}
-          </div>`;
-
-        L.marker([lat,lng],{icon}).bindPopup(popupHtml,{maxWidth:300}).addTo(clusterLayer);
-        bounds.push([lat,lng]);
+      // Detalle última incidencia
+      const ultimos = [...registros].sort((a,b)=>{
+        const da=parseSheetDate(a.fecha), db=parseSheetDate(b.fecha);
+        return (db||0)-(da||0);
       });
+      const r0 = ultimos[0];
+      const detalleHtml = total===1
+        ? `<div style="margin-top:8px;padding-top:7px;border-top:1px solid #f1f5f9;font-size:11px;color:#6b7280;line-height:1.8">
+             <div>&#128197; ${esc(r0.fecha)} &nbsp; ${esc(r0.hora)}</div>
+             <div>&#128100; ${esc(r0.operador)||'Sin operador'}</div>
+             <div style="margin-top:2px;color:#374151">&#128203; ${esc(r0.reporte)}</div>
+           </div>`
+        : `<div style="margin-top:6px;padding-top:6px;border-top:1px solid #f1f5f9;font-size:10px;color:#9ca3af">
+             \u00daltima: <strong style="color:#4b5563">${esc(r0?.fecha||'\u2014')}</strong>
+           </div>`;
 
-      clusterLayer.addTo(mapInstance);
-    }
+      const popupHtml = `
+        <div style="font-family:'Inter',sans-serif;min-width:260px;max-width:300px">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px">
+            <div style="font-weight:800;color:#0033a0;font-size:14px">${esc(grupo.codigo)||'Sin c\u00f3digo'}</div>
+            <div style="font-size:10px;font-weight:700;color:#64748b">${total} ${total===1?'incidencia':'incidencias'}</div>
+          </div>
+          <div style="font-size:10px;color:#6b7280;margin-bottom:10px;padding-bottom:8px;border-bottom:1.5px solid #e2e8f0">
+            &#128205; ${esc(grupo.dir)||'Sin direcci\u00f3n'} &nbsp;&middot;&nbsp; ${esc(grupo.ciudad)||''}
+          </div>
+          <table style="width:100%;border-collapse:collapse">${filasTipo}</table>
+          ${detalleHtml}
+        </div>`;
 
-    // Ajustar vista
-    if (bounds.length>0) {
-      mapInstance.fitBounds(bounds, {padding:[30,30], maxZoom:15});
-    } else {
-      mapInstance.setView([13.6894,-89.1872], 8);
-    }
+      L.marker([lat,lng],{icon})
+       .bindPopup(popupHtml,{maxWidth:320})
+       .addTo(clusterLayer);
+      bounds.push([lat,lng]);
+    });
+
+    clusterLayer.addTo(mapInstance);
   }
 
-  /* ─── Tabs de navegación principal ──────────────────────────── */
-  function switchMainTab(name, btn) {
-    ['mapa','resumen'].forEach(t => {
-      const panel = document.getElementById('panel-' + t);
-      if (panel) panel.style.display = 'none';
-    });
-    document.querySelectorAll('.tab-nav').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const panel = document.getElementById('panel-' + name);
-    if (panel) {
-      if (name === 'mapa') {
-        panel.style.display = 'flex';
-        if (mapInstance) setTimeout(() => mapInstance.invalidateSize(), 50);
-      } else {
-        panel.style.display = 'block';
-      }
-    }
-    if (name === 'resumen') renderResumen();
+  // Ajustar vista
+  if (bounds.length>0) {
+    mapInstance.fitBounds(bounds, {padding:[40,40], maxZoom:16});
+  } else {
+    mapInstance.setView([13.6894,-89.1872], 8);
   }
+}
 
-  /* ─── Resumen por tipo y ciudad ──────────────────────────────── */
-  function renderResumen() {
-    const el = document.getElementById('resumen-body');
+/* ── Captura PNG ────────────────────────────────────────────── */
+function capturarMapa() {
+  const btn = document.querySelector('.capture-btn');
+  btn.textContent = 'Capturando...';
+  btn.disabled = true;
+  const ts = new Date().toLocaleDateString('es-SV').replace(/\//g,'-') + '_' +
+             new Date().toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit'}).replace(/:/g,'-').replace(/\s/g,'');
+  html2canvas(document.getElementById('map-container'),{useCORS:true,allowTaint:true,scale:2,logging:false})
+    .then(canvas => {
+      const a = document.createElement('a');
+      a.download = 'CCM_Mapa_'+ts+'.png';
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+      toast('Imagen descargada: CCM_Mapa_'+ts+'.png');
+    })
+    .catch(() => toast('No se pudo capturar. Use captura de pantalla.'))
+    .finally(() => { btn.innerHTML='&#128247; Capturar mapa'; btn.disabled=false; });
+}
 
-    if (!dataset.length) {
-      el.innerHTML = '<p style="color:var(--text-light);padding:20px 0">Sin datos. Recarga la página.</p>';
-      return;
-    }
-
-    const rows = getFilteredRows();
-
-    if (!rows.length) {
-      el.innerHTML = '<p style="color:var(--text-light);padding:20px 0">No hay incidencias en el período seleccionado. Prueba cambiando las fechas o la ciudad.</p>';
-      return;
-    }
-
-    // ── 1. Conteo por tipo ──────────────────────────────────────
-    const porTipo = {};
-    rows.forEach(r => {
-      const t = getTipo(r.incidencia);
-      if (!porTipo[t.label]) porTipo[t.label] = { label: t.label, color: t.color, total: 0 };
-      porTipo[t.label].total++;
-    });
-    const tiposSorted = Object.values(porTipo).sort((a, b) => b.total - a.total);
-    const maxTipo = tiposSorted[0]?.total || 1;
-
-    // ── 2. Conteo por ciudad ────────────────────────────────────
-    const porCiudad = {};
-    rows.forEach(r => {
-      const c = (r.ciudad || 'Sin ciudad').trim();
-      porCiudad[c] = (porCiudad[c] || 0) + 1;
-    });
-    const ciudadesSorted = Object.entries(porCiudad).sort((a, b) => b[1] - a[1]);
-    const maxCiudad = ciudadesSorted[0]?.[1] || 1;
-
-    // ── 3. Tendencia: conteo por día en el período ──────────────
-    const porDia = {};
-    rows.forEach(r => {
-      const d = parseSheetDate(r.fecha);
-      if (!d) return;
-      const key = r.fecha; // "DD/MM/YYYY"
-      porDia[key] = { d, total: (porDia[key]?.total || 0) + 1 };
-    });
-    const diasSorted = Object.values(porDia).sort((a, b) => a.d - b.d);
-    const maxDia = Math.max(...diasSorted.map(x => x.total), 1);
-    const totalDias = diasSorted.length;
-
-    // Barras de tipos
-    const barrasTipo = tiposSorted.map((t, i) => {
-      const pct   = Math.round((t.total / rows.length) * 100);
-      const barW  = Math.round((t.total / maxTipo) * 100);
-      return `
-        <div style="display:flex;align-items:center;gap:12px;padding:7px 0;border-bottom:1px solid var(--border)">
-          <div style="width:10px;height:10px;border-radius:50%;background:${t.color};flex-shrink:0"></div>
-          <div style="flex:1;font-size:12px;color:var(--text-dark);font-weight:${i<3?'700':'400'}">${t.label}</div>
-          <div style="width:140px;height:8px;background:var(--bg-page);border-radius:4px;flex-shrink:0">
-            <div style="width:${barW}%;height:100%;background:${t.color};border-radius:4px;transition:width .3s"></div>
-          </div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:800;color:var(--text-dark);min-width:32px;text-align:right">${t.total}</div>
-          <div style="font-size:11px;color:var(--text-light);min-width:36px;text-align:right">${pct}%</div>
-        </div>`;
-    }).join('');
-
-    // Barras de ciudades
-    const barrasCiudad = ciudadesSorted.map(([ciudad, cnt]) => {
-      const pct  = Math.round((cnt / rows.length) * 100);
-      const barW = Math.round((cnt / maxCiudad) * 100);
-      return `
-        <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)">
-          <div style="flex:1;font-size:12px;color:var(--text-dark)">${ciudad}</div>
-          <div style="width:100px;height:7px;background:var(--bg-page);border-radius:4px;flex-shrink:0">
-            <div style="width:${barW}%;height:100%;background:var(--flag-blue);border-radius:4px"></div>
-          </div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:800;color:var(--text-dark);min-width:30px;text-align:right">${cnt}</div>
-          <div style="font-size:11px;color:var(--text-light);min-width:34px;text-align:right">${pct}%</div>
-        </div>`;
-    }).join('');
-
-    // Mini gráfica de tendencia diaria
-    const barrasDia = diasSorted.map(({ d, total }) => {
-      const h = Math.round((total / maxDia) * 56);
-      const label = `${d.getDate()}/${d.getMonth()+1}`;
-      return `
-        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:14px;max-width:40px" title="${label}: ${total}">
-          <div style="font-size:8px;color:var(--text-light);line-height:1">${total > 0 ? total : ''}</div>
-          <div style="width:100%;height:56px;display:flex;align-items:flex-end">
-            <div style="width:100%;height:${h || 1}px;background:var(--flag-blue);opacity:.75;border-radius:2px 2px 0 0"></div>
-          </div>
-          <div style="font-size:7px;color:var(--text-light);white-space:nowrap;overflow:hidden;max-width:100%;text-overflow:ellipsis">${label}</div>
-        </div>`;
-    }).join('');
-
-    // KPIs rápidos del período
-    const promDiario = totalDias > 0 ? (rows.length / totalDias).toFixed(1) : '—';
-    const diaMax = diasSorted.reduce((m, x) => x.total > (m?.total||0) ? x : m, null);
-    const diaMaxLabel = diaMax ? `${diaMax.d.getDate()}/${diaMax.d.getMonth()+1}/${diaMax.d.getFullYear()}` : '—';
-
-    el.innerHTML = `
-      <!-- KPIs rápidos -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px">
-        ${[
-          { label:'Total incidencias', val: rows.length, sub:'en el período' },
-          { label:'Tipos diferentes', val: tiposSorted.length, sub:'tipos de incidencia' },
-          { label:'Promedio diario', val: promDiario, sub:'incidencias por día' },
-          { label:'Día con más casos', val: diaMax?.total || '—', sub: diaMaxLabel },
-        ].map(k => `
-          <div style="background:var(--bg-page);border:1px solid var(--border);border-radius:var(--r-lg);padding:12px 14px">
-            <div style="font-size:22px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--text-dark)">${k.val}</div>
-            <div style="font-size:11px;font-weight:700;color:var(--text-mid);text-transform:uppercase;letter-spacing:.05em;margin-top:2px">${k.label}</div>
-            <div style="font-size:10px;color:var(--text-light);margin-top:1px">${k.sub}</div>
-          </div>`).join('')}
-      </div>
-
-      <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px">
-
-        <!-- Tipos de incidencia -->
-        <div style="background:var(--bg-white);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 18px">
-          <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">
-            Incidencias por tipo
-          </div>
-          ${barrasTipo}
-        </div>
-
-        <!-- Por ciudad -->
-        <div style="background:var(--bg-white);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 18px">
-          <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">
-            Por ciudad
-          </div>
-          ${barrasCiudad}
-        </div>
-
-      </div>
-
-      <!-- Tendencia diaria -->
-      ${totalDias > 1 ? `
-      <div style="background:var(--bg-white);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 18px">
-        <div style="font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">
-          Tendencia diaria &mdash; ${totalDias} dias con incidencias
-        </div>
-        <div style="display:flex;align-items:flex-end;gap:2px;height:72px;overflow-x:auto;overflow-y:hidden;min-height:72px">
-          ${barrasDia}
-        </div>
-      </div>` : ''}
-    `;
-  }
-
-  /* ─── Inicio ─────────────────────────────────────────────────── */
-  window.addEventListener('DOMContentLoaded', async () => {
-    await loadData();
-    const overlay = document.getElementById('loading-overlay');
-    overlay.classList.add('fade-out');
-    setTimeout(() => overlay.remove(), 400);
-  });
+/* ── Inicio ─────────────────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', async () => {
+  await loadData();
+  const overlay = document.getElementById('loading-overlay');
+  overlay.classList.add('fade-out');
+  setTimeout(()=>overlay.remove(), 400);
+});
 </script>
-</div>
 </body>
 </html>
