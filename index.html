@@ -378,8 +378,13 @@
   <!-- Panel: Ranking -->
   <div id="panel-ranking" class="ranking-panel">
     <div class="ranking-card">
-      <div class="card-title">SEMAFOROS CON MAS INCIDENCIAS</div>
-      <div id="ranking-body" style="font-size:12px;color:var(--text-light);padding:8px 0">Aplica filtros y cambia a esta pestaña para ver el ranking.</div>
+      <div class="card-title" style="justify-content:space-between">
+        <span>SEMAFOROS CON MAS INCIDENCIAS</span>
+        <button onclick="renderDiagnostico()" style="font-family:inherit;font-size:10px;font-weight:700;background:#fef9c3;border:1px solid #fbbf24;border-radius:var(--r-sm);padding:3px 10px;cursor:pointer;color:#92400e;text-transform:uppercase">
+          Diagnostico
+        </button>
+      </div>
+      <div id="ranking-body" style="font-size:12px;color:var(--text-light);padding:8px 0">Cargando...</div>
     </div>
   </div>
 
@@ -808,16 +813,22 @@
 
   /* ─── Render principal de marcadores y heatmap ───────────────── */
   function aplicarFiltroMapa() {
-    // Si hay pestaña secundaria activa, actualizarla también
+    // Siempre refrescar pestañas secundarias si están visibles
     const tab = tabActiva();
-    if (tab === 'ranking')  { renderRanking();  return; }
-    if (tab === 'horapico') { renderHoraPico(); return; }
 
+    if (tab === 'ranking') {
+      renderRanking();
+      return;
+    }
+    if (tab === 'horapico') {
+      renderHoraPico();
+      return;
+    }
+
+    // ── Pestaña MAPA activa ──────────────────────────────────────
     if (!mapInstance) return;
 
-    const ciudad   = document.getElementById('map-ciudad').value;
-
-    // Usar el filtro central
+    const ciudad  = document.getElementById('map-ciudad').value;
     const rowsAll = getFilteredRows();
 
     // Separar registros con y sin coordenadas válidas
@@ -1040,7 +1051,90 @@
     if (name === 'horapico') renderHoraPico();
   }
 
-  /* ─── Ranking: semáforos ordenados por incidencias ──────────── */
+  /* ─── Diagnóstico: muestra los primeros registros crudos del dataset ── */
+  function renderDiagnostico() {
+    const el = document.getElementById('ranking-body');
+    if (!dataset.length) {
+      el.innerHTML = `<div style="padding:16px;background:#fef9c3;border:1px solid #fbbf24;border-radius:var(--r-md);font-size:12px">
+        <strong>DIAGNOSTICO:</strong> dataset vacio. Los datos no han cargado o la URL de GViz fallo.
+      </div>`;
+      return;
+    }
+
+    const r0 = dataset[0];
+    const campos = Object.entries(r0).map(([k,v]) =>
+      `<tr><td style="padding:3px 10px;font-weight:700;color:var(--flag-blue);font-family:'JetBrains Mono',monospace">${k}</td>
+           <td style="padding:3px 10px;color:var(--text-mid);max-width:300px;word-break:break-all">${JSON.stringify(v)}</td></tr>`
+    ).join('');
+
+    // Muestra los primeros 5 valores de hora para depurar parseHora
+    const muestrasHora = dataset.slice(0, 10).map(r => {
+      const h = parseHora(r.hora);
+      return `<tr>
+        <td style="padding:2px 8px;font-family:monospace;font-size:11px">${JSON.stringify(r.hora)}</td>
+        <td style="padding:2px 8px;font-family:monospace;font-size:11px;color:${h>=0?'#059669':'#dc2626'}">${h >= 0 ? h + ':00h' : 'NO PARSEA'}</td>
+      </tr>`;
+    }).join('');
+
+    // Primeros 3 registros completos
+    const muestra3 = dataset.slice(0, 3).map((r,i) =>
+      `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:4px 8px;font-size:11px;color:var(--text-light)">${i+1}</td>
+        <td style="padding:4px 8px;font-family:monospace;font-size:11px">${r.fecha}</td>
+        <td style="padding:4px 8px;font-family:monospace;font-size:11px">${r.hora}</td>
+        <td style="padding:4px 8px;font-family:monospace;font-size:11px">${r.codigo}</td>
+        <td style="padding:4px 8px;font-family:monospace;font-size:11px">${r.incidencia}</td>
+        <td style="padding:4px 8px;font-family:monospace;font-size:11px">${r.ciudad}</td>
+      </tr>`
+    ).join('');
+
+    const rows = getFilteredRows();
+
+    el.innerHTML = `
+      <div style="background:#dbeafe;border:1px solid #93c5fd;border-radius:var(--r-md);padding:14px 16px;margin-bottom:14px;font-size:12px">
+        <div style="font-weight:800;color:#1e3a8a;margin-bottom:6px">PANEL DE DIAGNOSTICO</div>
+        <div>Total en dataset: <strong>${dataset.length}</strong> registros</div>
+        <div>Con filtros actuales (getFilteredRows): <strong style="color:${rows.length>0?'#059669':'#dc2626'}">${rows.length}</strong> registros</div>
+        <div>Ciudades unicas: <strong>${[...new Set(dataset.map(r=>r.ciudad).filter(Boolean))].join(', ') || 'ninguna detectada'}</strong></div>
+        <div>Ciudad seleccionada en filtro: <strong>"${document.getElementById('map-ciudad')?.value}"</strong></div>
+        <div>Fecha ini: <strong>"${document.getElementById('f-fecha-ini')?.value || 'vacía'}"</strong> — Fecha fin: <strong>"${document.getElementById('f-fecha-fin')?.value || 'vacía'}"</strong></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div style="background:var(--bg-page);border-radius:var(--r-md);padding:12px">
+          <div style="font-size:10px;font-weight:800;color:var(--text-light);text-transform:uppercase;margin-bottom:8px">Estructura primer registro</div>
+          <table style="width:100%;border-collapse:collapse"><tbody>${campos}</tbody></table>
+        </div>
+        <div style="background:var(--bg-page);border-radius:var(--r-md);padding:12px">
+          <div style="font-size:10px;font-weight:800;color:var(--text-light);text-transform:uppercase;margin-bottom:8px">Test parseHora (primeros 10)</div>
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr>
+              <th style="text-align:left;font-size:10px;padding:2px 8px;color:var(--text-light)">Valor crudo</th>
+              <th style="text-align:left;font-size:10px;padding:2px 8px;color:var(--text-light)">Resultado</th>
+            </tr></thead>
+            <tbody>${muestrasHora}</tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="background:var(--bg-page);border-radius:var(--r-md);padding:12px">
+        <div style="font-size:10px;font-weight:800;color:var(--text-light);text-transform:uppercase;margin-bottom:8px">Primeros 3 registros completos</div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <thead><tr style="border-bottom:1.5px solid var(--border)">
+            <th style="padding:4px 8px;text-align:left;color:var(--text-light)">#</th>
+            <th style="padding:4px 8px;text-align:left;color:var(--text-light)">Fecha</th>
+            <th style="padding:4px 8px;text-align:left;color:var(--text-light)">Hora</th>
+            <th style="padding:4px 8px;text-align:left;color:var(--text-light)">Codigo</th>
+            <th style="padding:4px 8px;text-align:left;color:var(--text-light)">Incidencia</th>
+            <th style="padding:4px 8px;text-align:left;color:var(--text-light)">Ciudad</th>
+          </tr></thead>
+          <tbody>${muestra3}</tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--text-light)">
+        Comparte una captura de este panel para depurar el problema.
+      </div>`;
+  }
   function renderRanking() {
     const el = document.getElementById('ranking-body');
 
