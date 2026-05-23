@@ -497,7 +497,7 @@
 
             <!-- Tipo -->
             <div class="feb-item">
-              <select class="feb-select" id="map-tipo" onchange="updateFiltroBtn()" title="Tipo de incidencia">
+              <select class="feb-select" id="map-tipo" onchange="updateFiltroBtn();aplicarFiltros()" title="Tipo de incidencia">
                 <option value="todos">Todos los tipos</option>
                 <option value="forzamiento">Forzamiento</option>
                 <option value="apagado">Apagado</option>
@@ -511,7 +511,7 @@
 
             <!-- Ciudad -->
             <div class="feb-item">
-              <select class="feb-select" id="map-ciudad" onchange="updateFiltroBtn()" title="Ciudad">
+              <select class="feb-select" id="map-ciudad" onchange="updateFiltroBtn();aplicarFiltros()" title="Ciudad">
                 <option value="todas">Todas las ciudades</option>
               </select>
             </div>
@@ -833,8 +833,16 @@ function onManualDate() {
   setActiveRangeBtn(null);
   document.getElementById('range-warning').classList.remove('visible');
   updateDateLabel();
-  closeDateDrop();
-  aplicarFiltros();
+  updateFiltroBtn();
+  const ini = document.getElementById('f-fecha-ini').value;
+  const fin = document.getElementById('f-fecha-fin').value;
+  // Solo cerrar y aplicar cuando ambas fechas están completas
+  if (ini && fin) {
+    closeDateDrop();
+    aplicarFiltros();
+  }
+  // Si solo hay una fecha, mantener el dropdown abierto para
+  // que el usuario seleccione la segunda sin tener que reabrirlo
 }
 function setRange(rango) {
   const hoy = new Date(), y = hoy.getFullYear(), m = hoy.getMonth();
