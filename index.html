@@ -111,7 +111,13 @@
     .fp-wrap {
       display:flex; align-items:center;
       height:36px; position:relative;
-      flex:1; /* ocupa todo el espacio sobrante de filter-row */
+      /* NO flex:1 — el wrapper toma solo el espacio de la barra */
+      flex-shrink:0;
+    }
+    /* Cuando la barra está abierta, el wrapper se estira para que la barra ocupe todo */
+    .fp-wrap:has(.filter-expand-bar.open),
+    .fp-wrap.fp-wrap-open {
+      flex:1;
     }
 
     /* Overlay para cerrar al clic fuera */
@@ -757,19 +763,25 @@ function updateDateLabel() {
 
 /* ── Panel de filtros ───────────────────────────────────────── */
 function toggleFiltroPanel() {
-  const bar = document.getElementById('filter-expand-bar');
+  const bar  = document.getElementById('filter-expand-bar');
+  const wrap = bar?.closest('.fp-wrap') || bar?.parentElement;
   if (!bar) return;
-  bar.classList.toggle('open');
-  // Cuando se cierra, quitar overlay
+  const opening = !bar.classList.contains('open');
+  bar.classList.toggle('open', opening);
+  wrap?.classList.toggle('fp-wrap-open', opening);
   const over = document.getElementById('fp-overlay');
-  if (bar.classList.contains('open')) {
+  if (opening) {
     over?.classList.add('active');
   } else {
     over?.classList.remove('active');
+    closeDateDrop();
   }
 }
 function closeFiltroPanel() {
-  document.getElementById('filter-expand-bar')?.classList.remove('open');
+  const bar  = document.getElementById('filter-expand-bar');
+  const wrap = bar?.closest('.fp-wrap') || bar?.parentElement;
+  bar?.classList.remove('open');
+  wrap?.classList.remove('fp-wrap-open');
   document.getElementById('fp-overlay')?.classList.remove('active');
   closeDateDrop();
 }
