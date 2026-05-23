@@ -12,7 +12,6 @@
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <style>
     :root {
       --bg-page:#f5f7fb; --bg-white:#ffffff; --bg-header:#0b1120;
@@ -173,14 +172,6 @@
       transition:border-color .15s; cursor:pointer;
     }
     .feb-date-native:focus { border-color:var(--flag-blue); box-shadow:0 0 0 3px rgba(0,51,160,.08); }
-    .feb-date-quick { display:flex; gap:4px; flex-wrap:wrap; }
-    .feb-date-qbtn {
-      font-family:inherit; font-size:10px; font-weight:600; color:var(--text-mid);
-      background:var(--bg-page); border:1px solid var(--border-mid);
-      border-radius:20px; padding:3px 10px; cursor:pointer; transition:all .15s;
-    }
-    .feb-date-qbtn:hover        { background:var(--flag-blue-soft); color:var(--flag-blue); border-color:#c7d3f0; }
-    .feb-date-qbtn.active-range { background:var(--flag-blue); color:#fff; border-color:var(--flag-blue); }
 
     /* Botón fecha dentro de la barra (reemplaza los inputs directos) */
     .feb-date-btn {
@@ -242,8 +233,8 @@
 
     /* Controles internos — ocultos hasta que se expande */
     .feb-controls {
-      display:flex; align-items:center; gap:6px;
-      padding:0 14px 0 10px; flex:1; overflow:visible; justify-content:space-between;
+      display:flex; align-items:center; gap:10px;
+      padding:0 14px 0 10px; flex:1; overflow:visible;
       opacity:0; pointer-events:none;
     }
     .filter-expand-bar.open .feb-controls {
@@ -639,7 +630,6 @@
       <button class="layer-btn"        id="btn-darkmap"    onclick="toggleDarkMap()" title="Modo noche">&#127761; Modo noche</button>
       <button class="layer-btn"        id="btn-fullscreen" onclick="toggleFullscreen()" title="Pantalla completa">&#9974; Pantalla completa</button>
       <button class="capture-btn"                          onclick="capturarMapa()">&#128247; Capturar mapa</button>
-      <button class="capture-btn" id="btn-kmz"             onclick="exportarKMZ()" style="margin-left:6px">&#128228; Exportar KMZ</button>
     </div>
     <div id="map-container"></div>
     <div class="map-status">
@@ -973,9 +963,8 @@ async function loadData() {
       '<option value="todas">TODAS LAS CIUDADES</option>' +
       ciudades.map(c => `<option value="${c}" ${c==='San Salvador'?'selected':''}>${c}</option>`).join('');
 
-    const hora      = new Date().toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit'});
-    const fromCache = !!cacheLeer(); // re-check para el label (no fetch extra)
-    document.getElementById('update-note').textContent = `${hora} · ${dataset.length} registros${fromCache?' (cach\u00e9)':''}`;
+    const hora = new Date().toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('update-note').textContent = `${hora} · ${dataset.length} registros${cached?' (cach\u00e9)':''}`;
     document.getElementById('live-label').textContent  = `Actualizado ${hora}`;
 
     initMap();
@@ -1030,22 +1019,21 @@ function initMap() {
 function countUp(elId, target) {
   const el = document.getElementById(elId);
   if (!el) return;
+  // Disparar animación pop siempre
+  el.classList.remove('counting');
+  void el.offsetWidth; // reflow para re-disparar
+  el.classList.add('counting');
   const num = parseInt(target);
-  if (isNaN(num) || num === 0) {
+  // Si no es número positivo (ej: '—'), solo mostrar el valor con la animación
+  if (isNaN(num) || num <= 0) {
     el.textContent = target;
-    el.classList.remove('counting');
-    void el.offsetWidth; // reflow para re-disparar animación
-    el.classList.add('counting');
     return;
   }
-  const duration = Math.min(600, 80 + num * 18); // más rápido para números grandes
-  const steps    = Math.min(num, 30);
-  const stepMs   = Math.round(duration / steps);
-  let current    = 0;
-  el.classList.remove('counting');
-  void el.offsetWidth;
-  el.classList.add('counting');
-  const tick = setInterval(() => {
+  // Conteo animado para números positivos
+  const steps  = Math.min(num, 30);
+  const stepMs = Math.round(Math.min(600, 80 + num * 18) / steps);
+  let current  = 0;
+  const tick   = setInterval(() => {
     current += Math.ceil(num / steps);
     if (current >= num) { current = num; clearInterval(tick); }
     el.textContent = current;
@@ -1356,168 +1344,6 @@ function toggleDarkMap() {
     attribution: '&copy; <a href="https://www.openstreetmap.org">OSM</a> &amp; CARTO',
     subdomains: 'abcd', maxZoom: 19, minZoom: 5,
   }).addTo(mapInstance);
-}
-
-/* ── Exportar KMZ ───────────────────────────────────────────── */
-function exportarKMZ() {
-  const btn = document.getElementById('btn-kmz');
-
-  // Validaciones previas
-  if (typeof JSZip === 'undefined') {
-    toast('JSZip no cargó. Verifica tu conexión.');
-    return;
-  }
-
-  const rows = getFilteredRows().filter(r => {
-    const lat = parseFloat(r.latitud);
-    const lng = parseFloat(r.longitud);
-    return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
-  });
-
-  if (!rows.length) {
-    toast('No hay registros con coordenadas para exportar.');
-    return;
-  }
-
-  btn.textContent = 'Generando...';
-  btn.disabled = true;
-
-  // ── Colores KML por tipo (formato AABBGGRR que usa KML) ──────
-  // KML usa orden Alpha-Blue-Green-Red (inverso a HTML)
-  const KML_COLORS = {
-    'Forzamiento de Tiempos': 'ff00a8ca', // #ca8a00 → amarillo
-    'Apagado':                'ff2626dc', // #dc2626 → rojo
-    'Mejora de Tiempos':      'ff0da365', // #65a30d → verde
-    'Intermitencia':          'ffeb6325', // #2563eb → azul
-    'Error de Comunicaci\u00f3n': 'ff339333', // #9333ea → morado (aproximado)
-    'Apoyo en Accidentes':    'ff0c58ea', // #ea580c → naranja
-    'Revisi\u00f3n VDT':      'ff88940d', // #0d9488 → teal
-  };
-  const colorKml = tipo => KML_COLORS[tipo] || 'ffa0a0a0';
-
-  // ── Generar estilos KML únicos por tipo ──────────────────────
-  const tiposUnicos = [...new Set(rows.map(r => getTipo(r.incidencia).label))];
-  const estilosKml = tiposUnicos.map(tipo => {
-    const id  = tipo.replace(/[^a-zA-Z0-9]/g, '_');
-    const col = colorKml(tipo);
-    return `
-  <Style id="estilo_${id}">
-    <IconStyle>
-      <color>${col}</color>
-      <scale>1.1</scale>
-      <Icon><href>http://maps.google.com/mapfiles/kml/shapes/traffic_light.png</href></Icon>
-      <hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction"/>
-    </IconStyle>
-    <LabelStyle><scale>0.8</scale></LabelStyle>
-    <BalloonStyle>
-      <text><![CDATA[$[description]]]></text>
-      <bgColor>ffffffff</bgColor>
-    </BalloonStyle>
-  </Style>`;
-  }).join('\n');
-
-  // ── Agrupar por tipo para carpetas ───────────────────────────
-  const grupos = {};
-  rows.forEach(r => {
-    const t = getTipo(r.incidencia).label;
-    if (!grupos[t]) grupos[t] = [];
-    grupos[t].push(r);
-  });
-
-  // ── Generar carpetas y placemarks ────────────────────────────
-  const carpetas = Object.entries(grupos).map(([tipo, regs]) => {
-    const styleId = tipo.replace(/[^a-zA-Z0-9]/g, '_');
-
-    const placemarks = regs.map(r => {
-      const lat = parseFloat(r.latitud);
-      const lng = parseFloat(r.longitud);
-      const nombre = esc(r.codigo || 'Sin código');
-      const desc = `<![CDATA[
-        <div style="font-family:Arial,sans-serif;font-size:13px;min-width:220px">
-          <b style="font-size:15px;color:#0033a0">${esc(r.codigo)||'Sin c\u00f3digo'}</b><br>
-          <span style="color:#666">${esc(r.dir)||'Sin direcci\u00f3n'}</span><br>
-          <span style="color:#666">${esc(r.ciudad)||''}</span><hr style="margin:6px 0">
-          <b>Tipo:</b> ${esc(tipo)}<br>
-          <b>Fecha:</b> ${esc(r.fecha)} ${esc(r.hora)}<br>
-          <b>Operador:</b> ${esc(r.operador)||'—'}<br>
-          <b>Reporte:</b> ${esc(r.reporte)||'—'}
-        </div>]]>`;
-
-      return `
-    <Placemark>
-      <name>${nombre}</name>
-      <description>${desc}</description>
-      <styleUrl>#estilo_${styleId}</styleUrl>
-      <ExtendedData>
-        <Data name="codigo"><value>${esc(r.codigo)}</value></Data>
-        <Data name="tipo"><value>${esc(tipo)}</value></Data>
-        <Data name="fecha"><value>${esc(r.fecha)}</value></Data>
-        <Data name="ciudad"><value>${esc(r.ciudad)}</value></Data>
-        <Data name="operador"><value>${esc(r.operador)}</value></Data>
-        <Data name="reporte"><value>${esc(r.reporte)}</value></Data>
-      </ExtendedData>
-      <Point><coordinates>${lng},${lat},0</coordinates></Point>
-    </Placemark>`;
-    }).join('\n');
-
-    return `
-  <Folder>
-    <name>${esc(tipo)} (${regs.length})</name>
-    <open>1</open>
-    ${placemarks}
-  </Folder>`;
-  }).join('\n');
-
-  // ── Fechas del filtro para el nombre del archivo ─────────────
-  const ini = document.getElementById('f-fecha-ini').value || '';
-  const fin = document.getElementById('f-fecha-fin').value || '';
-  const periodo = ini && fin
-    ? `_${ini}_${fin}`.replace(/-/g, '')
-    : `_${new Date().toISOString().slice(0,10).replace(/-/g,'')}`;
-
-  // ── KML completo ─────────────────────────────────────────────
-  const kml = `<?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2">
-<Document>
-  <name>CCM Incidencias Semaf\u00f3ricas${periodo}</name>
-  <description><![CDATA[
-    Exportado desde el Mapa de Incidencias Semaf\u00f3ricas<br>
-    Centro de Control y Monitoreo — MOPT El Salvador<br>
-    Registros: ${rows.length} | Fecha de exportaci\u00f3n: ${new Date().toLocaleString('es-SV')}
-  ]]></description>
-  ${estilosKml}
-  ${carpetas}
-</Document>
-</kml>`;
-
-  // ── Empaquetar en ZIP → KMZ ──────────────────────────────────
-  try {
-    const zip  = new JSZip();
-    zip.file('doc.kml', kml);
-    zip.generateAsync({ type:'blob', compression:'DEFLATE', compressionOptions:{ level:6 } })
-      .then(blob => {
-        const url  = URL.createObjectURL(blob);
-        const a    = document.createElement('a');
-        a.download = `CCM_Mapa${periodo}.kmz`;
-        a.href     = url;
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
-        toast(`KMZ exportado: ${rows.length} registros en ${Object.keys(grupos).length} tipos`);
-      })
-      .catch(err => {
-        console.error(err);
-        toast('Error al generar el KMZ.');
-      })
-      .finally(() => {
-        btn.innerHTML = '&#128228; Exportar KMZ';
-        btn.disabled  = false;
-      });
-  } catch(err) {
-    console.error(err);
-    toast('Error al crear el archivo KMZ.');
-    btn.innerHTML = '&#128228; Exportar KMZ';
-    btn.disabled  = false;
-  }
 }
 
 /* ── Captura PNG ────────────────────────────────────────────── */
