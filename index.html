@@ -17,7 +17,7 @@
       --bg-page:#f5f7fb; --bg-white:#ffffff; --bg-header:#0b1120;
       --text-dark:#111827; --text-mid:#4b5563; --text-light:#9ca3af;
       --yellow:#f59e0b; --blue:#3b82f6; --flag-blue:#0033a0;
-      --flag-blue-soft:#e6ebf5;
+      --flag-blue-soft:#e6ebf5; --red:#ef4444;
       --border:#f1f5f9; --border-mid:#e2e8f0;
       --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:20px;
     }
@@ -53,126 +53,175 @@
     .btn-refresh { display:flex; align-items:center; gap:6px; background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.25); border-radius:var(--r-sm); color:var(--yellow); font-size:12px; font-weight:600; padding:6px 14px; cursor:pointer; transition:background .2s; font-family:inherit; text-transform:uppercase; letter-spacing:.05em; }
     .btn-refresh:hover { background:rgba(245,158,11,.2); }
 
-    /* ── Filtros ── */
+    /* ══════════════════════════════════════════════════════════
+       BARRA DE FILTROS — fila única compacta
+    ══════════════════════════════════════════════════════════ */
     .filter-bar { background:var(--bg-white); border-bottom:1px solid var(--border); flex-shrink:0; }
-    .filter-bar-inner { max-width:1400px; margin:0 auto; padding:10px 28px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .filter-bar-inner { max-width:1400px; margin:0 auto; padding:0 28px; display:flex; align-items:center; height:52px; gap:6px; }
+    .filter-divider { width:1px; height:20px; background:var(--border-mid); flex-shrink:0; margin:0 4px; }
+    .filter-label   { font-size:9px; font-weight:800; color:var(--text-light); text-transform:uppercase; letter-spacing:.12em; white-space:nowrap; }
 
-    .filter-label { font-size:10px; font-weight:800; color:var(--text-light); text-transform:uppercase; letter-spacing:.12em; background:var(--bg-page); padding:3px 10px; border-radius:20px; white-space:nowrap; }
+    /* Rangos rápidos en la barra */
+    .range-btns { display:flex; gap:3px; }
+    .range-btn  { font-family:inherit; font-size:11px; font-weight:600; color:var(--text-mid); background:transparent; border:1px solid transparent; border-radius:20px; padding:4px 12px; cursor:pointer; transition:all .15s; white-space:nowrap; }
+    .range-btn:hover        { background:var(--flag-blue-soft); color:var(--flag-blue); border-color:#c7d3f0; }
+    .range-btn.active-range { background:var(--flag-blue); color:#fff; border-color:var(--flag-blue); box-shadow:0 2px 8px rgba(0,51,160,.25); }
 
-    /* ── Inputs de fecha ── */
-    .date-input {
-      font-family:'Inter',sans-serif; font-size:12px; font-weight:500;
-      color:var(--text-dark); background:var(--bg-white);
-      border:1.5px solid var(--border-mid); border-radius:var(--r-sm);
-      padding:6px 11px; outline:none;
-      transition:border-color .15s, box-shadow .15s, background .15s;
-      cursor:pointer;
-    }
-    .date-input:hover  { border-color:var(--flag-blue); background:var(--flag-blue-soft,#e6ebf5); }
-    .date-input:focus  { border-color:var(--flag-blue); box-shadow:0 0 0 3px rgba(0,51,160,.1); }
-
-    /* ── Selects (tipo e ciudad) ── */
-    .filter-select {
-      font-family:'Inter',sans-serif; font-size:12px; font-weight:600;
-      color:var(--text-dark); background:var(--bg-white);
-      border:1.5px solid var(--border-mid); border-radius:var(--r-sm);
-      padding:6px 32px 6px 13px; outline:none; cursor:pointer;
-      transition:border-color .15s, box-shadow .15s, background .15s, color .15s;
-      appearance:none; -webkit-appearance:none;
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-      background-repeat:no-repeat; background-position:right 10px center;
-    }
-    .filter-select:hover {
-      border-color:var(--flag-blue);
-      background-color:#e6ebf5;
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%230033a0' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-    }
-    .filter-select:focus {
-      border-color:var(--flag-blue); box-shadow:0 0 0 3px rgba(0,51,160,.1);
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%230033a0' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-    }
-    /* Estado activo — filtro aplicado */
-    .filter-select.is-active {
-      border-color:var(--flag-blue); background-color:#e6ebf5;
-      color:var(--flag-blue); font-weight:700;
-      box-shadow:0 0 0 3px rgba(0,51,160,.08);
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%230033a0' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-    }
-
-    .date-range-group { display:flex; align-items:center; gap:6px; }
-
-    /* ── Botón × Limpiar fechas ── */
-    .btn-clear-dates {
-      font-family:inherit; font-size:10px; font-weight:700;
-      color:var(--text-mid); background:transparent;
-      border:1px solid var(--border-mid); border-radius:var(--r-sm);
-      padding:5px 10px; cursor:pointer; transition:all .15s;
-      text-transform:uppercase; letter-spacing:.04em;
-    }
-    .btn-clear-dates:hover { background:#fee2e2; border-color:#fca5a5; color:#dc2626; }
-
-    /* ── Botones de rango ── */
-    .range-btns { display:flex; gap:4px; }
-    .range-btn {
-      font-family:inherit; font-size:10px; font-weight:700;
-      color:var(--text-mid); background:var(--bg-page);
-      border:1.5px solid var(--border-mid); border-radius:20px;
-      padding:5px 13px; cursor:pointer; transition:all .18s;
-      text-transform:uppercase; letter-spacing:.04em;
-    }
-    .range-btn:hover {
-      background:#e6ebf5; border-color:var(--flag-blue);
-      color:var(--flag-blue); transform:translateY(-1px);
-      box-shadow:0 2px 8px rgba(0,51,160,.12);
-    }
-    .range-btn.active-range {
-      background:var(--flag-blue); border-color:var(--flag-blue);
-      color:#fff; box-shadow:0 2px 10px rgba(0,51,160,.3);
-    }
-    .range-btn.active-range:hover { background:#002280; transform:translateY(-1px); }
-
-    .range-warning { font-size:11px; color:var(--yellow); background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.2); border-radius:20px; padding:3px 9px; display:none; white-space:nowrap; }
+    .range-warning { font-size:10px; color:var(--yellow); background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.2); border-radius:20px; padding:3px 10px; display:none; white-space:nowrap; }
     .range-warning.visible { display:inline-block; }
 
-    /* ── Botón APLICAR ── */
-    .btn-apply {
+    /* Botón LIMPIAR barra */
+    .btn-clear { font-family:inherit; font-size:10px; font-weight:700; color:#fff; background:#ef4444; border:1px solid #ef4444; border-radius:var(--r-sm); padding:4px 12px; cursor:pointer; transition:all .15s; text-transform:uppercase; letter-spacing:.04em; white-space:nowrap; }
+    .btn-clear:hover { background:#dc2626; border-color:#dc2626; }
+    .update-note { font-size:10px; color:var(--text-light); background:var(--bg-page); padding:3px 10px; border-radius:20px; white-space:nowrap; margin-left:auto; }
+    /* ══════════════════════════════════════════════════════════
+       FILTROS — expansión horizontal (inspirado en patrón SCSS)
+       El botón se expande hacia la derecha revelando los controles
+       con animación escalonada. Rangos y LIMPIAR se desplazan solos.
+    ══════════════════════════════════════════════════════════ */
+
+    /* Contenedor que ocupa solo el espacio necesario */
+    .fp-wrap {
+      display:flex; align-items:center;
+      height:36px; position:relative;
+    }
+
+    /* Overlay para cerrar al clic fuera */
+    .fp-overlay { position:fixed; inset:0; z-index:99; display:none; }
+    .fp-overlay.active { display:block; }
+
+    /* Barra expansible — empieza compacta, se abre hacia la derecha */
+    .filter-expand-bar {
+      display:flex; align-items:center; gap:0;
+      height:36px; border-radius:18px;
+      background:linear-gradient(135deg, var(--flag-blue) 0%, #3b82f6 100%);
+      overflow:hidden;
+      width:120px;               /* ancho colapsado */
+      transition:width 320ms cubic-bezier(.4,0,.2,1),
+                 box-shadow .2s ease;
+      box-shadow:0 2px 8px rgba(0,51,160,.3);
+      cursor:pointer; position:relative; z-index:100;
+    }
+    .filter-expand-bar.open {
+      width:480px;               /* ancho expandido */
+      box-shadow:0 4px 20px rgba(0,51,160,.35);
+      cursor:default;
+    }
+    @media(max-width:900px){
+      .filter-expand-bar.open { width:340px; }
+    }
+
+    /* Animación de pulso cuando está cerrado */
+    @keyframes fmb-pulse {
+      0%,100% { box-shadow:0 0 0 0 rgba(0,51,160,.4),0 2px 8px rgba(0,51,160,.25); }
+      55%      { box-shadow:0 0 0 7px rgba(0,51,160,0),0 2px 8px rgba(0,51,160,.25); }
+    }
+    .filter-expand-bar:not(.open) { animation:fmb-pulse 2.4s ease-in-out infinite; }
+
+    /* Botón hamburguesa — siempre visible a la izquierda */
+    .feb-trigger {
+      flex-shrink:0; width:120px; height:36px;
+      display:flex; align-items:center; justify-content:center; gap:7px;
+      color:#fff; font-family:inherit; font-size:12px; font-weight:700;
+      letter-spacing:.04em; cursor:pointer;
+      background:none; border:none; padding:0 16px 0 14px;
+      white-space:nowrap; user-select:none;
+      transition:background .15s;
+      border-radius:18px 0 0 18px;
+    }
+    .feb-trigger:hover { background:rgba(255,255,255,.1); }
+    .filter-expand-bar.open .feb-trigger { border-radius:18px 0 0 18px; }
+
+    /* Ícono de hamburguesa — rota a X cuando abierto */
+    .feb-icon { display:flex; flex-direction:column; gap:3.5px; flex-shrink:0; }
+    .feb-icon span {
+      display:block; width:14px; height:1.8px; background:#fff; border-radius:2px;
+      transition:transform .3s ease, opacity .2s ease, width .3s ease;
+      transform-origin:center;
+    }
+    .filter-expand-bar.open .feb-icon span:nth-child(1) { transform:translateY(5.3px) rotate(45deg); }
+    .filter-expand-bar.open .feb-icon span:nth-child(2) { opacity:0; width:0; }
+    .filter-expand-bar.open .feb-icon span:nth-child(3) { transform:translateY(-5.3px) rotate(-45deg); }
+
+    /* Punto indicador de filtros activos */
+    .feb-dot {
+      width:7px; height:7px; border-radius:50%; background:#fff;
+      box-shadow:0 0 0 2px rgba(255,255,255,.35);
+      display:none; flex-shrink:0;
+    }
+    .filter-expand-bar.has-filters .feb-dot { display:block; }
+
+    /* Separador vertical interno */
+    .feb-sep {
+      width:1px; height:20px; background:rgba(255,255,255,.25);
+      flex-shrink:0; opacity:0; transition:opacity .2s .1s;
+    }
+    .filter-expand-bar.open .feb-sep { opacity:1; }
+
+    /* Controles internos — ocultos hasta que se expande */
+    .feb-controls {
       display:flex; align-items:center; gap:6px;
-      font-family:inherit; font-size:12px; font-weight:700;
-      background:var(--flag-blue); color:#fff; border:none;
-      border-radius:var(--r-sm); padding:6px 16px; cursor:pointer;
-      text-transform:uppercase; letter-spacing:.05em;
-      transition:background .15s, transform .15s, box-shadow .15s;
-      box-shadow:0 2px 8px rgba(0,51,160,.25);
+      padding:0 12px 0 8px; flex:1; overflow:hidden;
+      opacity:0; pointer-events:none;
     }
-    .btn-apply:hover { background:#002280; transform:translateY(-1px); box-shadow:0 4px 14px rgba(0,51,160,.35); }
-    .btn-apply:active { transform:translateY(0); box-shadow:0 1px 4px rgba(0,51,160,.2); }
-
-    /* ── Botón LIMPIAR TODO ── */
-    .btn-limpiar {
-      font-family:inherit; font-size:11px; font-weight:600;
-      color:#dc2626; background:#fef2f2;
-      border:1.5px solid #fecaca; border-radius:var(--r-sm);
-      padding:5px 12px; cursor:pointer; transition:all .15s;
-      text-transform:uppercase; letter-spacing:.04em;
+    .filter-expand-bar.open .feb-controls {
+      opacity:1; pointer-events:auto;
     }
-    .btn-limpiar:hover { background:#fee2e2; border-color:#f87171; box-shadow:0 2px 6px rgba(220,38,38,.15); }
 
-    .update-note { font-size:11px; color:var(--text-light); background:var(--bg-page); padding:3px 9px; border-radius:20px; white-space:nowrap; }
-
-    /* ── Búsqueda por código ── */
-    .search-code-wrap { position:relative; }
-    .search-code {
-      font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:500;
-      color:var(--text-dark); background:var(--bg-white);
-      border:1.5px solid var(--border-mid); border-radius:var(--r-sm);
-      padding:6px 30px 6px 11px; outline:none; width:140px;
-      transition:border-color .15s, box-shadow .15s, width .2s;
+    /* Animación escalonada de cada control (patrón SCSS itop adaptado) */
+    @keyframes feb-slide {
+      from { opacity:0; transform:translateX(-14px); }
+      to   { opacity:1; transform:translateX(0); }
     }
-    .search-code:focus  { border-color:var(--flag-blue); box-shadow:0 0 0 3px rgba(0,51,160,.1); width:170px; }
-    .search-code:hover  { border-color:var(--flag-blue); }
-    .search-code.is-active { border-color:var(--flag-blue); background:#e6ebf5; color:var(--flag-blue); font-weight:700; }
-    .search-code-clear  { position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--text-light); font-size:13px; line-height:1; display:none; }
-    .search-code-clear.visible { display:block; }
+    .feb-controls .feb-item { opacity:0; }
+    .filter-expand-bar.open .feb-controls .feb-item:nth-child(1) { animation:feb-slide 220ms 80ms ease forwards; }
+    .filter-expand-bar.open .feb-controls .feb-item:nth-child(2) { animation:feb-slide 220ms 150ms ease forwards; }
+    .filter-expand-bar.open .feb-controls .feb-item:nth-child(3) { animation:feb-slide 220ms 220ms ease forwards; }
+    .filter-expand-bar.open .feb-controls .feb-item:nth-child(4) { animation:feb-slide 220ms 290ms ease forwards; }
+    .filter-expand-bar.open .feb-controls .feb-item:nth-child(5) { animation:feb-slide 220ms 360ms ease forwards; }
+
+    /* Selects dentro de la barra */
+    .feb-select {
+      font-family:inherit; font-size:11px; font-weight:600; color:#fff;
+      background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.3);
+      border-radius:12px; padding:4px 24px 4px 10px; outline:none; cursor:pointer;
+      appearance:none; -webkit-appearance:none; height:28px; white-space:nowrap;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,.8)' stroke-width='2.5' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 7px center; background-size:11px;
+      transition:background .15s; max-width:150px;
+    }
+    .feb-select:hover { background-color:rgba(255,255,255,.28); }
+    .feb-select:focus { background-color:rgba(255,255,255,.28); }
+    .feb-select option { background:#0033a0; color:#fff; }
+
+    /* Input de búsqueda dentro de la barra */
+    .feb-search-wrap { position:relative; display:flex; align-items:center; }
+    .feb-search {
+      font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:500; color:#fff;
+      background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.3);
+      border-radius:12px; padding:4px 26px 4px 10px; outline:none;
+      height:28px; width:110px; transition:width .2s, background .15s;
+    }
+    .feb-search::placeholder { color:rgba(255,255,255,.55); }
+    .feb-search:focus { width:130px; background:rgba(255,255,255,.28); }
+    .feb-search-x {
+      position:absolute; right:8px; background:none; border:none;
+      color:rgba(255,255,255,.7); font-size:13px; cursor:pointer;
+      line-height:1; display:none; padding:0;
+    }
+    .feb-search-x.visible { display:block; }
+
+    /* Botón APLICAR dentro de la barra */
+    .feb-apply {
+      font-family:inherit; font-size:11px; font-weight:700; color:var(--flag-blue);
+      background:#fff; border:none; border-radius:12px;
+      padding:4px 12px; height:28px; cursor:pointer; white-space:nowrap;
+      transition:background .15s, transform .1s; flex-shrink:0;
+    }
+    .feb-apply:hover { background:#e6ebf5; transform:scale(1.04); }
+    .feb-apply:active { transform:scale(.98); }
+
+    /* ── Resto de la barra: rangos y limpiar (sin cambios) ── */
 
     /* ── Main flex ── */
     .main { flex:1; padding:14px 24px 14px; display:flex; flex-direction:column; gap:12px; min-height:0; }
@@ -289,26 +338,7 @@
     }
     .stat-num.counting { animation:kpi-pop .35s cubic-bezier(.34,1.56,.64,1) both; }
 
-    /* ─────────────────────────────────────────────────────────
-       [E] BARRA DE PROGRESO BAJO EL HEADER
-    ───────────────────────────────────────────────────────── */
-    #progress-bar {
-      position:fixed; top:66px; left:0; right:0; z-index:200;
-      height:2px; background:transparent; pointer-events:none;
-    }
-    #progress-bar::after {
-      content:''; display:block; height:100%;
-      background:linear-gradient(90deg, var(--flag-blue), #3b82f6, var(--yellow));
-      width:0%; transition:width .3s ease;
-      box-shadow:0 0 6px rgba(59,130,246,.6);
-    }
-    #progress-bar.loading::after {
-      animation:progress-run 1.4s ease-in-out infinite;
-    }
-    #progress-bar.done::after { width:100%; transition:width .2s ease; }
-    @keyframes progress-run {
-      0%   { width:0%;   margin-left:0; }
-      50%  { width:60%;  margin-left:20%; }
+    50%  { width:60%;  margin-left:20%; }
       100% { width:0%;   margin-left:100%; }
     }
   </style>
@@ -361,52 +391,88 @@
   </div>
 </header>
 
-<!-- Barra de progreso [E] -->
-<div id="progress-bar"></div>
+<!-- Overlay -->
+<div class="fp-overlay" id="fp-overlay" onclick="closeFiltroPanel()"></div>
 
 <!-- Filtros -->
 <div class="filter-bar">
   <div class="filter-bar-inner">
-    <span class="filter-label">FILTROS</span>
-    <div class="date-range-group">
-      <input type="date" class="date-input" id="f-fecha-ini" onchange="onManualDate()">
-      <span style="color:var(--text-light)">&rarr;</span>
-      <input type="date" class="date-input" id="f-fecha-fin" onchange="onManualDate()">
-      <button onclick="clearDates()" class="btn-clear-dates">&times; LIMPIAR</button>
-    </div>
-    <select class="filter-select" id="map-tipo" onchange="aplicarFiltros()">
-      <option value="todos">TODOS LOS TIPOS</option>
-      <option value="forzamiento">Forzamiento de Tiempos</option>
-      <option value="apagado">Apagado</option>
-      <option value="accidente">Apoyo en Accidentes</option>
-      <option value="mejora">Mejora de Tiempos</option>
-      <option value="intermitencia">Intermitencia</option>
-      <option value="error">Error de Comunicaci&oacute;n</option>
-      <option value="vdt">Revisi&oacute;n VDT</option>
-    </select>
-    <select class="filter-select" id="map-ciudad" onchange="aplicarFiltros()">
-      <option value="todas">TODAS LAS CIUDADES</option>
-    </select>
-    <div class="search-code-wrap">
-      <input type="text" class="search-code" id="search-code" placeholder="Buscar SS1301..."
-             oninput="onSearchCode(this.value)" autocomplete="off">
-      <button class="search-code-clear" id="search-code-clear" onclick="clearSearchCode()">&times;</button>
-    </div>
-    <button class="btn-apply" onclick="aplicarFiltros()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      APLICAR
-    </button>
-    <button class="btn-limpiar" onclick="limpiarFiltros()">&times; LIMPIAR</button>
-    <span class="range-warning" id="range-warning">&#9888; Puede tardar con muchos registros</span>
-    <span class="update-note" id="update-note">CARGANDO...</span>
-    <span style="flex-basis:100%"></span>
+
+    <!-- Barra expansible horizontal -->
+    <div class="fp-wrap">
+      <div class="filter-expand-bar" id="filter-expand-bar">
+
+        <!-- Disparador siempre visible -->
+        <button class="feb-trigger" onclick="toggleFiltroPanel()" aria-label="Abrir filtros">
+          <div class="feb-icon"><span></span><span></span><span></span></div>
+          FILTROS
+          <div class="feb-dot"></div>
+        </button>
+
+        <div class="feb-sep"></div>
+
+        <!-- Controles que aparecen al expandir -->
+        <div class="feb-controls" id="feb-controls">
+
+          <div class="feb-item">
+            <select class="feb-select" id="map-tipo" onchange="updateFiltroBtn()" title="Tipo de incidencia">
+              <option value="todos">Todos los tipos</option>
+              <option value="forzamiento">Forzamiento</option>
+              <option value="apagado">Apagado</option>
+              <option value="accidente">Accidentes</option>
+              <option value="mejora">Mejora</option>
+              <option value="intermitencia">Intermitencia</option>
+              <option value="error">Error Com.</option>
+              <option value="vdt">VDT</option>
+            </select>
+          </div>
+
+          <div class="feb-item">
+            <select class="feb-select" id="map-ciudad" onchange="updateFiltroBtn()" title="Ciudad">
+              <option value="todas">Todas las ciudades</option>
+            </select>
+          </div>
+
+          <div class="feb-item" style="display:flex;align-items:center;gap:4px">
+            <input type="date" class="feb-select" id="f-fecha-ini"
+                   style="padding:4px 8px;font-family:inherit;font-size:10px;width:118px;cursor:pointer"
+                   onchange="onManualDate()" title="Desde">
+            <span style="color:rgba(255,255,255,.5);font-size:10px">&#8594;</span>
+            <input type="date" class="feb-select" id="f-fecha-fin"
+                   style="padding:4px 8px;font-family:inherit;font-size:10px;width:118px;cursor:pointer"
+                   onchange="onManualDate()" title="Hasta">
+          </div>
+
+          <div class="feb-item feb-search-wrap">
+            <input type="text" class="feb-search" id="search-code"
+                   placeholder="C&#243;digo&#8230;" oninput="onSearchCode(this.value)" autocomplete="off">
+            <button class="feb-search-x" id="search-code-clear" onclick="clearSearchCode()">&times;</button>
+          </div>
+
+          <div class="feb-item">
+            <button class="feb-apply" onclick="aplicarFiltros()">&#10003; APLICAR</button>
+          </div>
+
+        </div><!-- /.feb-controls -->
+      </div><!-- /.filter-expand-bar -->
+    </div><!-- /.fp-wrap -->
+
+    <div class="filter-divider"></div>
+
     <span class="filter-label">RANGO</span>
     <div class="range-btns">
-      <button class="range-btn active-range" id="rbtn-mes"  onclick="setRange('mes')">ESTE MES</button>
-      <button class="range-btn"              id="rbtn-ant"  onclick="setRange('ant')">MES ANTERIOR</button>
-      <button class="range-btn"              id="rbtn-3m"   onclick="setRange('3m')">&Uacute;LTIMOS 3 MESES</button>
-      <button class="range-btn"              id="rbtn-todo" onclick="setRange('todo')">TODO</button>
+      <button class="range-btn" id="rbtn-mes"  onclick="setRange('mes')">ESTE MES</button>
+      <button class="range-btn" id="rbtn-ant"  onclick="setRange('ant')">MES ANT.</button>
+      <button class="range-btn active-range" id="rbtn-3m" onclick="setRange('3m')">3 MESES</button>
+      <button class="range-btn" id="rbtn-todo" onclick="setRange('todo')">TODO</button>
     </div>
+    <span class="range-warning" id="range-warning">&#9888; Puede tardar</span>
+
+    <div class="filter-divider"></div>
+
+    <button class="btn-clear" onclick="clearAll()">&times; LIMPIAR</button>
+    <span class="update-note" id="update-note">CARGANDO...</span>
+
   </div>
 </div>
 
@@ -476,6 +542,8 @@ const SHEET_NAME     = 'P. Semaforico';
 const SEMAFOROS_NAME = 'Lista Sem\u00e1foros';
 const CACHE_KEY      = 'ccm_mapa_v3';
 const CACHE_TTL      = 10 * 60 * 1000; // 10 min
+const TILE_LIGHT     = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+const TILE_DARK      = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 
 /* ── Catálogo de tipos ──────────────────────────────────────── */
 const TIPOS = {
@@ -531,6 +599,8 @@ let clusterLayer = null;
 let heatLayer    = null;
 let capaActual   = 'marcadores';
 let codigoFiltro = '';
+let tileLayer    = null;   // capa de tile activa (light/dark)
+let darkMode     = false;  // estado del modo noche
 
 /* ── Escape HTML (XSS) ─────────────────────────────────────── */
 const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -544,6 +614,49 @@ function setActiveRangeBtn(id) {
   ['mes','ant','3m','todo'].forEach(k =>
     document.getElementById('rbtn-'+k)?.classList.toggle('active-range', k===id)
   );
+}
+
+/* ── Panel de filtros ───────────────────────────────────────── */
+function toggleFiltroPanel() {
+  const bar = document.getElementById('filter-expand-bar');
+  if (!bar) return;
+  bar.classList.toggle('open');
+  // Cuando se cierra, quitar overlay
+  const over = document.getElementById('fp-overlay');
+  if (bar.classList.contains('open')) {
+    over?.classList.add('active');
+  } else {
+    over?.classList.remove('active');
+  }
+}
+function closeFiltroPanel() {
+  document.getElementById('filter-expand-bar')?.classList.remove('open');
+  document.getElementById('fp-overlay')?.classList.remove('active');
+}
+function updateFiltroBtn() {
+  const tipo   = document.getElementById('map-tipo')?.value;
+  const ciudad = document.getElementById('map-ciudad')?.value;
+  const ini    = document.getElementById('f-fecha-ini')?.value;
+  const fin    = document.getElementById('f-fecha-fin')?.value;
+  const code   = document.getElementById('search-code')?.value.trim();
+  const has    = tipo!=='todos' || ciudad!=='todas' || ini || fin || code;
+  document.getElementById('filter-expand-bar')?.classList.toggle('has-filters', !!has);
+}
+function clearAll() {
+  const el = id => document.getElementById(id);
+  el('map-tipo').value    = 'todos';
+  el('map-ciudad').value  = 'todas';
+  el('f-fecha-ini').value = '';
+  el('f-fecha-fin').value = '';
+  el('range-warning').classList.remove('visible');
+  el('search-code').value = '';
+  el('search-code-clear').classList.remove('visible');
+  codigoFiltro = '';
+  setActiveRangeBtn(null);
+  document.getElementById('filter-expand-bar')?.classList.remove('has-filters');
+  closeFiltroPanel();
+  aplicarFiltros();
+  toast('Filtros limpiados');
 }
 function toast(msg, dur=2500) {
   const t = document.getElementById('toast');
@@ -576,12 +689,6 @@ function getFilteredRows() {
 }
 
 /* ── Controles de filtro ────────────────────────────────────── */
-function clearDates() {
-  document.getElementById('f-fecha-ini').value = '';
-  document.getElementById('f-fecha-fin').value = '';
-  setActiveRangeBtn(null);
-  aplicarFiltros();
-}
 function onManualDate() {
   setActiveRangeBtn(null);
   document.getElementById('range-warning').classList.remove('visible');
@@ -601,6 +708,7 @@ function setRange(rango) {
   document.getElementById('f-fecha-fin').value = fin ? fmt(fin) : '';
   document.getElementById('range-warning').classList.toggle('visible', rango==='todo');
   setActiveRangeBtn(rango);
+  updateFiltroBtn();
   aplicarFiltros();
 }
 function onSearchCode(val) {
@@ -612,44 +720,13 @@ function clearSearchCode() {
   document.getElementById('search-code').value = '';
   codigoFiltro = '';
   document.getElementById('search-code-clear').classList.remove('visible');
-  document.getElementById('search-code').classList.remove('is-active');
   aplicarFiltros();
-}
-
-/* ── Estado visual activo en selects y búsqueda ─────────────── */
-function updateSelectStates() {
-  const tipo   = document.getElementById('map-tipo');
-  const ciudad = document.getElementById('map-ciudad');
-  if (tipo)   tipo.classList.toggle('is-active', tipo.value   !== 'todos');
-  if (ciudad) ciudad.classList.toggle('is-active', ciudad.value !== 'todas');
-  const sc = document.getElementById('search-code');
-  if (sc) sc.classList.toggle('is-active', sc.value.trim() !== '');
-}
-function limpiarFiltros() {
-  document.getElementById('map-tipo').value   = 'todos';
-  document.getElementById('map-ciudad').value = 'todas';
-  document.getElementById('range-warning').classList.remove('visible');
-  clearSearchCode();
-  setRange('mes');
 }
 function setLayer(capa) {
   capaActual = capa;
   document.getElementById('btn-marcadores').classList.toggle('active', capa==='marcadores');
   document.getElementById('btn-heatmap').classList.toggle('active', capa==='heatmap');
   aplicarFiltros();
-}
-
-/* ── [E] Barra de progreso ──────────────────────────────────── */
-function progressStart() {
-  const b = document.getElementById('progress-bar');
-  if (b) { b.classList.remove('done'); b.classList.add('loading'); }
-}
-function progressDone() {
-  const b = document.getElementById('progress-bar');
-  if (!b) return;
-  b.classList.remove('loading');
-  b.classList.add('done');
-  setTimeout(() => b.classList.remove('done'), 500);
 }
 
 /* ── Caché ──────────────────────────────────────────────────── */
@@ -692,7 +769,6 @@ async function loadSemaforos() {
 
 /* ── Carga de datos principal ───────────────────────────────── */
 async function loadData() {
-  progressStart();
   document.getElementById('update-note').textContent = 'ACTUALIZANDO...';
   try {
     const cached = cacheLeer();
@@ -732,8 +808,9 @@ async function loadData() {
       '<option value="todas">TODAS LAS CIUDADES</option>' +
       ciudades.map(c => `<option value="${c}" ${c==='San Salvador'?'selected':''}>${c}</option>`).join('');
 
-    const hora = new Date().toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit'});
-    document.getElementById('update-note').textContent = `${hora} · ${dataset.length} registros${cached?' (cach\u00e9)':''}`;
+    const hora      = new Date().toLocaleTimeString('es-SV',{hour:'2-digit',minute:'2-digit'});
+    const fromCache = !!cacheLeer(); // re-check para el label (no fetch extra)
+    document.getElementById('update-note').textContent = `${hora} · ${dataset.length} registros${fromCache?' (cach\u00e9)':''}`;
     document.getElementById('live-label').textContent  = `Actualizado ${hora}`;
 
     initMap();
@@ -742,10 +819,8 @@ async function loadData() {
     if (!cached) {
       loadSemaforos().then(() => aplicarFiltros());
     }
-    progressDone();
-  } catch(err) {
-    progressDone();
-    document.getElementById('update-note').textContent = 'Error al cargar \u2014 verifique la conexi\u00f3n';
+    } catch(err) {
+      document.getElementById('update-note').textContent = 'Error al cargar \u2014 verifique la conexi\u00f3n';
     document.getElementById('live-label').textContent  = 'Sin conexi\u00f3n';
     console.error(err);
   }
@@ -841,8 +916,9 @@ function renderStats(rows, grupos, ciudad) {
 
 /* ── Render principal ───────────────────────────────────────── */
 function aplicarFiltros() {
+  closeFiltroPanel();
+  updateFiltroBtn();
   if (!mapInstance) return;
-  progressStart();
 
   const ciudad  = document.getElementById('map-ciudad').value;
   const rowsAll = getFilteredRows();
@@ -919,17 +995,8 @@ function aplicarFiltros() {
 
     /* [F] Tooltip enriquecido al hacer hover sobre un cluster */
     clusterLayer.on('clustermouseover', e => {
-      const count   = e.layer.getChildCount();
-      const markers = e.layer.getAllChildMarkers();
-      // Conteo de tipos dentro del cluster
-      const conteoCluster = {};
-      markers.forEach(m => {
-        const popup = m.getPopup();
-        if (!popup) return;
-        // Leer el data del marker directamente desde _grupo si existe
-      });
-      // Fallback: mostrar solo conteo y zoom hint
-      const zoom = mapInstance.getZoom();
+      const count = e.layer.getChildCount();
+      const zoom  = mapInstance.getZoom();
       const hint = zoom < 14 ? 'Acerca para ver semáforos individuales' : 'Clic para expandir';
       e.layer.bindTooltip(
         `<div style="font-family:'Inter',sans-serif;font-size:12px;line-height:1.6;padding:2px 4px">
@@ -1087,8 +1154,6 @@ function aplicarFiltros() {
   } else {
     mapInstance.setView([13.6894,-89.1872], 8);
   }
-  progressDone();
-  updateSelectStates();
 }
 
 /* ── [5] Pantalla completa ──────────────────────────────────── */
@@ -1106,10 +1171,6 @@ function toggleFullscreen() {
 }
 
 /* ── [7] Modo noche / tile oscuro ───────────────────────────── */
-let tileLayer    = null;
-let darkMode     = false;
-const TILE_LIGHT = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-const TILE_DARK  = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 
 function toggleDarkMap() {
   darkMode = !darkMode;
