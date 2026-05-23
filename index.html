@@ -95,21 +95,77 @@
       display:flex; align-items:center; gap:0;
       height:36px; border-radius:18px;
       background:linear-gradient(135deg, var(--flag-blue) 0%, #3b82f6 100%);
-      overflow:hidden;
+      /* overflow:hidden removido — bloqueaba el calendario nativo de los date inputs */
+      overflow:visible;
+      /* Clip para que el gradiente/border-radius se vea bien sin cortar popups */
       width:120px;               /* ancho colapsado */
       transition:width 320ms cubic-bezier(.4,0,.2,1),
-                 box-shadow .2s ease;
+                 box-shadow .2s ease, border-radius .2s;
       box-shadow:0 2px 8px rgba(0,51,160,.3);
       cursor:pointer; position:relative; z-index:100;
     }
+    /* Pseudo-elemento para replicar el fondo con border-radius sin overflow:hidden */
+    .filter-expand-bar::before {
+      content:''; position:absolute; inset:0;
+      background:inherit; border-radius:18px;
+      pointer-events:none; z-index:0;
+    }
+    .filter-expand-bar > * { position:relative; z-index:1; }
     .filter-expand-bar.open {
-      width:480px;               /* ancho expandido */
+      width:520px;
       box-shadow:0 4px 20px rgba(0,51,160,.35);
-      cursor:default;
+      cursor:default; border-radius:18px;
     }
-    @media(max-width:900px){
-      .filter-expand-bar.open { width:340px; }
+    @media(max-width:980px){
+      .filter-expand-bar.open { width:380px; }
     }
+
+    /* Dropdown de fechas — flota debajo de la barra, fuera del overflow */
+    .feb-date-drop {
+      position:absolute; top:calc(100% + 8px); left:0;
+      background:#fff; border:1px solid var(--border-mid);
+      border-radius:var(--r-lg); padding:14px 16px;
+      box-shadow:0 12px 32px rgba(0,51,160,.15),0 2px 8px rgba(0,0,0,.08);
+      display:none; z-index:400; min-width:300px;
+      animation:dateDropIn .2s ease;
+    }
+    .feb-date-drop.open { display:block; }
+    @keyframes dateDropIn {
+      from { opacity:0; transform:translateY(-6px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .feb-date-drop-label {
+      font-size:10px; font-weight:800; color:var(--text-light);
+      text-transform:uppercase; letter-spacing:.1em; margin-bottom:10px;
+      display:flex; align-items:center; gap:6px;
+    }
+    .feb-date-row { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+    .feb-date-native {
+      flex:1; font-family:inherit; font-size:12px; color:var(--text-dark);
+      background:var(--bg-page); border:1.5px solid var(--border-mid);
+      border-radius:var(--r-md); padding:7px 10px; outline:none;
+      transition:border-color .15s; cursor:pointer;
+    }
+    .feb-date-native:focus { border-color:var(--flag-blue); box-shadow:0 0 0 3px rgba(0,51,160,.08); }
+    .feb-date-quick { display:flex; gap:4px; flex-wrap:wrap; }
+    .feb-date-qbtn {
+      font-family:inherit; font-size:10px; font-weight:600; color:var(--text-mid);
+      background:var(--bg-page); border:1px solid var(--border-mid);
+      border-radius:20px; padding:3px 10px; cursor:pointer; transition:all .15s;
+    }
+    .feb-date-qbtn:hover        { background:var(--flag-blue-soft); color:var(--flag-blue); border-color:#c7d3f0; }
+    .feb-date-qbtn.active-range { background:var(--flag-blue); color:#fff; border-color:var(--flag-blue); }
+
+    /* Botón fecha dentro de la barra (reemplaza los inputs directos) */
+    .feb-date-btn {
+      display:flex; align-items:center; gap:5px;
+      font-family:inherit; font-size:11px; font-weight:600; color:#fff;
+      background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.3);
+      border-radius:12px; padding:4px 11px; height:28px; cursor:pointer;
+      white-space:nowrap; transition:background .15s; flex-shrink:0;
+    }
+    .feb-date-btn:hover { background:rgba(255,255,255,.28); }
+    .feb-date-btn.has-date { background:rgba(255,255,255,.32); font-weight:700; }
 
     /* Animación de pulso cuando está cerrado */
     @keyframes fmb-pulse {
@@ -433,14 +489,41 @@
             </select>
           </div>
 
-          <div class="feb-item" style="display:flex;align-items:center;gap:4px">
-            <input type="date" class="feb-select" id="f-fecha-ini"
-                   style="padding:4px 8px;font-family:inherit;font-size:10px;width:118px;cursor:pointer"
-                   onchange="onManualDate()" title="Desde">
-            <span style="color:rgba(255,255,255,.5);font-size:10px">&#8594;</span>
-            <input type="date" class="feb-select" id="f-fecha-fin"
-                   style="padding:4px 8px;font-family:inherit;font-size:10px;width:118px;cursor:pointer"
-                   onchange="onManualDate()" title="Hasta">
+          <div class="feb-item" style="position:relative">
+            <button class="feb-date-btn" id="feb-date-btn" onclick="toggleDateDrop(event)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11">
+                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              <span id="feb-date-label">Fechas</span>
+            </button>
+
+            <!-- Dropdown de fechas — fuera del overflow de la barra -->
+            <div class="feb-date-drop" id="feb-date-drop">
+              <div class="feb-date-drop-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                  <rect x="3" y="4" width="18" height="18" rx="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                Rango de fechas
+              </div>
+              <div class="feb-date-quick" style="margin-bottom:12px">
+                <button class="feb-date-qbtn" id="fpbtn-mes"  onclick="setRange('mes')">Este mes</button>
+                <button class="feb-date-qbtn" id="fpbtn-ant"  onclick="setRange('ant')">Mes ant.</button>
+                <button class="feb-date-qbtn" id="fpbtn-3m"   onclick="setRange('3m')">3 meses</button>
+                <button class="feb-date-qbtn" id="fpbtn-todo" onclick="setRange('todo')">Todo</button>
+              </div>
+              <div class="feb-date-drop-label" style="margin-bottom:8px">Personalizado</div>
+              <div class="feb-date-row">
+                <input type="date" class="feb-date-native" id="f-fecha-ini" onchange="onManualDate()" title="Desde">
+                <span style="color:var(--text-light);font-size:13px">&#8594;</span>
+                <input type="date" class="feb-date-native" id="f-fecha-fin" onchange="onManualDate()" title="Hasta">
+              </div>
+            </div>
           </div>
 
           <div class="feb-item feb-search-wrap">
@@ -611,9 +694,35 @@ function parseSheetDate(str) {
   return y ? new Date(+y,+m-1,+d) : null;
 }
 function setActiveRangeBtn(id) {
-  ['mes','ant','3m','todo'].forEach(k =>
-    document.getElementById('rbtn-'+k)?.classList.toggle('active-range', k===id)
-  );
+  ['mes','ant','3m','todo'].forEach(k => {
+    document.getElementById('rbtn-'+k)?.classList.toggle('active-range', k===id);
+    document.getElementById('fpbtn-'+k)?.classList.toggle('active-range', k===id);
+  });
+}
+
+/* ── Dropdown de fechas ─────────────────────────────────────── */
+function toggleDateDrop(e) {
+  e.stopPropagation();
+  const drop = document.getElementById('feb-date-drop');
+  drop?.classList.toggle('open');
+}
+function closeDateDrop() {
+  document.getElementById('feb-date-drop')?.classList.remove('open');
+}
+function updateDateLabel() {
+  const ini = document.getElementById('f-fecha-ini')?.value;
+  const fin = document.getElementById('f-fecha-fin')?.value;
+  const btn = document.getElementById('feb-date-btn');
+  const lbl = document.getElementById('feb-date-label');
+  if (!lbl || !btn) return;
+  if (ini || fin) {
+    const fmt = s => s ? s.split('-').slice(1).reverse().join('/') : '…';
+    lbl.textContent = `${fmt(ini)} → ${fmt(fin)}`;
+    btn.classList.add('has-date');
+  } else {
+    lbl.textContent = 'Fechas';
+    btn.classList.remove('has-date');
+  }
 }
 
 /* ── Panel de filtros ───────────────────────────────────────── */
@@ -632,6 +741,7 @@ function toggleFiltroPanel() {
 function closeFiltroPanel() {
   document.getElementById('filter-expand-bar')?.classList.remove('open');
   document.getElementById('fp-overlay')?.classList.remove('active');
+  closeDateDrop();
 }
 function updateFiltroBtn() {
   const tipo   = document.getElementById('map-tipo')?.value;
@@ -653,6 +763,7 @@ function clearAll() {
   el('search-code-clear').classList.remove('visible');
   codigoFiltro = '';
   setActiveRangeBtn(null);
+  updateDateLabel();
   document.getElementById('filter-expand-bar')?.classList.remove('has-filters');
   closeFiltroPanel();
   aplicarFiltros();
@@ -692,6 +803,8 @@ function getFilteredRows() {
 function onManualDate() {
   setActiveRangeBtn(null);
   document.getElementById('range-warning').classList.remove('visible');
+  updateDateLabel();
+  closeDateDrop();
   aplicarFiltros();
 }
 function setRange(rango) {
@@ -708,6 +821,8 @@ function setRange(rango) {
   document.getElementById('f-fecha-fin').value = fin ? fmt(fin) : '';
   document.getElementById('range-warning').classList.toggle('visible', rango==='todo');
   setActiveRangeBtn(rango);
+  updateDateLabel();
+  closeDateDrop();
   updateFiltroBtn();
   aplicarFiltros();
 }
