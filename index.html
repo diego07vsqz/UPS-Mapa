@@ -497,7 +497,7 @@
 
             <!-- Tipo -->
             <div class="feb-item">
-              <select class="feb-select" id="map-tipo" onchange="updateFiltroBtn();aplicarFiltros()" title="Tipo de incidencia">
+              <select class="feb-select" id="map-tipo" onchange="aplicarFiltros()" title="Tipo de incidencia">
                 <option value="todos">Todos los tipos</option>
                 <option value="forzamiento">Forzamiento</option>
                 <option value="apagado">Apagado</option>
@@ -511,7 +511,7 @@
 
             <!-- Ciudad -->
             <div class="feb-item">
-              <select class="feb-select" id="map-ciudad" onchange="updateFiltroBtn();aplicarFiltros()" title="Ciudad">
+              <select class="feb-select" id="map-ciudad" onchange="aplicarFiltros()" title="Ciudad">
                 <option value="todas">Todas las ciudades</option>
               </select>
             </div>
@@ -783,20 +783,18 @@ function updateFiltroBtn() {
 }
 function clearAll() {
   const el = id => document.getElementById(id);
+  // Resetear todos los controles
   el('map-tipo').value    = 'todos';
   el('map-ciudad').value  = 'todas';
-  el('f-fecha-ini').value = '';
-  el('f-fecha-fin').value = '';
-  el('range-warning').classList.remove('visible');
   el('search-code').value = '';
-  el('search-code-clear').classList.remove('visible');
+  el('search-code-clear')?.classList.remove('visible');
+  el('search-code')?.classList.remove('is-active');
+  el('range-warning').classList.remove('visible');
   codigoFiltro = '';
-  setActiveRangeBtn(null);
-  updateDateLabel();
+  // Restaurar rango inicial: Este mes
+  setRange('mes');
+  // setRange ya llama aplicarFiltros, updateDateLabel y updateFiltroBtn
   document.getElementById('filter-expand-bar')?.classList.remove('has-filters');
-  closeFiltroPanel();
-  aplicarFiltros();
-  toast('Filtros limpiados');
 }
 function toast(msg, dur=2500) {
   const t = document.getElementById('toast');
@@ -833,16 +831,17 @@ function onManualDate() {
   setActiveRangeBtn(null);
   document.getElementById('range-warning').classList.remove('visible');
   updateDateLabel();
-  updateFiltroBtn();
   const ini = document.getElementById('f-fecha-ini').value;
   const fin = document.getElementById('f-fecha-fin').value;
-  // Solo cerrar y aplicar cuando ambas fechas están completas
-  if (ini && fin) {
-    closeDateDrop();
-    aplicarFiltros();
+  // Aplicar siempre que haya al menos una fecha
+  // El dropdown permanece abierto hasta que el usuario lo cierre manualmente
+  // o seleccione ambas fechas
+  if (ini || fin) {
+    aplicarFiltros(); // updateFiltroBtn se llama dentro
   }
-  // Si solo hay una fecha, mantener el dropdown abierto para
-  // que el usuario seleccione la segunda sin tener que reabrirlo
+  if (ini && fin) {
+    closeDateDrop(); // cerrar solo cuando el rango está completo
+  }
 }
 function setRange(rango) {
   const hoy = new Date(), y = hoy.getFullYear(), m = hoy.getMonth();
@@ -1071,7 +1070,6 @@ function renderStats(rows, grupos, ciudad) {
 
 /* ── Render principal ───────────────────────────────────────── */
 function aplicarFiltros() {
-  closeFiltroPanel();
   updateFiltroBtn();
   if (!mapInstance) return;
 
