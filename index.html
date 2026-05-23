@@ -420,8 +420,17 @@
     }
     .stat-num.counting { animation:kpi-pop .35s cubic-bezier(.34,1.56,.64,1) both; }
 
-    50%  { width:60%;  margin-left:20%; }
-      100% { width:0%;   margin-left:100%; }
+    /* ─────────────────────────────────────────────────────────
+       [E] ANIMACIÓN DE ENTRADA DE MARCADORES
+       Fade + scale-up escalonado al aplicar filtros
+    ───────────────────────────────────────────────────────── */
+    @keyframes marker-in {
+      0%   { opacity:0; transform:scale(.4) translateY(8px); }
+      60%  { opacity:1; transform:scale(1.12) translateY(-2px); }
+      100% { opacity:1; transform:scale(1) translateY(0); }
+    }
+    .marker-animated {
+      animation:marker-in .38s cubic-bezier(.34,1.56,.64,1) both;
     }
   </style>
 </head>
@@ -1181,6 +1190,9 @@ function aplicarFiltros() {
       });
     }
 
+    // Contador para delay escalonado (E)
+    let markerIdx = 0;
+
     // Marcadores activos
     Object.values(grupos).forEach(grupo => {
       const { lat, lng, registros } = grupo;
@@ -1217,8 +1229,11 @@ function aplicarFiltros() {
 
       const criticalClass = isCritical ? 'marker-critical' : '';
       const svgSize = Math.round(size*.52);
+      // [E] delay escalonado: máx 600ms para que no se sienta lento con muchos marcadores
+      const delay = Math.min(markerIdx * 30, 600);
+      markerIdx++;
       const iconHtml = `
-        <div style="position:relative;width:${size}px;height:${size}px">
+        <div class="marker-animated" style="position:relative;width:${size}px;height:${size}px;animation-delay:${delay}ms">
           <div class="${criticalClass}" style="
             width:${size}px;height:${size}px;background:${color};
             border-radius:50%;border:3px solid #fff;
