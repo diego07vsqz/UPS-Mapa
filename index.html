@@ -64,11 +64,12 @@
       display:flex; flex-direction:column; gap:0;
     }
     /* Cada fila */
+    /* Fila 1: inline-flex — la barra ocupa solo su ancho natural cuando cerrada */
     .filter-row {
-      display:flex; align-items:center; gap:6px;
-      height:46px; /* altura fija por fila */
+      display:inline-flex; align-items:center; gap:6px;
+      height:46px; width:100%;
     }
-    .filter-row-2 { border-top:1px solid var(--border); }
+    .filter-row-2 { border-top:1px solid var(--border); display:flex; }
 
     .filter-divider { width:1px; height:20px; background:var(--border-mid); flex-shrink:0; margin:0 2px; }
     .filter-label   { font-size:9px; font-weight:800; color:var(--text-light); text-transform:uppercase; letter-spacing:.12em; white-space:nowrap; }
@@ -111,10 +112,10 @@
     .fp-wrap {
       display:flex; align-items:center;
       height:36px; position:relative;
-      /* NO flex:1 — el wrapper toma solo el espacio de la barra */
+      width:auto;        /* toma solo el ancho de su contenido */
       flex-shrink:0;
     }
-    /* Cuando la barra está abierta, el wrapper se estira para que la barra ocupe todo */
+    /* Al abrir, el wrapper crece para que la barra ocupe toda la fila */
     .fp-wrap:has(.filter-expand-bar.open),
     .fp-wrap.fp-wrap-open {
       flex:1;
@@ -124,21 +125,21 @@
     .fp-overlay { position:fixed; inset:0; z-index:99; display:none; }
     .fp-overlay.active { display:block; }
 
-    /* Barra expansible — empieza compacta, se abre hacia la derecha */
+    /* Barra expansible — ancho fijo cerrada, 100% abierta */
     .filter-expand-bar {
       display:flex; align-items:center; gap:0;
       height:36px; border-radius:18px;
       background:linear-gradient(135deg, var(--flag-blue) 0%, #3b82f6 100%);
-      /* overflow:hidden removido — bloqueaba el calendario nativo de los date inputs */
       overflow:visible;
-      /* Clip para que el gradiente/border-radius se vea bien sin cortar popups */
       width:130px;               /* ancho colapsado */
+      max-width:130px;           /* evita estiramiento en flexbox */
+      flex-shrink:0;
       transition:width 320ms cubic-bezier(.4,0,.2,1),
-                 box-shadow .2s ease, border-radius .2s;
+                 max-width 320ms cubic-bezier(.4,0,.2,1),
+                 box-shadow .2s ease;
       box-shadow:0 2px 8px rgba(0,51,160,.3);
       cursor:pointer; position:relative; z-index:100;
     }
-    /* Pseudo-elemento para replicar el fondo con border-radius sin overflow:hidden */
     .filter-expand-bar::before {
       content:''; position:absolute; inset:0;
       background:inherit; border-radius:18px;
@@ -146,9 +147,10 @@
     }
     .filter-expand-bar > * { position:relative; z-index:1; }
     .filter-expand-bar.open {
-      width:100%;   /* ocupa todo el fp-wrap */
+      width:100%; max-width:100%;  /* ocupa todo el fp-wrap */
+      flex-shrink:1;
       box-shadow:0 4px 20px rgba(0,51,160,.35);
-      cursor:default; border-radius:18px;
+      cursor:default;
     }
 
     /* Dropdown de fechas — flota debajo de la barra, fuera del overflow */
