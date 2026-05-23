@@ -535,15 +535,8 @@
                     <line x1="8" y1="2" x2="8" y2="6"/>
                     <line x1="3" y1="10" x2="21" y2="10"/>
                   </svg>
-                  Rango de fechas
+                  Fecha personalizada
                 </div>
-                <div class="feb-date-quick" style="margin-bottom:12px">
-                  <button class="feb-date-qbtn" id="fpbtn-mes"  onclick="setRange('mes')">Este mes</button>
-                  <button class="feb-date-qbtn" id="fpbtn-ant"  onclick="setRange('ant')">Mes ant.</button>
-                  <button class="feb-date-qbtn" id="fpbtn-3m"   onclick="setRange('3m')">3 meses</button>
-                  <button class="feb-date-qbtn" id="fpbtn-todo" onclick="setRange('todo')">Todo</button>
-                </div>
-                <div class="feb-date-drop-label" style="margin-bottom:8px">Personalizado</div>
                 <div class="feb-date-row">
                   <input type="date" class="feb-date-native" id="f-fecha-ini" onchange="onManualDate()" title="Desde">
                   <span style="color:var(--text-light);font-size:13px">&#8594;</span>
@@ -731,10 +724,9 @@ function parseSheetDate(str) {
   return y ? new Date(+y,+m-1,+d) : null;
 }
 function setActiveRangeBtn(id) {
-  ['mes','ant','3m','todo'].forEach(k => {
-    document.getElementById('rbtn-'+k)?.classList.toggle('active-range', k===id);
-    document.getElementById('fpbtn-'+k)?.classList.toggle('active-range', k===id);
-  });
+  ['mes','ant','3m','todo'].forEach(k =>
+    document.getElementById('rbtn-'+k)?.classList.toggle('active-range', k===id)
+  );
 }
 
 /* ── Dropdown de fechas ─────────────────────────────────────── */
