@@ -54,14 +54,41 @@
     .btn-refresh:hover { background:rgba(245,158,11,.2); }
 
     /* ══════════════════════════════════════════════════════════
-       BARRA DE FILTROS — fila única compacta
+       BARRA DE FILTROS — 2 filas
+       Fila 1: botón FILTROS expansible (tipo, ciudad, fechas, aplicar)
+       Fila 2: buscador · rangos · limpiar · nota
     ══════════════════════════════════════════════════════════ */
     .filter-bar { background:var(--bg-white); border-bottom:1px solid var(--border); flex-shrink:0; }
-    .filter-bar-inner { max-width:1400px; margin:0 auto; padding:0 28px; display:flex; align-items:center; height:52px; gap:6px; }
-    .filter-divider { width:1px; height:20px; background:var(--border-mid); flex-shrink:0; margin:0 4px; }
+    .filter-bar-inner {
+      max-width:1400px; margin:0 auto; padding:0 28px;
+      display:flex; flex-direction:column; gap:0;
+    }
+    /* Cada fila */
+    .filter-row {
+      display:flex; align-items:center; gap:6px;
+      height:46px; /* altura fija por fila */
+    }
+    .filter-row-2 { border-top:1px solid var(--border); }
+
+    .filter-divider { width:1px; height:20px; background:var(--border-mid); flex-shrink:0; margin:0 2px; }
     .filter-label   { font-size:9px; font-weight:800; color:var(--text-light); text-transform:uppercase; letter-spacing:.12em; white-space:nowrap; }
 
-    /* Rangos rápidos en la barra */
+    /* Buscador en fila 2 */
+    .search-bar-wrap { position:relative; display:flex; align-items:center; }
+    .search-bar-input {
+      font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:500;
+      color:var(--text-dark); background:var(--bg-page);
+      border:1.5px solid var(--border-mid); border-radius:var(--r-sm);
+      padding:5px 28px 5px 30px; outline:none; width:160px;
+      transition:border-color .15s, box-shadow .15s, width .2s;
+    }
+    .search-bar-input:focus { border-color:var(--flag-blue); box-shadow:0 0 0 3px rgba(0,51,160,.08); width:190px; }
+    .search-bar-input.is-active { border-color:var(--flag-blue); background:var(--flag-blue-soft); color:var(--flag-blue); font-weight:700; }
+    .search-bar-icon { position:absolute; left:9px; color:var(--text-light); pointer-events:none; }
+    .search-bar-clear { position:absolute; right:8px; background:none; border:none; cursor:pointer; color:var(--text-light); font-size:13px; line-height:1; display:none; }
+    .search-bar-clear.visible { display:block; }
+
+    /* Rangos rápidos */
     .range-btns { display:flex; gap:3px; }
     .range-btn  { font-family:inherit; font-size:11px; font-weight:600; color:var(--text-mid); background:transparent; border:1px solid transparent; border-radius:20px; padding:4px 12px; cursor:pointer; transition:all .15s; white-space:nowrap; }
     .range-btn:hover        { background:var(--flag-blue-soft); color:var(--flag-blue); border-color:#c7d3f0; }
@@ -70,7 +97,7 @@
     .range-warning { font-size:10px; color:var(--yellow); background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.2); border-radius:20px; padding:3px 10px; display:none; white-space:nowrap; }
     .range-warning.visible { display:inline-block; }
 
-    /* Botón LIMPIAR barra */
+    /* Botón LIMPIAR */
     .btn-clear { font-family:inherit; font-size:10px; font-weight:700; color:#fff; background:#ef4444; border:1px solid #ef4444; border-radius:var(--r-sm); padding:4px 12px; cursor:pointer; transition:all .15s; text-transform:uppercase; letter-spacing:.04em; white-space:nowrap; }
     .btn-clear:hover { background:#dc2626; border-color:#dc2626; }
     .update-note { font-size:10px; color:var(--text-light); background:var(--bg-page); padding:3px 10px; border-radius:20px; white-space:nowrap; margin-left:auto; }
@@ -450,111 +477,122 @@
 <!-- Overlay -->
 <div class="fp-overlay" id="fp-overlay" onclick="closeFiltroPanel()"></div>
 
-<!-- Filtros -->
+<!-- Filtros: 2 filas -->
 <div class="filter-bar">
   <div class="filter-bar-inner">
 
-    <!-- Barra expansible horizontal -->
-    <div class="fp-wrap">
-      <div class="filter-expand-bar" id="filter-expand-bar">
+    <!-- ── FILA 1: botón FILTROS expansible ───────────────── -->
+    <div class="filter-row">
+      <div class="fp-wrap">
+        <div class="filter-expand-bar" id="filter-expand-bar">
 
-        <!-- Disparador siempre visible -->
-        <button class="feb-trigger" onclick="toggleFiltroPanel()" aria-label="Abrir filtros">
-          <div class="feb-icon"><span></span><span></span><span></span></div>
-          FILTROS
-          <div class="feb-dot"></div>
-        </button>
+          <button class="feb-trigger" onclick="toggleFiltroPanel()" aria-label="Abrir filtros">
+            <div class="feb-icon"><span></span><span></span><span></span></div>
+            FILTROS
+            <div class="feb-dot"></div>
+          </button>
 
-        <div class="feb-sep"></div>
+          <div class="feb-sep"></div>
 
-        <!-- Controles que aparecen al expandir -->
-        <div class="feb-controls" id="feb-controls">
+          <div class="feb-controls" id="feb-controls">
 
-          <div class="feb-item">
-            <select class="feb-select" id="map-tipo" onchange="updateFiltroBtn()" title="Tipo de incidencia">
-              <option value="todos">Todos los tipos</option>
-              <option value="forzamiento">Forzamiento</option>
-              <option value="apagado">Apagado</option>
-              <option value="accidente">Accidentes</option>
-              <option value="mejora">Mejora</option>
-              <option value="intermitencia">Intermitencia</option>
-              <option value="error">Error Com.</option>
-              <option value="vdt">VDT</option>
-            </select>
-          </div>
+            <!-- Tipo -->
+            <div class="feb-item">
+              <select class="feb-select" id="map-tipo" onchange="updateFiltroBtn()" title="Tipo de incidencia">
+                <option value="todos">Todos los tipos</option>
+                <option value="forzamiento">Forzamiento</option>
+                <option value="apagado">Apagado</option>
+                <option value="accidente">Accidentes</option>
+                <option value="mejora">Mejora</option>
+                <option value="intermitencia">Intermitencia</option>
+                <option value="error">Error Com.</option>
+                <option value="vdt">VDT</option>
+              </select>
+            </div>
 
-          <div class="feb-item">
-            <select class="feb-select" id="map-ciudad" onchange="updateFiltroBtn()" title="Ciudad">
-              <option value="todas">Todas las ciudades</option>
-            </select>
-          </div>
+            <!-- Ciudad -->
+            <div class="feb-item">
+              <select class="feb-select" id="map-ciudad" onchange="updateFiltroBtn()" title="Ciudad">
+                <option value="todas">Todas las ciudades</option>
+              </select>
+            </div>
 
-          <div class="feb-item" style="position:relative">
-            <button class="feb-date-btn" id="feb-date-btn" onclick="toggleDateDrop(event)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11">
-                <rect x="3" y="4" width="18" height="18" rx="2"/>
-                <line x1="16" y1="2" x2="16" y2="6"/>
-                <line x1="8" y1="2" x2="8" y2="6"/>
-                <line x1="3" y1="10" x2="21" y2="10"/>
-              </svg>
-              <span id="feb-date-label">Fechas</span>
-            </button>
-
-            <!-- Dropdown de fechas — fuera del overflow de la barra -->
-            <div class="feb-date-drop" id="feb-date-drop">
-              <div class="feb-date-drop-label">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+            <!-- Fechas (dropdown externo) -->
+            <div class="feb-item" style="position:relative">
+              <button class="feb-date-btn" id="feb-date-btn" onclick="toggleDateDrop(event)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11">
                   <rect x="3" y="4" width="18" height="18" rx="2"/>
                   <line x1="16" y1="2" x2="16" y2="6"/>
                   <line x1="8" y1="2" x2="8" y2="6"/>
                   <line x1="3" y1="10" x2="21" y2="10"/>
                 </svg>
-                Rango de fechas
-              </div>
-              <div class="feb-date-quick" style="margin-bottom:12px">
-                <button class="feb-date-qbtn" id="fpbtn-mes"  onclick="setRange('mes')">Este mes</button>
-                <button class="feb-date-qbtn" id="fpbtn-ant"  onclick="setRange('ant')">Mes ant.</button>
-                <button class="feb-date-qbtn" id="fpbtn-3m"   onclick="setRange('3m')">3 meses</button>
-                <button class="feb-date-qbtn" id="fpbtn-todo" onclick="setRange('todo')">Todo</button>
-              </div>
-              <div class="feb-date-drop-label" style="margin-bottom:8px">Personalizado</div>
-              <div class="feb-date-row">
-                <input type="date" class="feb-date-native" id="f-fecha-ini" onchange="onManualDate()" title="Desde">
-                <span style="color:var(--text-light);font-size:13px">&#8594;</span>
-                <input type="date" class="feb-date-native" id="f-fecha-fin" onchange="onManualDate()" title="Hasta">
+                <span id="feb-date-label">Fechas</span>
+              </button>
+              <div class="feb-date-drop" id="feb-date-drop">
+                <div class="feb-date-drop-label">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  Rango de fechas
+                </div>
+                <div class="feb-date-quick" style="margin-bottom:12px">
+                  <button class="feb-date-qbtn" id="fpbtn-mes"  onclick="setRange('mes')">Este mes</button>
+                  <button class="feb-date-qbtn" id="fpbtn-ant"  onclick="setRange('ant')">Mes ant.</button>
+                  <button class="feb-date-qbtn" id="fpbtn-3m"   onclick="setRange('3m')">3 meses</button>
+                  <button class="feb-date-qbtn" id="fpbtn-todo" onclick="setRange('todo')">Todo</button>
+                </div>
+                <div class="feb-date-drop-label" style="margin-bottom:8px">Personalizado</div>
+                <div class="feb-date-row">
+                  <input type="date" class="feb-date-native" id="f-fecha-ini" onchange="onManualDate()" title="Desde">
+                  <span style="color:var(--text-light);font-size:13px">&#8594;</span>
+                  <input type="date" class="feb-date-native" id="f-fecha-fin" onchange="onManualDate()" title="Hasta">
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="feb-item feb-search-wrap">
-            <input type="text" class="feb-search" id="search-code"
-                   placeholder="C&#243;digo&#8230;" oninput="onSearchCode(this.value)" autocomplete="off">
-            <button class="feb-search-x" id="search-code-clear" onclick="clearSearchCode()">&times;</button>
-          </div>
+            <!-- Aplicar -->
+            <div class="feb-item">
+              <button class="feb-apply" onclick="aplicarFiltros()">&#10003; APLICAR</button>
+            </div>
 
-          <div class="feb-item">
-            <button class="feb-apply" onclick="aplicarFiltros()">&#10003; APLICAR</button>
-          </div>
+          </div><!-- /.feb-controls -->
+        </div><!-- /.filter-expand-bar -->
+      </div><!-- /.fp-wrap -->
+    </div><!-- /.filter-row -->
 
-        </div><!-- /.feb-controls -->
-      </div><!-- /.filter-expand-bar -->
-    </div><!-- /.fp-wrap -->
+    <!-- ── FILA 2: búsqueda · rangos · limpiar ────────────── -->
+    <div class="filter-row filter-row-2">
 
-    <div class="filter-divider"></div>
+      <!-- Buscador por código -->
+      <div class="search-bar-wrap">
+        <svg class="search-bar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" class="search-bar-input" id="search-code"
+               placeholder="Buscar c&#243;digo&#8230;" oninput="onSearchCode(this.value)" autocomplete="off">
+        <button class="search-bar-clear" id="search-code-clear" onclick="clearSearchCode()">&times;</button>
+      </div>
 
-    <span class="filter-label">RANGO</span>
-    <div class="range-btns">
-      <button class="range-btn" id="rbtn-mes"  onclick="setRange('mes')">ESTE MES</button>
-      <button class="range-btn" id="rbtn-ant"  onclick="setRange('ant')">MES ANT.</button>
-      <button class="range-btn active-range" id="rbtn-3m" onclick="setRange('3m')">3 MESES</button>
-      <button class="range-btn" id="rbtn-todo" onclick="setRange('todo')">TODO</button>
-    </div>
-    <span class="range-warning" id="range-warning">&#9888; Puede tardar</span>
+      <div class="filter-divider"></div>
 
-    <div class="filter-divider"></div>
+      <span class="filter-label">RANGO</span>
+      <div class="range-btns">
+        <button class="range-btn" id="rbtn-mes"  onclick="setRange('mes')">ESTE MES</button>
+        <button class="range-btn" id="rbtn-ant"  onclick="setRange('ant')">MES ANT.</button>
+        <button class="range-btn active-range" id="rbtn-3m" onclick="setRange('3m')">3 MESES</button>
+        <button class="range-btn" id="rbtn-todo" onclick="setRange('todo')">TODO</button>
+      </div>
+      <span class="range-warning" id="range-warning">&#9888; Puede tardar</span>
 
-    <button class="btn-clear" onclick="clearAll()">&times; LIMPIAR</button>
-    <span class="update-note" id="update-note">CARGANDO...</span>
+      <div class="filter-divider"></div>
+
+      <button class="btn-clear" onclick="clearAll()">&times; LIMPIAR</button>
+      <span class="update-note" id="update-note">CARGANDO...</span>
+
+    </div><!-- /.filter-row-2 -->
 
   </div>
 </div>
@@ -828,13 +866,16 @@ function setRange(rango) {
 }
 function onSearchCode(val) {
   codigoFiltro = val.trim().toUpperCase();
-  document.getElementById('search-code-clear').classList.toggle('visible', val.length>0);
+  document.getElementById('search-code-clear')?.classList.toggle('visible', val.length > 0);
+  document.getElementById('search-code')?.classList.toggle('is-active', val.trim().length > 0);
   aplicarFiltros();
 }
 function clearSearchCode() {
-  document.getElementById('search-code').value = '';
+  const inp = document.getElementById('search-code');
+  if (inp) inp.value = '';
   codigoFiltro = '';
-  document.getElementById('search-code-clear').classList.remove('visible');
+  document.getElementById('search-code-clear')?.classList.remove('visible');
+  document.getElementById('search-code')?.classList.remove('is-active');
   aplicarFiltros();
 }
 function setLayer(capa) {
