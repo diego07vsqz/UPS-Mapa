@@ -951,20 +951,32 @@ async function loadData() {
       if (!match) throw new Error('Respuesta GViz inesperada');
       const json = JSON.parse(match[1]);
       dataset = (json.table.rows||[]).map(row => {
-        const c   = row.c;
-        const get = i => (c[i]?.v != null) ? String(c[i].f||c[i].v).trim() : '';
+        const c    = row.c;
+        // Para texto: preferir el valor formateado (f), fallback al crudo (v)
+        const get  = i => (c[i]?.v != null) ? String(c[i].f || c[i].v).trim() : '';
+        // Para números (coordenadas): usar siempre el valor numérico crudo (v) para máxima precisión
+        const getN = i => (c[i]?.v != null && c[i].v !== '') ? c[i].v : null;
+
         const codigo = get(2);
         const ref    = coordsMap[codigo?.toUpperCase()] || {};
-        const latRaw = get(8) || ref.lat?.toString() || '';
-        const lngRaw = get(9) || ref.lng?.toString() || '';
-        const lngNum = parseFloat(lngRaw);
-        const lngFix = (!isNaN(lngNum) && lngNum>0) ? -lngNum : lngNum;
+
+        // Leer coordenadas: primero del Sheet (col I=8, J=9), luego del listado de semáforos
+        const latVal = getN(8);
+        const lngVal = getN(9);
+        const latNum = latVal !== null ? parseFloat(latVal) : parseFloat(ref.lat) || NaN;
+        const lngNum = lngVal !== null ? parseFloat(lngVal) : parseFloat(ref.lng) || NaN;
+
+        // Corrección de signo: longitud de El Salvador debe ser negativa (-89.x)
+        // Algunos registros pueden traerla positiva (89.x)
+        const lngFix = (!isNaN(lngNum) && lngNum > 0) ? -lngNum : lngNum;
+
         return {
           fecha:     get(0), hora: get(1), codigo,
           reporte:   get(3), incidencia: get(4),
           dir:       get(6), ciudad: get(7) || ref.zona || '',
-          latitud:   latRaw ? parseFloat(latRaw).toString() : '',
-          longitud:  latRaw ? lngFix.toString() : '',
+          // Solo guardar coords si ambas son números válidos
+          latitud:   !isNaN(latNum) && latNum !== 0 ? latNum.toString() : '',
+          longitud:  !isNaN(lngFix) && lngFix !== 0 ? lngFix.toString() : '',
           operador:  get(10),
         };
       }).filter(r => r.fecha || r.codigo);
