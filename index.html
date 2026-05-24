@@ -950,36 +950,83 @@ async function loadData() {
       const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/);
       if (!match) throw new Error('Respuesta GViz inesperada');
       const json = JSON.parse(match[1]);
+      // ── Parsing robusto de coordenadas ─────────────────────
+      // Maneja: número, string, coma decimal, espacios, NBSP, signos
+      const parseCoord = raw => {
+        if (raw === null || raw === undefined || raw === '') return NaN;
+        // Si ya es número
+        if (typeof raw === 'number') return raw;
+        // Normalizar string: trim, quitar NBSP, comas → puntos, quitar caracteres no numéricos extra
+        let s = String(raw).trim()
+          .replace(/\u00a0/g, '')           // no-break space
+          .replace(/[\s]/g, '')              // espacios
+          .replace(/,/g, '.');               // coma decimal → punto
+        // Si tiene múltiples puntos (ej. "14.33.101389" mal formado), quedarse con el primer punto válido
+        const dots = s.split('.');
+        if (dots.length > 2) s = dots[0] + '.' + dots.slice(1).join('');
+        const n = parseFloat(s);
+        return isNaN(n) ? NaN : n;
+      };
+
+      let sinCoordsLog = [];
       dataset = (json.table.rows||[]).map(row => {
         const c    = row.c;
-        // Para texto: preferir el valor formateado (f), fallback al crudo (v)
         const get  = i => (c[i]?.v != null) ? String(c[i].f || c[i].v).trim() : '';
-        // Para números (coordenadas): usar siempre el valor numérico crudo (v) para máxima precisión
-        const getN = i => (c[i]?.v != null && c[i].v !== '') ? c[i].v : null;
+        // Para coordenadas: preferir valor crudo (v), fallback al formateado (f)
+        const getC = i => {
+          if (!c[i] || c[i].v == null || c[i].v === '') return null;
+          // v es el más confiable para números; si v es string, parseCoord lo maneja
+          return c[i].v;
+        };
 
         const codigo = get(2);
         const ref    = coordsMap[codigo?.toUpperCase()] || {};
 
-        // Leer coordenadas: primero del Sheet (col I=8, J=9), luego del listado de semáforos
-        const latVal = getN(8);
-        const lngVal = getN(9);
-        const latNum = latVal !== null ? parseFloat(latVal) : parseFloat(ref.lat) || NaN;
-        const lngNum = lngVal !== null ? parseFloat(lngVal) : parseFloat(ref.lng) || NaN;
+        // Intentar columnas I (8) y J (9) del Sheet
+        const latRaw = getC(8);
+        const lngRaw = getC(9);
 
-        // Corrección de signo: longitud de El Salvador debe ser negativa (-89.x)
-        // Algunos registros pueden traerla positiva (89.x)
-        const lngFix = (!isNaN(lngNum) && lngNum > 0) ? -lngNum : lngNum;
+        let latNum = parseCoord(latRaw);
+        let lngNum = parseCoord(lngRaw);
+
+        // Fallback: si una está vacía, usar la del listado de semáforos
+        if (isNaN(latNum) && ref.lat != null) latNum = parseCoord(ref.lat);
+        if (isNaN(lngNum) && ref.lng != null) lngNum = parseCoord(ref.lng);
+
+        // Corrección de signo para El Salvador (longitud debe ser negativa)
+        let lngFix = lngNum;
+        if (!isNaN(lngFix) && lngFix > 0 && lngFix < 100) lngFix = -lngFix;
+
+        // Validar rangos razonables para El Salvador
+        // Lat: 13.0 a 14.5  ·  Lng: -90.5 a -87.5
+        const latValida = !isNaN(latNum) && latNum >= 13.0 && latNum <= 14.5;
+        const lngValida = !isNaN(lngFix) && lngFix >= -90.5 && lngFix <= -87.5;
+
+        // Log de diagnóstico cuando hay código pero coords inválidas
+        if (codigo && (!latValida || !lngValida)) {
+          sinCoordsLog.push({
+            codigo,
+            latRaw, lngRaw,
+            latParsed: latNum, lngParsed: lngFix,
+            razon: !latValida ? `lat fuera de rango (${latNum})` : `lng fuera de rango (${lngFix})`
+          });
+        }
 
         return {
           fecha:     get(0), hora: get(1), codigo,
           reporte:   get(3), incidencia: get(4),
           dir:       get(6), ciudad: get(7) || ref.zona || '',
-          // Solo guardar coords si ambas son números válidos
-          latitud:   !isNaN(latNum) && latNum !== 0 ? latNum.toString() : '',
-          longitud:  !isNaN(lngFix) && lngFix !== 0 ? lngFix.toString() : '',
+          latitud:   latValida ? latNum.toString() : '',
+          longitud:  lngValida ? lngFix.toString() : '',
           operador:  get(10),
         };
       }).filter(r => r.fecha || r.codigo);
+
+      // Exponer log para inspección en consola
+      if (sinCoordsLog.length > 0) {
+        console.warn(`[CCM] ${sinCoordsLog.length} registros con coordenadas inválidas:`, sinCoordsLog.slice(0, 20));
+        window.__ccmSinCoords = sinCoordsLog; // accesible desde DevTools
+      }
       cacheGuardar(dataset);
     }
 
