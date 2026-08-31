@@ -112,19 +112,6 @@
     /* Botón LIMPIAR */
     .btn-clear { font-family:inherit; font-size:10px; font-weight:700; color:#fff; background:#ef4444; border:1px solid #ef4444; border-radius:var(--r-sm); padding:4px 12px; cursor:pointer; transition:all .15s; text-transform:uppercase; letter-spacing:.04em; white-space:nowrap; }
     .btn-clear:hover { background:#dc2626; border-color:#dc2626; }
-
-    /* [H] Botón toggle modo compacto */
-    .btn-toggle-bar {
-      font-family:inherit; background:transparent; border:1px solid var(--border-mid);
-      border-radius:var(--r-sm); padding:3px 7px; cursor:pointer;
-      color:var(--text-mid); transition:all .15s; margin-left:4px;
-      display:flex; align-items:center; justify-content:center;
-    }
-    .btn-toggle-bar:hover { background:var(--flag-blue-soft); color:var(--flag-blue); border-color:var(--flag-blue); }
-    .btn-toggle-bar svg { transition:transform .3s cubic-bezier(.4,0,.2,1); }
-    body.compact-bar .btn-toggle-bar svg { transform:rotate(180deg); }
-    body.compact-bar .filter-row-2 { display:none; }
-    body.compact-bar .filter-row-1 { height:44px; }
     .update-note { font-size:10px; color:var(--text-light); background:var(--bg-page); padding:3px 10px; border-radius:20px; white-space:nowrap; margin-left:auto; }
     /* ══════════════════════════════════════════════════════════
        FILTROS — expansión horizontal (inspirado en patrón SCSS)
@@ -770,11 +757,6 @@
       <div class="filter-divider"></div>
 
       <button class="btn-clear" onclick="clearAll()">&times; LIMPIAR</button>
-      <button class="btn-toggle-bar" onclick="toggleFilterBar()" title="Modo compacto — más espacio al mapa">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
-          <polyline points="18 15 12 9 6 15"/>
-        </svg>
-      </button>
       <span class="update-note" id="update-note">CARGANDO...</span>
 
     </div><!-- /.filter-row-2 -->
@@ -1001,13 +983,6 @@ function updateFiltroBtn() {
   const has    = tipo!=='todos' || ciudad!=='todas' || ini || fin || code;
   document.getElementById('filter-expand-bar')?.classList.toggle('has-filters', !!has);
 }
-function toggleFilterBar() {
-  document.body.classList.toggle('compact-bar');
-  const isCompact = document.body.classList.contains('compact-bar');
-  toast(isCompact ? 'Modo compacto — más espacio al mapa' : 'Barra completa');
-  setTimeout(() => mapInstance?.invalidateSize(), 320);
-}
-
 function clearAll() {
   const el = id => document.getElementById(id);
   // Resetear todos los controles
