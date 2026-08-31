@@ -521,65 +521,7 @@
       padding:7px 12px;
       pointer-events:none;
     }
-    .leaflet-tooltip-cluster::before { display:none; }
-    /* [1] Timeline scroller */
-    .timeline-wrap {
-      margin-top:10px; padding:10px 14px; background:var(--bg-white);
-      border:1px solid var(--border); border-radius:var(--r-lg);
-      flex-shrink:0;
-    }
-    .timeline-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
-    .timeline-title  { font-size:10px; font-weight:800; color:var(--text-light); text-transform:uppercase; letter-spacing:.12em; }
-    .timeline-hint   { font-size:10px; color:var(--text-light); font-style:italic; }
-    .timeline-scroll {
-      display:flex; gap:2px; overflow-x:auto; overflow-y:hidden;
-      padding:8px 4px 4px; scroll-behavior:smooth;
-      align-items:flex-end; height:80px;
-    }
-    .timeline-scroll::-webkit-scrollbar        { height:5px; }
-    .timeline-scroll::-webkit-scrollbar-track  { background:transparent; }
-    .timeline-scroll::-webkit-scrollbar-thumb  { background:var(--border-mid); border-radius:3px; }
-    .tl-day {
-      flex:0 0 auto; min-width:26px; height:100%;
-      display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
-      gap:4px; cursor:pointer; position:relative;
-      border-radius:6px 6px 3px 3px; padding:2px 3px;
-      transition:background .15s;
-    }
-    .tl-day:hover { background:var(--flag-blue-soft); }
-    .tl-day.active { background:var(--flag-blue-soft); }
-    .tl-day.active .tl-bar { background:var(--flag-blue); box-shadow:0 0 8px rgba(0,51,160,.4); }
-    .tl-bar {
-      width:16px; background:linear-gradient(180deg, var(--blue), var(--flag-blue));
-      border-radius:3px 3px 0 0; min-height:2px;
-      transition:height .3s cubic-bezier(.4,0,.2,1), background .15s;
-    }
-    .tl-day.hot .tl-bar { background:linear-gradient(180deg, #f87171, #dc2626); }
-    .tl-count { font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:800; color:var(--text-mid); }
-    .tl-date  { font-size:9px; color:var(--text-light); text-transform:uppercase; letter-spacing:.05em; }
-    .tl-day.active .tl-date  { color:var(--flag-blue); font-weight:700; }
-
-    /* [3] Top 3 chips zonas críticas */
-    .top-chips { display:flex; gap:8px; padding:10px 14px; background:var(--bg-white);
-      border:1px solid var(--border); border-radius:var(--r-lg); margin-top:10px;
-      flex-shrink:0; align-items:center; flex-wrap:wrap; }
-    .top-chips-label { font-size:10px; font-weight:800; color:var(--text-light);
-      text-transform:uppercase; letter-spacing:.12em; margin-right:4px; }
-    .top-chip {
-      display:inline-flex; align-items:center; gap:6px;
-      font-family:inherit; font-size:11px; font-weight:700; color:var(--text-dark);
-      background:var(--bg-page); border:1.5px solid var(--border-mid);
-      border-radius:20px; padding:5px 12px; cursor:pointer;
-      transition:all .18s; white-space:nowrap;
-    }
-    .top-chip:hover { background:var(--flag-blue-soft); border-color:var(--flag-blue); color:var(--flag-blue); transform:translateY(-1px); }
-    .top-chip .chip-dot { width:8px; height:8px; border-radius:50%; }
-    .top-chip .chip-count { font-family:'JetBrains Mono',monospace; font-weight:800; color:var(--flag-blue); }
-    .top-chip.rank-1 .chip-dot { background:#dc2626; }
-    .top-chip.rank-2 .chip-dot { background:#f59e0b; }
-    .top-chip.rank-3 .chip-dot { background:#eab308; }
-
-    /* [9] Glassmorphism en KPI cards */
+    .leaflet-tooltip-cluster::before { display:none; }/* [9] Glassmorphism en KPI cards */
     .stat-card {
       background:linear-gradient(145deg, rgba(255,255,255,.85), rgba(245,247,251,.9)) !important;
       backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
@@ -598,34 +540,6 @@
     }
     .view-fade-out .leaflet-marker-pane,
     .view-fade-out .leaflet-heatmap-layer { opacity:0; }
-
-    /* [11] Modo focus — semáforos no-focus con opacidad baja */
-    .focus-mode .leaflet-marker-icon:not(.marker-focused) { opacity:.15; transition:opacity .25s; }
-    .focus-mode .leaflet-marker-icon.marker-focused       { z-index:1000 !important; transform:scale(1.25); }
-    .focus-badge {
-      position:absolute; top:16px; left:50%; transform:translateX(-50%);
-      z-index:800; background:#0b1120; color:#fff;
-      padding:8px 16px; border-radius:20px; font-size:11px; font-weight:700;
-      display:none; align-items:center; gap:8px; box-shadow:0 4px 16px rgba(0,0,0,.3);
-      letter-spacing:.05em;
-    }
-    body.focus-mode .focus-badge { display:flex; }
-    .focus-badge button {
-      background:rgba(255,255,255,.15); border:none; color:#fff; border-radius:12px;
-      padding:3px 10px; font-size:10px; font-weight:700; cursor:pointer; font-family:inherit;
-      transition:background .15s;
-    }
-    .focus-badge button:hover { background:rgba(255,255,255,.28); }
-
-    /* [12] Sparkline en popup */
-    .popup-sparkline {
-      margin-top:8px; padding-top:8px; border-top:1px solid #f1f5f9;
-    }
-    .popup-sparkline-title {
-      font-size:9px; font-weight:800; color:#94a3b8;
-      text-transform:uppercase; letter-spacing:.1em; margin-bottom:4px;
-    }
-    .popup-sparkline svg { display:block; width:100%; height:32px; }
 
     /* [8] Tooltip hover en marcador individual */
     .marker-tooltip {
@@ -911,21 +825,6 @@
       <button class="capture-btn"                          onclick="capturarMapa()">&#128247; Capturar mapa</button>
     </div>
     <div id="map-container"></div>
-    <!-- [3] Top zonas críticas -->
-    <div class="top-chips" id="top-chips" style="display:none"></div>
-    <!-- [11] Focus mode badge -->
-    <div class="focus-badge" id="focus-badge">
-      <span>&#128301; Modo enfoque activo</span>
-      <button onclick="salirFocus()">Salir</button>
-    </div>
-    <!-- [1] Timeline scroller -->
-    <div class="timeline-wrap" id="timeline-wrap" style="display:none">
-      <div class="timeline-header">
-        <span class="timeline-title">&#128197; TENDENCIA DIARIA</span>
-        <span class="timeline-hint" id="timeline-hint">Clic en un d&iacute;a para filtrar</span>
-      </div>
-      <div class="timeline-scroll" id="timeline-scroll"></div>
-    </div>
     <div class="map-status">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       <span id="map-status-text">Cargando datos...</span>
@@ -1134,9 +1033,7 @@ function getFilteredRows() {
   const fechaFin = document.getElementById('f-fecha-fin').value;
   const dateIni  = fechaIni ? new Date(fechaIni+'T00:00:00') : null;
   const dateFin  = fechaFin ? new Date(fechaFin+'T23:59:59') : null;
-  const diaTimeline = timelineActiveDate;
   return dataset.filter(r => {
-    if (diaTimeline && r.fecha !== diaTimeline) return false;
     if (dateIni||dateFin) {
       const d = parseSheetDate(r.fecha);
       if (!d) return false;
@@ -1403,99 +1300,6 @@ function initMap() {
   };
   legend.addTo(mapInstance);
 }
-
-/* ── [1] Timeline scroller — barras por día ─────────────── */
-let timelineActiveDate = null;
-
-function renderTimeline(rows) {
-  const wrap    = document.getElementById('timeline-wrap');
-  const scroll  = document.getElementById('timeline-scroll');
-  if (!wrap || !scroll) return;
-  if (!rows.length) { wrap.style.display = 'none'; return; }
-
-  // Agrupar por fecha (formato original del Sheet)
-  const porDia = {};
-  rows.forEach(r => {
-    if (!r.fecha) return;
-    porDia[r.fecha] = (porDia[r.fecha] || 0) + 1;
-  });
-  const entries = Object.entries(porDia).sort((a,b) => {
-    const da = parseSheetDate(a[0]) || 0;
-    const db = parseSheetDate(b[0]) || 0;
-    return da - db;
-  });
-  if (entries.length < 2) { wrap.style.display = 'none'; return; }
-
-  wrap.style.display = 'block';
-  const max = Math.max(...entries.map(e => e[1]));
-  const avg = entries.reduce((s,e) => s + e[1], 0) / entries.length;
-
-  scroll.innerHTML = entries.map(([fecha, cnt]) => {
-    const hPct = Math.max(4, Math.round(cnt/max * 60));
-    const hot  = cnt > avg * 1.5;
-    const d = parseSheetDate(fecha);
-    const label = d ? `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}` : fecha.slice(0,5);
-    const active = fecha === timelineActiveDate ? 'active' : '';
-    return `<div class="tl-day ${hot?'hot':''} ${active}" onclick="filtrarPorDia('${fecha.replace(/'/g,"")}')" title="${fecha}: ${cnt}">
-      <div class="tl-count">${cnt}</div>
-      <div class="tl-bar" style="height:${hPct}px"></div>
-      <div class="tl-date">${label}</div>
-    </div>`;
-  }).join('');
-}
-
-function filtrarPorDia(fecha) {
-  // Toggle: si es el mismo día, quitar filtro
-  if (timelineActiveDate === fecha) {
-    timelineActiveDate = null;
-    toast('Filtro de d\u00eda quitado');
-  } else {
-    timelineActiveDate = fecha;
-    toast(`Solo d\u00eda ${fecha}`);
-  }
-  aplicarFiltros();
-}
-
-/* ── [3] Top 3 zonas críticas ─────────────────────────────── */
-function renderTopChips(rows) {
-  const wrap = document.getElementById('top-chips');
-  if (!wrap) return;
-  if (!rows.length) { wrap.style.display = 'none'; return; }
-
-  const conteo = {};
-  rows.forEach(r => {
-    const c = r.ciudad || 'Sin ciudad';
-    conteo[c] = (conteo[c] || 0) + 1;
-  });
-  const top = Object.entries(conteo).sort((a,b) => b[1] - a[1]).slice(0, 3);
-  if (top.length < 2) { wrap.style.display = 'none'; return; }
-
-  wrap.style.display = 'flex';
-  wrap.innerHTML = `
-    <span class="top-chips-label">&#128293; TOP ZONAS</span>` +
-    top.map(([ciudad, cnt], i) =>
-      `<button class="top-chip rank-${i+1}" onclick="filtrarCiudad('${esc(ciudad).replace(/'/g,"")}')">
-         <span class="chip-dot"></span>
-         <span>${esc(ciudad)}</span>
-         <span class="chip-count">${cnt}</span>
-       </button>`
-    ).join('');
-}
-
-function filtrarCiudad(ciudad) {
-  const sel = document.getElementById('map-ciudad');
-  if (!sel) return;
-  // Buscar la opción que coincida
-  const opt = [...sel.options].find(o => o.value.toLowerCase() === ciudad.toLowerCase() || o.text.toLowerCase() === ciudad.toLowerCase());
-  if (opt) {
-    sel.value = opt.value;
-    aplicarFiltros();
-    toast(`Filtrado por ${ciudad}`);
-  } else {
-    toast(`No se encontr\u00f3 la ciudad ${ciudad}`);
-  }
-}
-
 /* ── [4] Leyenda dinámica ordenada por cantidad ──────────── */
 function renderLeyenda(grupos) {
   const body = document.getElementById('leg-body');
@@ -1602,10 +1406,6 @@ function aplicarFiltros() {
     return !isNaN(lat) && !isNaN(lng) && lat!==0 && lng!==0;
   });
   const sinCoords = rowsAll.length - rows.length;
-
-  // [1] [3] Actualizar timeline y top chips
-  renderTimeline(rowsAll);
-  renderTopChips(rowsAll);
 
   document.getElementById('map-status-text').innerHTML =
     rows.length===0
@@ -1844,58 +1644,6 @@ function aplicarFiltros() {
                title="Copiar coordenadas">
         &#128203; Copiar</button>`;
 
-      // [7] Centrar / [11] Focus mode
-      const btnCentrar = `<button onclick="centrarEnPunto(${lat},${lng})"
-        style="display:flex;align-items:center;justify-content:center;gap:5px;flex:1;
-               font-family:inherit;font-size:11px;font-weight:700;color:var(--text-dark);
-               background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:6px 10px;
-               cursor:pointer;transition:all .15s"
-               onmouseover="this.style.background='#e2e8f0'"
-               onmouseout="this.style.background='#f1f5f9'"
-               title="Acercar zoom a este semáforo">
-        &#128269; Centrar</button>`;
-      const btnFocus = `<button onclick="entrarFocus('${esc(grupo.codigo).replace(/'/g,'')}',${lat},${lng})"
-        style="display:flex;align-items:center;justify-content:center;gap:5px;flex:1;
-               font-family:inherit;font-size:11px;font-weight:700;color:#7c3aed;
-               background:#f5f3ff;border:1px solid #ddd6fe;border-radius:6px;padding:6px 10px;
-               cursor:pointer;transition:all .15s"
-               onmouseover="this.style.background='#ede9fe'"
-               onmouseout="this.style.background='#f5f3ff'"
-               title="Ocultar los demás semáforos">
-        &#128301; Enfoque</button>`;
-
-      // [12] Sparkline últimos 7 días
-      const hoy = new Date();
-      const dias7 = [];
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date(hoy); d.setDate(hoy.getDate() - i);
-        dias7.push({ key:`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`, count:0, label:d });
-      }
-      registros.forEach(r => {
-        const rd = parseSheetDate(r.fecha);
-        if (!rd) return;
-        const dif = Math.floor((hoy - rd) / 86400000);
-        if (dif >= 0 && dif < 7) dias7[6 - dif].count++;
-      });
-      const maxSpark = Math.max(1, ...dias7.map(d => d.count));
-      const sparkPts = dias7.map((d, i) => {
-        const x = (i / 6) * 100;
-        const y = 30 - (d.count / maxSpark) * 26;
-        return `${x},${y}`;
-      }).join(' ');
-      const sparkDots = dias7.map((d, i) => {
-        const x = (i / 6) * 100;
-        const y = 30 - (d.count / maxSpark) * 26;
-        return `<circle cx="${x}" cy="${y}" r="1.8" fill="${d.count>0?'#0033a0':'#cbd5e1'}"/>`;
-      }).join('');
-      const sparklineHtml = `<div class="popup-sparkline">
-        <div class="popup-sparkline-title">&#128200; \u00daltimos 7 d\u00edas</div>
-        <svg viewBox="0 0 100 32" preserveAspectRatio="none">
-          <polyline points="${sparkPts}" fill="none" stroke="#0033a0" stroke-width="1.5" stroke-linejoin="round"/>
-          ${sparkDots}
-        </svg>
-      </div>`;
-
       const popupHtml = `
         <div style="font-family:'Inter',sans-serif;min-width:260px;max-width:300px">
           <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px">
@@ -1907,9 +1655,7 @@ function aplicarFiltros() {
           </div>
           <table style="width:100%;border-collapse:collapse">${filasTipo}</table>
           ${detalleHtml}
-          ${sparklineHtml}
-          <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">${btnMaps}${btnCoords}</div>
-          <div style="margin-top:6px;display:flex;gap:6px">${btnCentrar}${btnFocus}</div>
+          <div style="margin-top:10px;display:flex;gap:6px">${btnMaps}${btnCoords}</div>
         </div>`;
 
       L.marker([lat,lng],{icon})
@@ -1985,57 +1731,6 @@ function mostrarSinCoords() {
 function cerrarSinCoords() {
   document.getElementById('sin-coords-modal')?.classList.remove('open');
 }
-
-/* ── [7] Centrar mapa en un punto ────────────────────────── */
-function centrarEnPunto(lat, lng) {
-  if (!mapInstance) return;
-  mapInstance.setView([lat, lng], 17, { animate:true, duration:.6 });
-  mapInstance.closePopup();
-}
-
-/* ── [11] Modo focus — resalta un semáforo, oculta los demás ── */
-let focusCode = null;
-function entrarFocus(codigo, lat, lng) {
-  if (!mapInstance) return;
-  focusCode = codigo;
-  document.body.classList.add('focus-mode');
-  // Marcar el marcador activo
-  document.querySelectorAll('.leaflet-marker-icon').forEach(el => {
-    el.classList.remove('marker-focused');
-  });
-  // Buscar y marcar el marcador que coincide (por posición aprox)
-  setTimeout(() => {
-    document.querySelectorAll('.leaflet-marker-icon').forEach(el => {
-      // Heurística: buscar el que está más cerca del centro tras el zoom
-    });
-    mapInstance.setView([lat, lng], 16, { animate:true });
-    mapInstance.closePopup();
-    // Marcar por proximidad tras la animación
-    setTimeout(() => {
-      const target = mapInstance.latLngToContainerPoint([lat, lng]);
-      let closest = null, minDist = Infinity;
-      document.querySelectorAll('.custom-marker').forEach(el => {
-        const rect = el.getBoundingClientRect();
-        const mapRect = document.getElementById('map-container').getBoundingClientRect();
-        const cx = rect.left + rect.width/2 - mapRect.left;
-        const cy = rect.top + rect.height/2 - mapRect.top;
-        const dist = Math.hypot(cx - target.x, cy - target.y);
-        if (dist < minDist) { minDist = dist; closest = el; }
-      });
-      if (closest && minDist < 40) closest.classList.add('marker-focused');
-    }, 700);
-  }, 50);
-  toast(`Enfoque: ${codigo}`);
-}
-function salirFocus() {
-  focusCode = null;
-  document.body.classList.remove('focus-mode');
-  document.querySelectorAll('.leaflet-marker-icon').forEach(el => {
-    el.classList.remove('marker-focused');
-  });
-  toast('Enfoque desactivado');
-}
-
 /* ── [2] Copiar coordenadas al portapapeles ──────────────── */
 function copiarCoords(lat, lng, btn) {
   const txt = `${lat},${lng}`;
@@ -2187,7 +1882,6 @@ window.addEventListener('keydown', (e) => {
   closeDateDrop?.();
   document.getElementById('basemap-menu')?.classList.remove('open');
   if (document.body.classList.contains('fullscreen')) toggleFullscreen();
-  if (document.body.classList.contains('focus-mode')) salirFocus();
 });
 
 window.addEventListener('DOMContentLoaded', async () => {
