@@ -711,9 +711,9 @@
           </svg>
         </button>
         <div class="basemap-menu" id="basemap-menu">
-          <button class="basemap-opt active" data-map="osm"  onclick="setBaseMap('osm')">&#128736;&#65039; <span>Calles</span><small>R&aacute;pido</small></button>
+          <button class="basemap-opt active" data-map="osm"  onclick="setBaseMap('osm')">&#128736;&#65039; <span>Calles</span><small>OpenStreetMap</small></button>
           <button class="basemap-opt"        data-map="sat"  onclick="setBaseMap('sat')">&#128752; <span>Sat&eacute;lite</span><small>Vista a&eacute;rea</small></button>
-          <button class="basemap-opt"        data-map="topo" onclick="setBaseMap('topo')">&#127956;&#65039; <span>Terreno</span><small>Relieve</small></button>
+          <button class="basemap-opt"        data-map="topo" onclick="setBaseMap('topo')">&#127956;&#65039; <span>Topogr&aacute;fico</span><small>Terreno y curvas</small></button>
           <button class="basemap-opt"        data-map="dark" onclick="setBaseMap('dark')">&#127761; <span>Modo noche</span><small>Fondo oscuro</small></button>
         </div>
       </div>
@@ -801,18 +801,18 @@ const CACHE_KEY      = 'ccm_mapa_v3';
 const CACHE_TTL      = 10 * 60 * 1000; // 10 min
 // Mapas base disponibles — todos gratis sin API key
 const BASE_MAPS = {
-  osm:  { name:'Calles',        url:'https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png',
-          attr:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &mdash; Wikimedia',
+  osm:  { name:'Calles',        url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          attr:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
           max:19 },
   sat:  { name:'Sat\u00e9lite', url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
           attr:'Tiles &copy; Esri &mdash; World Imagery',
           max:19 },
-  topo: { name:'Terreno',       url:'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}.png',
-          attr:'Map tiles &copy; Stamen Design &mdash; Data &copy; OSM',
-          subdomains:'abcd', max:16 },
-  dark: { name:'Modo noche',    url:'https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png',
-          attr:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &mdash; Wikimedia',
-          max:19, darkFilter:true },   // filtro CSS para oscurecer
+  topo: { name:'Topogr\u00e1fico', url:'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+          attr:'&copy; OpenTopoMap (CC-BY-SA)',
+          subdomains:'abc', max:17 },
+  dark: { name:'Modo noche',    url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          attr:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+          max:19, darkFilter:true },
 };
 let baseActual = 'osm';
 const TILE_LIGHT = BASE_MAPS.osm.url;
