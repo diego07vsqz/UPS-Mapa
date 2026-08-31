@@ -348,18 +348,39 @@
     .leaflet-bar a:last-child  { border-radius:0 0 var(--r-md) var(--r-md) !important; border-bottom:none !important; }
     .leaflet-bar { box-shadow:0 4px 14px rgba(0,0,0,.12) !important; border:none !important; }
 
-    /* [A] Selector de mapa base */
+    /* Selector de mapa base — menú propio */
     .basemap-wrap { position:relative; display:inline-block; }
-    .basemap-menu { position:absolute; top:calc(100% + 6px); left:0; background:#fff;
-      border:1px solid var(--border-mid); border-radius:var(--r-md);
-      box-shadow:0 8px 24px rgba(0,0,0,.12); padding:6px; min-width:170px;
-      display:none; z-index:400; animation:panelIn .18s ease; }
-    .basemap-menu.open { display:flex; flex-direction:column; gap:2px; }
-    .basemap-opt { font-family:inherit; font-size:12px; font-weight:600; color:var(--text-mid);
-      background:transparent; border:none; border-radius:var(--r-sm);
-      padding:7px 12px; cursor:pointer; text-align:left; transition:background .12s; }
-    .basemap-opt:hover { background:var(--flag-blue-soft); color:var(--flag-blue); }
-    .basemap-opt.active { background:var(--flag-blue); color:#fff; }
+    .basemap-trigger {
+      display:inline-flex; align-items:center; gap:6px;
+      font-family:inherit; font-size:11px; font-weight:700; color:var(--flag-blue);
+      background:var(--flag-blue-soft); border:1px solid #c7d3f0;
+      border-radius:20px; padding:4px 11px; cursor:pointer;
+      transition:all .15s; white-space:nowrap;
+    }
+    .basemap-trigger:hover { background:#d0dcf0; border-color:var(--flag-blue); }
+    .basemap-trigger .bm-chevron { transition:transform .2s; opacity:.7; }
+    .basemap-trigger.open .bm-chevron { transform:rotate(180deg); }
+    .basemap-menu {
+      position:absolute; top:calc(100% + 8px); right:0; background:#fff;
+      border:1px solid var(--border-mid); border-radius:var(--r-lg);
+      box-shadow:0 12px 32px rgba(0,0,0,.15); padding:8px;
+      min-width:220px; display:none; z-index:400;
+      animation:panelIn .18s cubic-bezier(.34,1.56,.64,1);
+    }
+    .basemap-menu.open { display:flex; flex-direction:column; gap:3px; }
+    .basemap-opt {
+      display:flex; align-items:center; gap:10px;
+      font-family:inherit; font-size:12px; font-weight:600; color:var(--text-dark);
+      background:transparent; border:none; border-radius:var(--r-md);
+      padding:9px 12px; cursor:pointer; text-align:left;
+      transition:background .12s, color .12s;
+    }
+    .basemap-opt span    { flex:1; }
+    .basemap-opt small   { font-size:10px; font-weight:500; color:var(--text-light); }
+    .basemap-opt:hover                        { background:var(--flag-blue-soft); color:var(--flag-blue); }
+    .basemap-opt:hover small                  { color:var(--flag-blue); }
+    .basemap-opt.active                       { background:var(--flag-blue); color:#fff; }
+    .basemap-opt.active small                 { color:rgba(255,255,255,.75); }
 
     /* ── Leyenda mapa ── */
     .map-legend-control { background:rgba(255,255,255,.96); border:1px solid var(--border-mid); border-radius:var(--r-md); padding:10px 13px; box-shadow:0 2px 10px rgba(0,0,0,.12); min-width:155px; }
@@ -653,6 +674,29 @@
 
       <div class="filter-divider"></div>
 
+      <!-- Mapa base: menú propio -->
+      <span class="filter-label">MAPA</span>
+      <div class="basemap-wrap">
+        <button class="basemap-trigger" id="basemap-trigger" onclick="toggleBaseMenu(event)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="12" height="12">
+            <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
+            <line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
+          </svg>
+          <span id="basemap-current">Calles</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10" class="bm-chevron">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+        <div class="basemap-menu" id="basemap-menu">
+          <button class="basemap-opt active" data-map="osm"  onclick="setBaseMap('osm')">&#128736;&#65039; <span>Calles</span><small>OpenStreetMap</small></button>
+          <button class="basemap-opt"        data-map="sat"  onclick="setBaseMap('sat')">&#128752; <span>Sat&eacute;lite</span><small>Vista a&eacute;rea</small></button>
+          <button class="basemap-opt"        data-map="topo" onclick="setBaseMap('topo')">&#127956;&#65039; <span>Topogr&aacute;fico</span><small>Terreno y curvas</small></button>
+          <button class="basemap-opt"        data-map="dark" onclick="setBaseMap('dark')">&#127761; <span>Modo noche</span><small>Fondo oscuro</small></button>
+        </div>
+      </div>
+
+      <div class="filter-divider"></div>
+
       <button class="btn-clear" onclick="clearAll()">&times; LIMPIAR</button>
       <span class="update-note" id="update-note">CARGANDO...</span>
 
@@ -699,14 +743,6 @@
       <button class="layer-btn active" id="btn-marcadores" onclick="setLayer('marcadores')">&#128204; Marcadores</button>
       <button class="layer-btn"        id="btn-heatmap"    onclick="setLayer('heatmap')">&#127777; Mapa de calor</button>
       <button class="layer-btn"        id="btn-darkmap"    onclick="toggleDarkMap()" title="Modo noche">&#127761; Modo noche</button>
-      <div class="basemap-wrap">
-        <button class="layer-btn" onclick="toggleBaseMenu(event)" title="Mapa base">&#128506; Mapa base</button>
-        <div class="basemap-menu" id="basemap-menu">
-          <button class="basemap-opt active" data-map="osm"  onclick="setBaseMap('osm')">&#128736; Calles (OSM)</button>
-          <button class="basemap-opt"        data-map="sat"  onclick="setBaseMap('sat')">&#128752; Sat&eacute;lite</button>
-          <button class="basemap-opt"        data-map="topo" onclick="setBaseMap('topo')">&#127956; Topogr&aacute;fico</button>
-        </div>
-      </div>
       <button class="layer-btn"        id="btn-fullscreen" onclick="toggleFullscreen()" title="Pantalla completa">&#9974; Pantalla completa</button>
       <button class="capture-btn"                          onclick="capturarMapa()">&#128247; Capturar mapa</button>
     </div>
@@ -807,7 +843,6 @@ let mapInstance  = null;
 let clusterLayer = null;
 let heatLayer    = null;
 let capaActual   = 'marcadores';
-let radioLayer   = null;   // capa del círculo de radio activo
 let codigoFiltro = '';
 let tileLayer    = null;   // capa de tile activa (light/dark)
 let darkMode     = false;  // estado del modo noche
@@ -1175,7 +1210,6 @@ function initMap() {
     return div;
   };
   legend.addTo(mapInstance);
-  _initRadioListeners();
 }
 
 /* ── [D] Animación contador KPI ─────────────────────────────── */
@@ -1244,48 +1278,10 @@ function renderStats(rows, grupos, ciudad) {
   }
 }
 
-/* ── [C] Círculo de radio alrededor de un semáforo ─────────── */
-let radioZoomInicial = null;   // zoom al momento de dibujar el radio
-const RADIO_METROS   = 500;
-
-function quitarRadio() {
-  if (radioLayer && mapInstance) {
-    mapInstance.removeLayer(radioLayer);
-    radioLayer = null;
-    radioZoomInicial = null;
-  }
-}
-
-function dibujarRadio(lat, lng, codigo) {
-  if (!mapInstance) return;
-  // Quitar cualquier radio previo (al seleccionar otro semáforo)
-  quitarRadio();
-  radioLayer = L.circle([lat, lng], {
-    radius: RADIO_METROS, color:'#0033a0', weight:2,
-    fillColor:'#3b82f6', fillOpacity:.12, dashArray:'6,4',
-    interactive:false,   // no bloquea clics
-  }).addTo(mapInstance);
-  mapInstance.setView([lat, lng], 15);
-  radioZoomInicial = mapInstance.getZoom();
-  toast(`Radio de ${RADIO_METROS} m alrededor de ${codigo}. Aleja el zoom para quitarlo.`);
-}
-
-/* Listener global de zoom — quitar radio si el usuario aleja */
-function _initRadioListeners() {
-  if (!mapInstance) return;
-  mapInstance.on('zoomend', () => {
-    if (radioLayer && radioZoomInicial !== null) {
-      // Quitar si el zoom bajó (alejó) más de 2 niveles
-      if (mapInstance.getZoom() < radioZoomInicial - 1) quitarRadio();
-    }
-  });
-}
-
 /* ── Render principal ───────────────────────────────────────── */
 function aplicarFiltros() {
   updateFiltroBtn();
   if (!mapInstance) return;
-  quitarRadio();   // limpiar radio al cambiar filtros
 
   const ciudad  = document.getElementById('map-ciudad').value;
   const rowsAll = getFilteredRows();
@@ -1499,21 +1495,14 @@ function aplicarFiltros() {
              \u00daltima: <strong style="color:#4b5563">${esc(r0?.fecha||'\u2014')}</strong>
            </div>`;
 
-      // [B] botón Google Maps + [C] botón radio
+      // [B] botón Google Maps para verificar ubicación
       const btnMaps  = `<a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank"
-        style="display:inline-flex;align-items:center;gap:4px;font-family:inherit;font-size:11px;
-               font-weight:700;color:#fff;background:#4285F4;border-radius:6px;
-               padding:5px 10px;text-decoration:none;flex:1;justify-content:center;
+        style="display:flex;align-items:center;justify-content:center;gap:6px;
+               font-family:inherit;font-size:11px;font-weight:700;color:#fff;
+               background:#4285F4;border-radius:6px;padding:6px 12px;text-decoration:none;
                transition:background .15s" onmouseover="this.style.background='#3367d6'"
                onmouseout="this.style.background='#4285F4'">
-        &#128205; Google Maps</a>`;
-      const btnRadio = `<button onclick="dibujarRadio(${lat},${lng},'${esc(grupo.codigo)}')"
-        style="font-family:inherit;font-size:11px;font-weight:700;color:#0033a0;
-               background:#e6ebf5;border:1px solid #c7d3f0;border-radius:6px;
-               padding:5px 10px;cursor:pointer;flex:1;transition:background .15s"
-               onmouseover="this.style.background='#d0dcf0'"
-               onmouseout="this.style.background='#e6ebf5'">
-        &#9678; Ver radio</button>`;
+        &#128205; Ver en Google Maps</a>`;
 
       const popupHtml = `
         <div style="font-family:'Inter',sans-serif;min-width:260px;max-width:300px">
@@ -1526,7 +1515,7 @@ function aplicarFiltros() {
           </div>
           <table style="width:100%;border-collapse:collapse">${filasTipo}</table>
           ${detalleHtml}
-          <div style="display:flex;gap:6px;margin-top:10px">${btnMaps}${btnRadio}</div>
+          <div style="margin-top:10px">${btnMaps}</div>
         </div>`;
 
       L.marker([lat,lng],{icon})
@@ -1599,15 +1588,20 @@ function setBaseMap(key) {
   document.querySelectorAll('.basemap-opt').forEach(b =>
     b.classList.toggle('active', b.dataset.map === key)
   );
+  // Reflejar el mapa activo en el botón trigger
+  const label = document.getElementById('basemap-current');
+  if (label) label.textContent = bm.name;
   document.getElementById('basemap-menu')?.classList.remove('open');
+  document.getElementById('basemap-trigger')?.classList.remove('open');
   toast(`Mapa base: ${bm.name}`);
 }
 
 function toggleBaseMenu(e) {
   e?.stopPropagation();
-  const menu = document.getElementById('basemap-menu');
-  const isOpen = menu?.classList.toggle('open');
-  // Cerrar al clic fuera
+  const menu    = document.getElementById('basemap-menu');
+  const trigger = document.getElementById('basemap-trigger');
+  const isOpen  = menu?.classList.toggle('open');
+  trigger?.classList.toggle('open', isOpen);
   if (isOpen) {
     setTimeout(() => {
       document.addEventListener('click', _closeBaseMenuOnce, { once:true });
@@ -1615,9 +1609,11 @@ function toggleBaseMenu(e) {
   }
 }
 function _closeBaseMenuOnce(e) {
-  const menu = document.getElementById('basemap-menu');
   const wrap = e.target.closest('.basemap-wrap');
-  if (!wrap) menu?.classList.remove('open');
+  if (!wrap) {
+    document.getElementById('basemap-menu')?.classList.remove('open');
+    document.getElementById('basemap-trigger')?.classList.remove('open');
+  }
 }
 
 /* ── Captura PNG ────────────────────────────────────────────── */
