@@ -334,11 +334,55 @@
     .map-status { margin-top:8px; font-size:12px; color:var(--text-light); display:flex; align-items:center; gap:6px; flex-shrink:0; }
     .custom-marker { background:transparent !important; border:none !important; }
 
+    /* [D] Botones zoom más grandes y estilo dashboard */
+    .leaflet-touch .leaflet-bar a,
+    .leaflet-bar a {
+      width:38px !important; height:38px !important; line-height:38px !important;
+      font-size:22px !important; font-weight:600 !important;
+      color:var(--flag-blue) !important; background:#fff !important;
+      border-bottom:1px solid var(--border) !important;
+      transition:background .12s, color .12s;
+    }
+    .leaflet-bar a:hover { background:var(--flag-blue-soft) !important; }
+    .leaflet-bar a:first-child { border-radius:var(--r-md) var(--r-md) 0 0 !important; }
+    .leaflet-bar a:last-child  { border-radius:0 0 var(--r-md) var(--r-md) !important; border-bottom:none !important; }
+    .leaflet-bar { box-shadow:0 4px 14px rgba(0,0,0,.12) !important; border:none !important; }
+
+    /* [A] Selector de mapa base */
+    .basemap-wrap { position:relative; display:inline-block; }
+    .basemap-menu { position:absolute; top:calc(100% + 6px); left:0; background:#fff;
+      border:1px solid var(--border-mid); border-radius:var(--r-md);
+      box-shadow:0 8px 24px rgba(0,0,0,.12); padding:6px; min-width:170px;
+      display:none; z-index:400; animation:panelIn .18s ease; }
+    .basemap-menu.open { display:flex; flex-direction:column; gap:2px; }
+    .basemap-opt { font-family:inherit; font-size:12px; font-weight:600; color:var(--text-mid);
+      background:transparent; border:none; border-radius:var(--r-sm);
+      padding:7px 12px; cursor:pointer; text-align:left; transition:background .12s; }
+    .basemap-opt:hover { background:var(--flag-blue-soft); color:var(--flag-blue); }
+    .basemap-opt.active { background:var(--flag-blue); color:#fff; }
+
     /* ── Leyenda mapa ── */
     .map-legend-control { background:rgba(255,255,255,.96); border:1px solid var(--border-mid); border-radius:var(--r-md); padding:10px 13px; box-shadow:0 2px 10px rgba(0,0,0,.12); min-width:155px; }
     .map-legend-control h4 { font-size:10px; font-weight:800; color:var(--text-light); text-transform:uppercase; letter-spacing:.1em; margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid var(--border); }
     .map-legend-control .leg-item { display:flex; align-items:center; gap:7px; padding:3px 0; font-size:11px; font-weight:500; color:var(--text-mid); }
     .map-legend-control .leg-dot  { width:10px; height:10px; border-radius:50%; flex-shrink:0; border:1.5px solid rgba(255,255,255,.8); box-shadow:0 1px 3px rgba(0,0,0,.2); }
+    /* [E] Leyenda colapsable */
+    .map-legend-control .leg-header {
+      display:flex; align-items:center; justify-content:space-between; gap:8px;
+      cursor:pointer; padding-bottom:6px; margin-bottom:8px;
+      border-bottom:1px solid var(--border); user-select:none;
+    }
+    .map-legend-control .leg-toggle {
+      font-size:16px; font-weight:800; color:var(--text-light); line-height:1;
+      width:18px; height:18px; display:flex; align-items:center; justify-content:center;
+      transition:transform .2s;
+    }
+    .map-legend-control.collapsed .leg-body   { display:none; }
+    .map-legend-control.collapsed .leg-header { padding-bottom:0; margin-bottom:0; border-bottom:none; }
+    .map-legend-control.collapsed .leg-toggle::before { content:"+"; }
+    .map-legend-control.collapsed .leg-toggle { font-size:14px; }
+    .map-legend-control.collapsed .leg-toggle:not(:empty) { visibility:hidden; }
+    .map-legend-control.collapsed .leg-toggle::before { visibility:visible; position:absolute; }
 
     /* ─────────────────────────────────────────────────────────
        [5] MODO PANTALLA COMPLETA
@@ -419,6 +463,25 @@
       100% { transform:scale(1);   opacity:1; }
     }
     .stat-num.counting { animation:kpi-pop .35s cubic-bezier(.34,1.56,.64,1) both; }
+
+    /* [F] Skeleton loading en KPI cards */
+    @keyframes skeleton-shine {
+      0%   { background-position:-200px 0; }
+      100% { background-position:200px 0; }
+    }
+    .stat-num.skeleton,
+    .stat-label.skeleton,
+    .stat-sub.skeleton {
+      color:transparent !important;
+      background:linear-gradient(90deg, #e5e7eb 0%, #f3f4f6 50%, #e5e7eb 100%);
+      background-size:400px 100%;
+      border-radius:6px;
+      animation:skeleton-shine 1.4s ease-in-out infinite;
+      user-select:none;
+    }
+    .stat-num.skeleton  { min-height:26px; width:60px; display:inline-block; }
+    .stat-label.skeleton{ min-height:11px; width:80px; margin-top:2px; display:inline-block; }
+    .stat-sub.skeleton  { min-height:11px; width:100px; margin-top:3px; display:inline-block; }
 
     /* ─────────────────────────────────────────────────────────
        [E] ANIMACIÓN DE ENTRADA DE MARCADORES
@@ -606,7 +669,7 @@
     <div class="stat-card s-blue">
       <div class="stat-icon" style="background:#eff6ff">&#128506;</div>
       <div>
-        <div class="stat-num" id="stat-zonas">&mdash;</div>
+        <div class="stat-num skeleton" id="stat-zonas">&mdash;</div>
         <div class="stat-label">Zonas</div>
         <div class="stat-sub" id="stat-zonas-sub">ciudades en el filtro</div>
       </div>
@@ -614,7 +677,7 @@
     <div class="stat-card s-green">
       <div class="stat-icon" style="background:#ecfdf5">&#128678;</div>
       <div>
-        <div class="stat-num" id="stat-total-sem">&mdash;</div>
+        <div class="stat-num skeleton" id="stat-total-sem">&mdash;</div>
         <div class="stat-label">Sem&aacute;foros en zona</div>
         <div class="stat-sub" id="stat-total-sem-sub">seg&uacute;n listado oficial</div>
       </div>
@@ -622,7 +685,7 @@
     <div class="stat-card s-yellow">
       <div class="stat-icon" style="background:#fffbeb">&#9889;</div>
       <div>
-        <div class="stat-num" id="stat-activos">&mdash;</div>
+        <div class="stat-num skeleton" id="stat-activos">&mdash;</div>
         <div class="stat-label">Con incidencias</div>
         <div class="stat-sub" id="stat-activos-sub">en el per&iacute;odo</div>
       </div>
@@ -636,6 +699,14 @@
       <button class="layer-btn active" id="btn-marcadores" onclick="setLayer('marcadores')">&#128204; Marcadores</button>
       <button class="layer-btn"        id="btn-heatmap"    onclick="setLayer('heatmap')">&#127777; Mapa de calor</button>
       <button class="layer-btn"        id="btn-darkmap"    onclick="toggleDarkMap()" title="Modo noche">&#127761; Modo noche</button>
+      <div class="basemap-wrap">
+        <button class="layer-btn" onclick="toggleBaseMenu(event)" title="Mapa base">&#128506; Mapa base</button>
+        <div class="basemap-menu" id="basemap-menu">
+          <button class="basemap-opt active" data-map="osm"  onclick="setBaseMap('osm')">&#128736; Calles (OSM)</button>
+          <button class="basemap-opt"        data-map="sat"  onclick="setBaseMap('sat')">&#128752; Sat&eacute;lite</button>
+          <button class="basemap-opt"        data-map="topo" onclick="setBaseMap('topo')">&#127956; Topogr&aacute;fico</button>
+        </div>
+      </div>
       <button class="layer-btn"        id="btn-fullscreen" onclick="toggleFullscreen()" title="Pantalla completa">&#9974; Pantalla completa</button>
       <button class="capture-btn"                          onclick="capturarMapa()">&#128247; Capturar mapa</button>
     </div>
@@ -664,10 +735,24 @@ const SHEET_NAME     = 'P. Semaforico';
 const SEMAFOROS_NAME = 'Lista Sem\u00e1foros';
 const CACHE_KEY      = 'ccm_mapa_v3';
 const CACHE_TTL      = 10 * 60 * 1000; // 10 min
-const TILE_LIGHT     = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-const TILE_DARK      = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-// Nota: CARTO ahora exige API key. OSM directo funciona sin llave.
-// Modo noche sigue usando CARTO dark (menos crítico visualmente).
+// Mapas base disponibles — todos gratis sin API key
+const BASE_MAPS = {
+  osm:  { name:'Calles (OSM)',   url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          attr:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+          max:19 },
+  sat:  { name:'Sat\u00e9lite',  url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+          attr:'Tiles &copy; Esri &mdash; World Imagery',
+          max:19 },
+  topo: { name:'Topogr\u00e1fico', url:'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+          attr:'&copy; OpenTopoMap (CC-BY-SA)',
+          subdomains:'abc', max:17 },
+  dark: { name:'Modo noche',    url:'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+          attr:'&copy; OSM &amp; CARTO',
+          subdomains:'abcd', max:19 },
+};
+let baseActual = 'osm';
+const TILE_LIGHT = BASE_MAPS.osm.url;
+const TILE_DARK  = BASE_MAPS.dark.url;
 
 /* ── Catálogo de tipos ──────────────────────────────────────── */
 const TIPOS = {
@@ -722,6 +807,7 @@ let mapInstance  = null;
 let clusterLayer = null;
 let heatLayer    = null;
 let capaActual   = 'marcadores';
+let radioLayer   = null;   // capa del círculo de radio activo
 let codigoFiltro = '';
 let tileLayer    = null;   // capa de tile activa (light/dark)
 let darkMode     = false;  // estado del modo noche
@@ -1064,17 +1150,18 @@ function refrescarDatos() {
 function initMap() {
   if (mapInstance) return;
   mapInstance = L.map('map-container', { zoomControl:true }).setView([13.6894,-89.1872], 8);
-  tileLayer = L.tileLayer(TILE_LIGHT, {
-    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom:19, minZoom:5,
-  }).addTo(mapInstance);
+  setBaseMap('osm');
 
   // Leyenda
   const legend = L.control({ position:'bottomleft' });
   legend.onAdd = () => {
     const div = L.DomUtil.create('div','map-legend-control');
     div.innerHTML = `
-      <h4>Tipos de incidencia</h4>
+      <div class="leg-header" onclick="this.parentElement.classList.toggle('collapsed')">
+        <h4 style="margin:0;padding:0;border:none">Tipos de incidencia</h4>
+        <span class="leg-toggle">&minus;</span>
+      </div>
+      <div class="leg-body">
       <div class='leg-item'><div class='leg-dot' style='background:#ca8a04'></div>Forzamiento de Tiempos</div>
       <div class='leg-item'><div class='leg-dot' style='background:#dc2626'></div>Apagado</div>
       <div class='leg-item'><div class='leg-dot' style='background:#65a30d'></div>Mejora de Tiempos</div>
@@ -1083,7 +1170,7 @@ function initMap() {
       <div class='leg-item'><div class='leg-dot' style='background:#ea580c'></div>Apoyo en Accidentes</div>
       <div class='leg-item'><div class='leg-dot' style='background:#0d9488'></div>Revisi\u00f3n VDT</div>
       <div class='leg-item'><div class='leg-dot' style='background:#94a3b8'></div>Otro tipo</div>
-      <div class='leg-item'><div class='leg-dot' style='background:#dc2626;box-shadow:0 0 0 3px rgba(239,68,68,.3)'></div>Cr\u00edtico (pulso)</div>`;
+      <div class='leg-item'><div class='leg-dot' style='background:#dc2626;box-shadow:0 0 0 3px rgba(239,68,68,.3)'></div>Cr\u00edtico (pulso)</div></div>`;
     L.DomEvent.disableClickPropagation(div);
     return div;
   };
@@ -1117,6 +1204,10 @@ function countUp(elId, target) {
 
 /* ── KPI cards ──────────────────────────────────────────────── */
 function renderStats(rows, grupos, ciudad) {
+  // [F] quitar skeleton cuando llegan datos reales
+  ['stat-zonas','stat-total-sem','stat-activos'].forEach(id => {
+    document.getElementById(id)?.classList.remove('skeleton');
+  });
   const zonas = new Set(rows.map(r=>r.ciudad).filter(Boolean));
   countUp('stat-zonas', zonas.size || '\u2014');
   document.getElementById('stat-zonas-sub').textContent = zonas.size===1 ? [...zonas][0] : `${zonas.size} ciudades`;
@@ -1140,6 +1231,24 @@ function renderStats(rows, grupos, ciudad) {
     cardActivos?.classList.remove('alerta');
     if (iconActivos) iconActivos.textContent = '\u26a1';
   }
+}
+
+/* ── [C] Círculo de radio alrededor de un semáforo ─────────── */
+function dibujarRadio(lat, lng, codigo, metros) {
+  if (!mapInstance) return;
+  metros = metros || 500;
+  if (radioLayer) mapInstance.removeLayer(radioLayer);
+  radioLayer = L.circle([lat, lng], {
+    radius: metros, color:'#0033a0', weight:2,
+    fillColor:'#3b82f6', fillOpacity:.12, dashArray:'6,4',
+  }).bindTooltip(`${codigo} — Radio de ${metros} m`, { permanent:false, direction:'top' })
+    .addTo(mapInstance);
+  mapInstance.setView([lat, lng], 15);
+  toast(`Radio de ${metros} m dibujado. Clic en el mapa para quitar.`);
+  // Quitar al hacer clic en cualquier parte
+  mapInstance.once('click', () => {
+    if (radioLayer) { mapInstance.removeLayer(radioLayer); radioLayer = null; }
+  });
 }
 
 /* ── Render principal ───────────────────────────────────────── */
@@ -1359,6 +1468,22 @@ function aplicarFiltros() {
              \u00daltima: <strong style="color:#4b5563">${esc(r0?.fecha||'\u2014')}</strong>
            </div>`;
 
+      // [B] botón Google Maps + [C] botón radio
+      const btnMaps  = `<a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank"
+        style="display:inline-flex;align-items:center;gap:4px;font-family:inherit;font-size:11px;
+               font-weight:700;color:#fff;background:#4285F4;border-radius:6px;
+               padding:5px 10px;text-decoration:none;flex:1;justify-content:center;
+               transition:background .15s" onmouseover="this.style.background='#3367d6'"
+               onmouseout="this.style.background='#4285F4'">
+        &#128205; Google Maps</a>`;
+      const btnRadio = `<button onclick="dibujarRadio(${lat},${lng},'${esc(grupo.codigo)}')"
+        style="font-family:inherit;font-size:11px;font-weight:700;color:#0033a0;
+               background:#e6ebf5;border:1px solid #c7d3f0;border-radius:6px;
+               padding:5px 10px;cursor:pointer;flex:1;transition:background .15s"
+               onmouseover="this.style.background='#d0dcf0'"
+               onmouseout="this.style.background='#e6ebf5'">
+        &#9678; Ver radio</button>`;
+
       const popupHtml = `
         <div style="font-family:'Inter',sans-serif;min-width:260px;max-width:300px">
           <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px">
@@ -1370,6 +1495,7 @@ function aplicarFiltros() {
           </div>
           <table style="width:100%;border-collapse:collapse">${filasTipo}</table>
           ${detalleHtml}
+          <div style="display:flex;gap:6px;margin-top:10px">${btnMaps}${btnRadio}</div>
         </div>`;
 
       L.marker([lat,lng],{icon})
@@ -1413,12 +1539,28 @@ function toggleDarkMap() {
   if (btn) btn.innerHTML = darkMode ? '&#9728; Modo d\u00eda' : '&#127761; Modo noche';
 
   if (!mapInstance) return;
-  // Cambiar tile — OSM (light) no usa subdominios, CARTO dark sí
+  setBaseMap(darkMode ? 'dark' : baseActual === 'dark' ? 'osm' : baseActual);
+}
+
+/* ── [A] Selector de mapa base ─────────────────────────────── */
+function setBaseMap(key) {
+  const bm = BASE_MAPS[key];
+  if (!bm || !mapInstance) return;
+  baseActual = key;
   if (tileLayer) mapInstance.removeLayer(tileLayer);
-  const opts = darkMode
-    ? { attribution:'&copy; OSM &amp; CARTO', subdomains:'abcd', maxZoom:19, minZoom:5 }
-    : { attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom:19, minZoom:5 };
-  tileLayer = L.tileLayer(darkMode ? TILE_DARK : TILE_LIGHT, opts).addTo(mapInstance);
+  const opts = { attribution: bm.attr, maxZoom: bm.max, minZoom: 5 };
+  if (bm.subdomains) opts.subdomains = bm.subdomains;
+  tileLayer = L.tileLayer(bm.url, opts).addTo(mapInstance);
+  // Actualizar UI del selector
+  document.querySelectorAll('.basemap-opt').forEach(b =>
+    b.classList.toggle('active', b.dataset.map === key)
+  );
+  // Selector cerrado tras elegir
+  document.getElementById('basemap-menu')?.classList.remove('open');
+}
+function toggleBaseMenu(e) {
+  e?.stopPropagation();
+  document.getElementById('basemap-menu')?.classList.toggle('open');
 }
 
 /* ── Captura PNG ────────────────────────────────────────────── */
