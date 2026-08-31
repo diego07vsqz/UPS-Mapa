@@ -1175,29 +1175,40 @@ function initMap() {
     return div;
   };
   legend.addTo(mapInstance);
+  _initRadioListeners();
 }
 
 /* ── [D] Animación contador KPI ─────────────────────────────── */
+// Rastreo de intervals activos por elemento (evita race conditions)
+const _countUpIntervals = {};
+
 function countUp(elId, target) {
   const el = document.getElementById(elId);
   if (!el) return;
+  // Cancelar animación previa del mismo elemento
+  if (_countUpIntervals[elId]) {
+    clearInterval(_countUpIntervals[elId]);
+    delete _countUpIntervals[elId];
+  }
   // Disparar animación pop siempre
   el.classList.remove('counting');
-  void el.offsetWidth; // reflow para re-disparar
+  void el.offsetWidth;
   el.classList.add('counting');
   const num = parseInt(target);
-  // Si no es número positivo (ej: '—'), solo mostrar el valor con la animación
   if (isNaN(num) || num <= 0) {
     el.textContent = target;
     return;
   }
-  // Conteo animado para números positivos
   const steps  = Math.min(num, 30);
   const stepMs = Math.round(Math.min(600, 80 + num * 18) / steps);
   let current  = 0;
-  const tick   = setInterval(() => {
+  _countUpIntervals[elId] = setInterval(() => {
     current += Math.ceil(num / steps);
-    if (current >= num) { current = num; clearInterval(tick); }
+    if (current >= num) {
+      current = num;
+      clearInterval(_countUpIntervals[elId]);
+      delete _countUpIntervals[elId];
+    }
     el.textContent = current;
   }, stepMs);
 }
@@ -1234,20 +1245,39 @@ function renderStats(rows, grupos, ciudad) {
 }
 
 /* ── [C] Círculo de radio alrededor de un semáforo ─────────── */
-function dibujarRadio(lat, lng, codigo, metros) {
+let radioZoomInicial = null;   // zoom al momento de dibujar el radio
+const RADIO_METROS   = 500;
+
+function quitarRadio() {
+  if (radioLayer && mapInstance) {
+    mapInstance.removeLayer(radioLayer);
+    radioLayer = null;
+    radioZoomInicial = null;
+  }
+}
+
+function dibujarRadio(lat, lng, codigo) {
   if (!mapInstance) return;
-  metros = metros || 500;
-  if (radioLayer) mapInstance.removeLayer(radioLayer);
+  // Quitar cualquier radio previo (al seleccionar otro semáforo)
+  quitarRadio();
   radioLayer = L.circle([lat, lng], {
-    radius: metros, color:'#0033a0', weight:2,
+    radius: RADIO_METROS, color:'#0033a0', weight:2,
     fillColor:'#3b82f6', fillOpacity:.12, dashArray:'6,4',
-  }).bindTooltip(`${codigo} — Radio de ${metros} m`, { permanent:false, direction:'top' })
-    .addTo(mapInstance);
+    interactive:false,   // no bloquea clics
+  }).addTo(mapInstance);
   mapInstance.setView([lat, lng], 15);
-  toast(`Radio de ${metros} m dibujado. Clic en el mapa para quitar.`);
-  // Quitar al hacer clic en cualquier parte
-  mapInstance.once('click', () => {
-    if (radioLayer) { mapInstance.removeLayer(radioLayer); radioLayer = null; }
+  radioZoomInicial = mapInstance.getZoom();
+  toast(`Radio de ${RADIO_METROS} m alrededor de ${codigo}. Aleja el zoom para quitarlo.`);
+}
+
+/* Listener global de zoom — quitar radio si el usuario aleja */
+function _initRadioListeners() {
+  if (!mapInstance) return;
+  mapInstance.on('zoomend', () => {
+    if (radioLayer && radioZoomInicial !== null) {
+      // Quitar si el zoom bajó (alejó) más de 2 niveles
+      if (mapInstance.getZoom() < radioZoomInicial - 1) quitarRadio();
+    }
   });
 }
 
@@ -1255,6 +1285,7 @@ function dibujarRadio(lat, lng, codigo, metros) {
 function aplicarFiltros() {
   updateFiltroBtn();
   if (!mapInstance) return;
+  quitarRadio();   // limpiar radio al cambiar filtros
 
   const ciudad  = document.getElementById('map-ciudad').value;
   const rowsAll = getFilteredRows();
@@ -1545,9 +1576,22 @@ function toggleDarkMap() {
 /* ── [A] Selector de mapa base ─────────────────────────────── */
 function setBaseMap(key) {
   const bm = BASE_MAPS[key];
-  if (!bm || !mapInstance) return;
+  if (!bm) { console.warn('Mapa base no encontrado:', key); return; }
+  if (!mapInstance) return;
+  // Si el usuario elige un mapa que NO sea 'dark', desactivar modo noche
+  if (key !== 'dark' && darkMode) {
+    darkMode = false;
+    document.body.classList.remove('dark-map');
+    const btn = document.getElementById('btn-darkmap');
+    btn?.classList.remove('dark-active');
+    if (btn) btn.innerHTML = '&#127761; Modo noche';
+  }
   baseActual = key;
-  if (tileLayer) mapInstance.removeLayer(tileLayer);
+  // Remover tile anterior de forma segura
+  if (tileLayer) {
+    try { mapInstance.removeLayer(tileLayer); } catch(e) {}
+    tileLayer = null;
+  }
   const opts = { attribution: bm.attr, maxZoom: bm.max, minZoom: 5 };
   if (bm.subdomains) opts.subdomains = bm.subdomains;
   tileLayer = L.tileLayer(bm.url, opts).addTo(mapInstance);
@@ -1555,12 +1599,25 @@ function setBaseMap(key) {
   document.querySelectorAll('.basemap-opt').forEach(b =>
     b.classList.toggle('active', b.dataset.map === key)
   );
-  // Selector cerrado tras elegir
   document.getElementById('basemap-menu')?.classList.remove('open');
+  toast(`Mapa base: ${bm.name}`);
 }
+
 function toggleBaseMenu(e) {
   e?.stopPropagation();
-  document.getElementById('basemap-menu')?.classList.toggle('open');
+  const menu = document.getElementById('basemap-menu');
+  const isOpen = menu?.classList.toggle('open');
+  // Cerrar al clic fuera
+  if (isOpen) {
+    setTimeout(() => {
+      document.addEventListener('click', _closeBaseMenuOnce, { once:true });
+    }, 0);
+  }
+}
+function _closeBaseMenuOnce(e) {
+  const menu = document.getElementById('basemap-menu');
+  const wrap = e.target.closest('.basemap-wrap');
+  if (!wrap) menu?.classList.remove('open');
 }
 
 /* ── Captura PNG ────────────────────────────────────────────── */
