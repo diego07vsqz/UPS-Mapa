@@ -351,11 +351,36 @@
     .map-toolbar { display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap; flex-shrink:0; }
     .layer-btn { font-family:inherit; font-size:11px; font-weight:700; color:var(--text-mid); background:var(--bg-page); border:1px solid var(--border-mid); border-radius:20px; padding:4px 12px; cursor:pointer; transition:all .15s; display:flex; align-items:center; gap:5px; }
     .layer-btn:hover, .layer-btn.active { background:var(--flag-blue); border-color:var(--flag-blue); color:#fff; }
+    /* [10] Botones toolbar con borde inferior tipo pestaña cuando activo */
+    .layer-btn { position:relative; }
+    .layer-btn.active::after {
+      content:''; position:absolute; left:15%; right:15%; bottom:-4px;
+      height:3px; background:var(--yellow); border-radius:2px;
+      box-shadow:0 0 8px rgba(245,158,11,.5);
+    }
     .capture-btn { font-family:inherit; font-size:11px; font-weight:700; color:var(--text-mid); background:var(--bg-page); border:1px solid var(--border-mid); border-radius:var(--r-sm); padding:4px 12px; cursor:pointer; transition:all .15s; display:flex; align-items:center; gap:5px; margin-left:auto; }
     .capture-btn:hover { background:#059669; border-color:#059669; color:#fff; }
-    #map-container { flex:1; min-height:400px; border-radius:var(--r-lg); overflow:hidden; border:1px solid var(--border-mid); }
+    #map-container { flex:1; min-height:400px; border-radius:var(--r-lg); overflow:hidden; border:1px solid var(--border-mid); position:relative; }
+
+    /* [6] Skeleton overlay del mapa mientras carga */
+    #map-container.loading::after {
+      content:''; position:absolute; inset:0; z-index:500;
+      background:linear-gradient(90deg,#e5e7eb 0%,#f3f4f6 50%,#e5e7eb 100%);
+      background-size:400px 100%;
+      animation:skeleton-shine 1.4s ease-in-out infinite;
+      pointer-events:none;
+    }
+    #map-container.loading::before {
+      content:'Cargando mapa\2026'; position:absolute; inset:0; z-index:501;
+      display:flex; align-items:center; justify-content:center;
+      font-family:'Inter',sans-serif; font-size:13px; font-weight:600;
+      color:#6b7280; letter-spacing:.05em; pointer-events:none;
+    }
     .map-status { margin-top:8px; font-size:12px; color:var(--text-light); display:flex; align-items:center; gap:6px; flex-shrink:0; }
-    .custom-marker { background:transparent !important; border:none !important; }
+    .custom-marker { background:transparent !important; border:none !important; transition:transform .2s ease; }
+    /* [7] Marcadores escalan con zoom mediante CSS var actualizado por JS */
+    .leaflet-container.zoom-hi .custom-marker { transform:scale(1.15); }
+    .leaflet-container.zoom-far .custom-marker { transform:scale(.85); }
 
     /* [D] Botones zoom más grandes y estilo dashboard */
     .leaflet-touch .leaflet-bar a,
@@ -408,7 +433,7 @@
     /* ── Leyenda mapa ── */
     .map-legend-control { background:rgba(255,255,255,.96); border:1px solid var(--border-mid); border-radius:var(--r-md); padding:10px 13px; box-shadow:0 2px 10px rgba(0,0,0,.12); min-width:155px; }
     .map-legend-control h4 { font-size:10px; font-weight:800; color:var(--text-light); text-transform:uppercase; letter-spacing:.1em; margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid var(--border); }
-    .map-legend-control .leg-item { display:flex; align-items:center; gap:7px; padding:3px 0; font-size:11px; font-weight:500; color:var(--text-mid); }
+    .map-legend-control .leg-item { display:flex; align-items:center; gap:7px; padding:3px 0; font-size:11px; font-weight:500; color:var(--text-mid); min-width:180px; }
     .map-legend-control .leg-dot  { width:10px; height:10px; border-radius:50%; flex-shrink:0; border:1.5px solid rgba(255,255,255,.8); box-shadow:0 1px 3px rgba(0,0,0,.2); }
     /* [E] Leyenda colapsable */
     .map-legend-control .leg-header {
@@ -484,6 +509,21 @@
     .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:#1e293b; color:#fff; font-size:11px; font-weight:600; padding:9px 18px; border-radius:var(--r-lg); z-index:500; opacity:0; transition:all .3s ease; pointer-events:none; box-shadow:0 4px 20px rgba(0,0,0,.3); white-space:nowrap; }
     .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
+    /* [3] Modal sin coordenadas */
+    .sin-coords-modal {
+      position:fixed; inset:0; background:rgba(15,23,42,.5); backdrop-filter:blur(4px);
+      display:none; align-items:center; justify-content:center; z-index:9998;
+      animation:fadeIn .18s ease;
+    }
+    .sin-coords-modal.open { display:flex; }
+    .sin-coords-box {
+      background:#fff; border-radius:var(--r-lg); box-shadow:0 24px 64px rgba(0,0,0,.25);
+      max-width:640px; width:calc(100% - 40px); overflow:hidden;
+      animation:panelIn .22s cubic-bezier(.68,-.55,.265,1.55);
+    }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+    .sin-coords-link:hover { color:#d97706 !important; }
+
     /* [F] Tooltip cluster personalizado */
     .leaflet-tooltip-cluster {
       background:rgba(255,255,255,.97);
@@ -494,6 +534,14 @@
       pointer-events:none;
     }
     .leaflet-tooltip-cluster::before { display:none; }
+    /* [8] Tooltip hover en marcador individual */
+    .marker-tooltip {
+      background:#0b1120 !important; color:#fff !important;
+      border:none !important; border-radius:6px !important;
+      padding:5px 10px !important; font-family:'Inter',sans-serif !important;
+      font-size:11px !important; box-shadow:0 4px 12px rgba(0,0,0,.25) !important;
+    }
+    .marker-tooltip::before { border-top-color:#0b1120 !important; }
 
     /* ── Footer ── */
     .footer { padding:12px 0 4px; text-align:center; font-size:11px; color:var(--text-light); text-transform:uppercase; letter-spacing:.07em; flex-shrink:0; }
@@ -785,6 +833,11 @@
 </main>
 
 <div class="toast" id="toast"></div>
+
+<!-- [3] Modal lista sin coordenadas -->
+<div class="sin-coords-modal" id="sin-coords-modal" onclick="if(event.target===this) cerrarSinCoords()">
+  <div class="sin-coords-box" id="sin-coords-body"></div>
+</div>
 <button id="btn-fullscreen-exit" onclick="toggleFullscreen()">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
   SALIR
@@ -1096,6 +1149,7 @@ async function loadSemaforos() {
 
 /* ── Carga de datos principal ───────────────────────────────── */
 async function loadData() {
+  document.getElementById('map-container')?.classList.add('loading');
   document.getElementById('update-note').textContent = 'ACTUALIZANDO...';
   try {
     const cached = cacheLeer();
@@ -1221,30 +1275,53 @@ function initMap() {
   if (mapInstance) return;
   mapInstance = L.map('map-container', { zoomControl:true }).setView([13.6894,-89.1872], 8);
   setBaseMap('osm');
+  // [7] Escalar marcadores según zoom
+  mapInstance.on('zoomend', () => {
+    const z = mapInstance.getZoom();
+    const el = mapInstance.getContainer();
+    el.classList.toggle('zoom-hi',  z >= 15);
+    el.classList.toggle('zoom-far', z <= 9);
+  });
 
   // Leyenda
   const legend = L.control({ position:'bottomleft' });
   legend.onAdd = () => {
     const div = L.DomUtil.create('div','map-legend-control');
+    div.id = 'map-legend';
     div.innerHTML = `
       <div class="leg-header" onclick="this.parentElement.classList.toggle('collapsed')">
         <h4 style="margin:0;padding:0;border:none">Tipos de incidencia</h4>
         <span class="leg-toggle">&minus;</span>
       </div>
-      <div class="leg-body">
-      <div class='leg-item'><div class='leg-dot' style='background:#ca8a04'></div>Forzamiento de Tiempos</div>
-      <div class='leg-item'><div class='leg-dot' style='background:#dc2626'></div>Apagado</div>
-      <div class='leg-item'><div class='leg-dot' style='background:#65a30d'></div>Mejora de Tiempos</div>
-      <div class='leg-item'><div class='leg-dot' style='background:#2563eb'></div>Intermitencia</div>
-      <div class='leg-item'><div class='leg-dot' style='background:#9333ea'></div>Error de Comunicaci\u00f3n</div>
-      <div class='leg-item'><div class='leg-dot' style='background:#ea580c'></div>Apoyo en Accidentes</div>
-      <div class='leg-item'><div class='leg-dot' style='background:#0d9488'></div>Revisi\u00f3n VDT</div>
-      <div class='leg-item'><div class='leg-dot' style='background:#94a3b8'></div>Otro tipo</div>
-      <div class='leg-item'><div class='leg-dot' style='background:#dc2626;box-shadow:0 0 0 3px rgba(239,68,68,.3)'></div>Cr\u00edtico (pulso)</div></div>`;
+      <div class="leg-body" id="leg-body"><div class="leg-item" style="opacity:.5">Cargando\u2026</div></div>`;
     L.DomEvent.disableClickPropagation(div);
     return div;
   };
   legend.addTo(mapInstance);
+}
+
+/* ── [4] Leyenda dinámica ordenada por cantidad ──────────── */
+function renderLeyenda(grupos) {
+  const body = document.getElementById('leg-body');
+  if (!body) return;
+  // Contar por tipo (label) usando los grupos ya renderizados
+  const conteoTipos = {};
+  Object.values(grupos).forEach(g => {
+    Object.entries(g.conteo || {}).forEach(([lbl, cnt]) => {
+      conteoTipos[lbl] = (conteoTipos[lbl] || 0) + cnt;
+    });
+  });
+  const items = Object.entries(conteoTipos)
+    .sort((a,b) => b[1] - a[1])
+    .map(([lbl, cnt]) => {
+      const color = Object.values(TIPOS).find(t => t.label === lbl)?.color || '#94a3b8';
+      return `<div class="leg-item">
+        <div class="leg-dot" style="background:${color}"></div>
+        <span style="flex:1">${esc(lbl)}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-weight:800;color:#0033a0;font-size:11px">${cnt}</span>
+      </div>`;
+    }).join('');
+  body.innerHTML = items || '<div class="leg-item" style="opacity:.5">Sin datos</div>';
 }
 
 /* ── [D] Animación contador KPI ─────────────────────────────── */
@@ -1298,6 +1375,10 @@ function renderStats(rows, grupos, ciudad) {
 
   const nAct = Object.keys(grupos).length;
   countUp('stat-activos', nAct || '\u2014');
+  // [9] Título del navegador refleja incidencias activas
+  document.title = nAct > 0
+    ? `(${nAct}) Mapa CCM \u2014 Incidencias`
+    : 'Mapa CCM \u2014 Incidencias Semaf\u00f3ricas';
   const pct = tot>0 && nAct>0 ? Math.round(nAct/tot*100) : 0;
   document.getElementById('stat-activos-sub').textContent = pct>0 ? `${pct}% del total` : 'en el per\u00edodo';
 
@@ -1317,6 +1398,7 @@ function renderStats(rows, grupos, ciudad) {
 function aplicarFiltros() {
   updateFiltroBtn();
   if (!mapInstance) return;
+  document.getElementById('map-container')?.classList.remove('loading');
 
   const ciudad  = document.getElementById('map-ciudad').value;
   const rowsAll = getFilteredRows();
@@ -1333,7 +1415,7 @@ function aplicarFiltros() {
     rows.length===0
       ? 'No hay registros con coordenadas v\u00e1lidas para los filtros seleccionados.'
       : `Mostrando ${rows.length} registros` +
-        (sinCoords>0 ? ` &nbsp;&middot;&nbsp; <span style="color:#f59e0b;font-weight:600">${sinCoords} sin coordenadas</span>` : '');
+        (sinCoords>0 ? ` &nbsp;&middot;&nbsp; <span class="sin-coords-link" onclick="mostrarSinCoords()" style="color:#f59e0b;font-weight:600;cursor:pointer;text-decoration:underline;text-decoration-style:dotted">${sinCoords} sin coordenadas</span>` : '');
 
   // Limpiar capas
   if (clusterLayer) { mapInstance.removeLayer(clusterLayer); clusterLayer = null; }
@@ -1538,14 +1620,23 @@ function aplicarFiltros() {
              \u00daltima: <strong style="color:#4b5563">${esc(r0?.fecha||'\u2014')}</strong>
            </div>`;
 
-      // [B] botón Google Maps para verificar ubicación
+      // [B] botón Google Maps + [2] botón copiar coordenadas
       const btnMaps  = `<a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank"
-        style="display:flex;align-items:center;justify-content:center;gap:6px;
+        style="display:flex;align-items:center;justify-content:center;gap:6px;flex:1;
                font-family:inherit;font-size:11px;font-weight:700;color:#fff;
                background:#4285F4;border-radius:6px;padding:6px 12px;text-decoration:none;
                transition:background .15s" onmouseover="this.style.background='#3367d6'"
                onmouseout="this.style.background='#4285F4'">
-        &#128205; Ver en Google Maps</a>`;
+        &#128205; Google Maps</a>`;
+      const btnCoords = `<button onclick="copiarCoords(${lat},${lng},this)"
+        style="display:flex;align-items:center;justify-content:center;gap:5px;flex-shrink:0;
+               font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:#0033a0;
+               background:#e6ebf5;border:1px solid #c7d3f0;border-radius:6px;padding:6px 10px;
+               cursor:pointer;transition:all .15s;white-space:nowrap"
+               onmouseover="this.style.background='#d0dcf0'"
+               onmouseout="this.style.background='#e6ebf5'"
+               title="Copiar coordenadas">
+        &#128203; Copiar</button>`;
 
       const popupHtml = `
         <div style="font-family:'Inter',sans-serif;min-width:260px;max-width:300px">
@@ -1558,16 +1649,19 @@ function aplicarFiltros() {
           </div>
           <table style="width:100%;border-collapse:collapse">${filasTipo}</table>
           ${detalleHtml}
-          <div style="margin-top:10px">${btnMaps}</div>
+          <div style="margin-top:10px;display:flex;gap:6px">${btnMaps}${btnCoords}</div>
         </div>`;
 
       L.marker([lat,lng],{icon})
+       .bindTooltip(`<b>${esc(grupo.codigo)}</b> &middot; ${total} ${total===1?'incidencia':'incidencias'}`,
+                    { direction:'top', offset:[0,-half], className:'marker-tooltip', opacity:0.95 })
        .bindPopup(popupHtml,{maxWidth:320})
        .addTo(clusterLayer);
       bounds.push([lat,lng]);
     });
 
     clusterLayer.addTo(mapInstance);
+    renderLeyenda(grupos);   // [4] actualizar leyenda con cantidades
   }
 
   // Ajustar vista
@@ -1575,6 +1669,85 @@ function aplicarFiltros() {
     mapInstance.fitBounds(bounds, {padding:[40,40], maxZoom:16});
   } else {
     mapInstance.setView([13.6894,-89.1872], 8);
+  }
+}
+
+/* ── [3] Modal lista de códigos sin coordenadas ──────────── */
+function mostrarSinCoords() {
+  const rows = getFilteredRows().filter(r => {
+    const lat = parseFloat(r.latitud), lng = parseFloat(r.longitud);
+    return isNaN(lat) || isNaN(lng) || lat===0 || lng===0;
+  });
+  if (!rows.length) { toast('No hay registros sin coordenadas'); return; }
+  // Contar por código
+  const conteo = {};
+  rows.forEach(r => {
+    const key = (r.codigo || 'Sin c\u00f3digo').trim().toUpperCase();
+    if (!conteo[key]) conteo[key] = { codigo:key, count:0, ciudad:r.ciudad||'\u2014', dir:r.dir||'' };
+    conteo[key].count++;
+  });
+  const lista = Object.values(conteo).sort((a,b) => b.count - a.count);
+  const filas = lista.map(x => `
+    <tr style="border-bottom:1px solid #f1f5f9">
+      <td style="padding:6px 10px;font-family:'JetBrains Mono',monospace;font-weight:700;color:#0033a0">${esc(x.codigo)}</td>
+      <td style="padding:6px 10px;color:#4b5563;font-size:12px">${esc(x.ciudad)}</td>
+      <td style="padding:6px 10px;color:#6b7280;font-size:11px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(x.dir)}</td>
+      <td style="padding:6px 10px;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:800">${x.count}</td>
+    </tr>`).join('');
+  const modal = document.getElementById('sin-coords-modal');
+  const cuerpo = document.getElementById('sin-coords-body');
+  cuerpo.innerHTML = `
+    <div style="padding:14px 20px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:15px;font-weight:800;color:#0033a0">Registros sin coordenadas</div>
+        <div style="font-size:11px;color:#6b7280;margin-top:2px">${lista.length} c\u00f3digos distintos &middot; ${rows.length} registros totales</div>
+      </div>
+      <button onclick="cerrarSinCoords()" style="background:none;border:none;font-size:22px;color:#9ca3af;cursor:pointer;line-height:1">&times;</button>
+    </div>
+    <div style="max-height:60vh;overflow-y:auto">
+      <table style="width:100%;border-collapse:collapse;font-family:'Inter',sans-serif">
+        <thead style="position:sticky;top:0;background:#f8fafc">
+          <tr style="border-bottom:2px solid #e2e8f0">
+            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:800;color:#6b7280;text-transform:uppercase">C\u00f3digo</th>
+            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:800;color:#6b7280;text-transform:uppercase">Ciudad</th>
+            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:800;color:#6b7280;text-transform:uppercase">Direcci\u00f3n</th>
+            <th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:800;color:#6b7280;text-transform:uppercase">Registros</th>
+          </tr>
+        </thead>
+        <tbody>${filas}</tbody>
+      </table>
+    </div>
+    <div style="padding:10px 20px;border-top:1px solid #e2e8f0;font-size:11px;color:#6b7280;background:#f8fafc">
+      &#128161; Estos c\u00f3digos no tienen coordenadas en la hoja <b>Semaforos</b>. Ag\u00e9rgalos ah\u00ed para que aparezcan en el mapa.
+    </div>`;
+  modal.classList.add('open');
+}
+function cerrarSinCoords() {
+  document.getElementById('sin-coords-modal')?.classList.remove('open');
+}
+
+/* ── [2] Copiar coordenadas al portapapeles ──────────────── */
+function copiarCoords(lat, lng, btn) {
+  const txt = `${lat},${lng}`;
+  const done = () => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '&#10003; Copiado';
+    btn.style.background = '#dcfce7';
+    btn.style.color = '#166534';
+    setTimeout(() => {
+      btn.innerHTML = orig;
+      btn.style.background = '#e6ebf5';
+      btn.style.color = '#0033a0';
+    }, 1500);
+  };
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(txt).then(done).catch(() => toast('No se pudo copiar'));
+  } else {
+    // Fallback para navegadores viejos
+    const ta = document.createElement('textarea');
+    ta.value = txt; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch(e) { toast('No se pudo copiar'); }
+    document.body.removeChild(ta);
   }
 }
 
@@ -1696,6 +1869,16 @@ function capturarMapa() {
 }
 
 /* ── Inicio ─────────────────────────────────────────────────── */
+// [5] Tecla ESC cierra todos los overlays
+window.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  cerrarSinCoords();
+  closeFiltroPanel?.();
+  closeDateDrop?.();
+  document.getElementById('basemap-menu')?.classList.remove('open');
+  if (document.body.classList.contains('fullscreen')) toggleFullscreen();
+});
+
 window.addEventListener('DOMContentLoaded', async () => {
   await loadData();
   const overlay = document.getElementById('loading-overlay');
