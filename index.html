@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mapa de Incidencias Semafóricas | CCM</title>
+  <title>Mapa de Incidencias Semaf&oacute;ricas | CCM</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='10' y='2' width='12' height='28' rx='3' fill='%230b1120'/%3E%3Ccircle cx='16' cy='9' r='3.5' fill='%23ef4444'/%3E%3Ccircle cx='16' cy='16' r='3.5' fill='%23FFD100'/%3E%3Ccircle cx='16' cy='23' r='3.5' fill='%2322c55e'/%3E%3C/svg%3E">
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
@@ -1284,7 +1285,7 @@ function initMap() {
   });
 
   // Leyenda
-  const legend = L.control({ position:'bottomleft' });
+  const legend = L.control({ position:'bottomright' });
   legend.onAdd = () => {
     const div = L.DomUtil.create('div','map-legend-control');
     div.id = 'map-legend';
@@ -1375,10 +1376,6 @@ function renderStats(rows, grupos, ciudad) {
 
   const nAct = Object.keys(grupos).length;
   countUp('stat-activos', nAct || '\u2014');
-  // [9] Título del navegador refleja incidencias activas
-  document.title = nAct > 0
-    ? `(${nAct}) Mapa CCM \u2014 Incidencias`
-    : 'Mapa CCM \u2014 Incidencias Semaf\u00f3ricas';
   const pct = tot>0 && nAct>0 ? Math.round(nAct/tot*100) : 0;
   document.getElementById('stat-activos-sub').textContent = pct>0 ? `${pct}% del total` : 'en el per\u00edodo';
 
@@ -1516,12 +1513,13 @@ function aplicarFiltros() {
       const { lat, lng, registros } = grupo;
       const total = registros.length;
 
-      // Conteo por tipo
+      // Conteo por tipo (guardado en el grupo para que renderLeyenda lo use)
       const conteo = {};
       registros.forEach(r => {
         const lbl = getTipo(r.incidencia).label;
         conteo[lbl] = (conteo[lbl]||0) + 1;
       });
+      grupo.conteo = conteo;
 
       // Tipo predominante → color del círculo
       const tipoPrincipal = Object.entries(conteo).sort((a,b)=>b[1]-a[1])[0][0];
