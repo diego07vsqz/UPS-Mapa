@@ -34,6 +34,16 @@
     }
     .marker-critical { animation:ring-pulse 1.6s ease-out infinite; }
 
+    /* Filtro oscuro para tiles OSM en modo noche (sin marca de agua) */
+    .map-dark-filter .leaflet-tile-pane {
+      filter: invert(1) hue-rotate(180deg) brightness(.85) contrast(.9) saturate(.7);
+    }
+    /* Etiquetas y marcadores no se invierten */
+    .map-dark-filter .leaflet-marker-pane,
+    .map-dark-filter .leaflet-popup-pane,
+    .map-dark-filter .leaflet-control-container,
+    .map-dark-filter .leaflet-overlay-pane { filter: none; }
+
     /* ── Loading ── */
     #loading-overlay { position:fixed; inset:0; background:var(--bg-header); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; z-index:9999; transition:opacity .4s ease; }
     #loading-overlay.fade-out { opacity:0; pointer-events:none; }
@@ -41,7 +51,7 @@
     .loading-msg { font-size:14px; font-weight:700; color:#fff; letter-spacing:.06em; text-transform:uppercase; }
 
     /* ── Header ── */
-    .header { background:var(--bg-header); border-bottom:2px solid var(--yellow); flex-shrink:0; }
+    .header { background:linear-gradient(135deg,#0b1120 0%,#0f2653 55%,#0b1a3a 100%); border-bottom:2px solid var(--yellow); flex-shrink:0; box-shadow:0 2px 12px rgba(0,0,0,.15); }
     .header-inner { max-width:1400px; margin:0 auto; padding:0 28px; display:flex; align-items:center; justify-content:space-between; height:64px; }
     .header-brand { display:flex; align-items:center; gap:13px; }
     .divider-v { width:1px; height:30px; background:rgba(255,255,255,.12); }
@@ -101,6 +111,19 @@
     /* Botón LIMPIAR */
     .btn-clear { font-family:inherit; font-size:10px; font-weight:700; color:#fff; background:#ef4444; border:1px solid #ef4444; border-radius:var(--r-sm); padding:4px 12px; cursor:pointer; transition:all .15s; text-transform:uppercase; letter-spacing:.04em; white-space:nowrap; }
     .btn-clear:hover { background:#dc2626; border-color:#dc2626; }
+
+    /* [H] Botón toggle modo compacto */
+    .btn-toggle-bar {
+      font-family:inherit; background:transparent; border:1px solid var(--border-mid);
+      border-radius:var(--r-sm); padding:3px 7px; cursor:pointer;
+      color:var(--text-mid); transition:all .15s; margin-left:4px;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .btn-toggle-bar:hover { background:var(--flag-blue-soft); color:var(--flag-blue); border-color:var(--flag-blue); }
+    .btn-toggle-bar svg { transition:transform .3s cubic-bezier(.4,0,.2,1); }
+    body.compact-bar .btn-toggle-bar svg { transform:rotate(180deg); }
+    body.compact-bar .filter-row-2 { display:none; }
+    body.compact-bar .filter-row-1 { height:44px; }
     .update-note { font-size:10px; color:var(--text-light); background:var(--bg-page); padding:3px 10px; border-radius:20px; white-space:nowrap; margin-left:auto; }
     /* ══════════════════════════════════════════════════════════
        FILTROS — expansión horizontal (inspirado en patrón SCSS)
@@ -574,7 +597,7 @@
   <div class="filter-bar-inner">
 
     <!-- ── FILA 1: botón FILTROS expansible ───────────────── -->
-    <div class="filter-row">
+    <div class="filter-row filter-row-1">
       <div class="fp-wrap">
         <div class="filter-expand-bar" id="filter-expand-bar">
 
@@ -698,6 +721,11 @@
       <div class="filter-divider"></div>
 
       <button class="btn-clear" onclick="clearAll()">&times; LIMPIAR</button>
+      <button class="btn-toggle-bar" onclick="toggleFilterBar()" title="Modo compacto — más espacio al mapa">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+          <polyline points="18 15 12 9 6 15"/>
+        </svg>
+      </button>
       <span class="update-note" id="update-note">CARGANDO...</span>
 
     </div><!-- /.filter-row-2 -->
@@ -782,9 +810,9 @@ const BASE_MAPS = {
   topo: { name:'Topogr\u00e1fico', url:'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
           attr:'&copy; OpenTopoMap (CC-BY-SA)',
           subdomains:'abc', max:17 },
-  dark: { name:'Modo noche',    url:'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-          attr:'&copy; OSM &amp; CARTO',
-          subdomains:'abcd', max:19 },
+  dark: { name:'Modo noche',    url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          attr:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+          max:19, darkFilter:true },   // aplica CSS filter para oscurecer
 };
 let baseActual = 'osm';
 const TILE_LIGHT = BASE_MAPS.osm.url;
@@ -919,6 +947,13 @@ function updateFiltroBtn() {
   const has    = tipo!=='todos' || ciudad!=='todas' || ini || fin || code;
   document.getElementById('filter-expand-bar')?.classList.toggle('has-filters', !!has);
 }
+function toggleFilterBar() {
+  document.body.classList.toggle('compact-bar');
+  const isCompact = document.body.classList.contains('compact-bar');
+  toast(isCompact ? 'Modo compacto — más espacio al mapa' : 'Barra completa');
+  setTimeout(() => mapInstance?.invalidateSize(), 320);
+}
+
 function clearAll() {
   const el = id => document.getElementById(id);
   // Resetear todos los controles
@@ -1433,6 +1468,14 @@ function aplicarFiltros() {
       // [E] delay escalonado: máx 600ms para que no se sienta lento con muchos marcadores
       const delay = Math.min(markerIdx * 30, 600);
       markerIdx++;
+      // [F] badge visible con contador arriba del semáforo
+      const badgeVisible = total > 0 ? `
+        <div style="position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;
+          background:#0033a0;color:#fff;border:2px solid #fff;border-radius:10px;
+          font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:800;
+          display:flex;align-items:center;justify-content:center;padding:0 5px;
+          box-shadow:0 2px 6px rgba(0,0,0,.35);z-index:2;">${total}</div>` : '';
+
       const iconHtml = `
         <div class="marker-animated" style="position:relative;width:${size}px;height:${size}px;animation-delay:${delay}ms">
           <div class="${criticalClass}" style="
@@ -1447,7 +1490,7 @@ function aplicarFiltros() {
               <circle cx="8" cy="15" r="2.4" fill="#2ecc71"/>
             </svg>
           </div>
-          ${badgeHtml}
+          ${badgeVisible}
         </div>`;
 
       const icon = L.divIcon({
@@ -1581,8 +1624,25 @@ function setBaseMap(key) {
     try { mapInstance.removeLayer(tileLayer); } catch(e) {}
     tileLayer = null;
   }
-  const opts = { attribution: bm.attr, maxZoom: bm.max, minZoom: 5 };
+  const opts = {
+    attribution: bm.attr,
+    maxZoom: bm.max,
+    minZoom: 5,
+    // Optimizaciones de rendimiento
+    keepBuffer: 4,             // mantiene tiles fuera de vista (menos re-fetch)
+    updateWhenZooming: false,  // no re-fetch mientras hace zoom
+    updateWhenIdle: true,      // fetch solo cuando termina de mover
+    crossOrigin: true,         // permite cache del navegador
+  };
   if (bm.subdomains) opts.subdomains = bm.subdomains;
+
+  // Aplicar filtro oscuro si el mapa lo requiere (modo noche OSM)
+  const mapEl = document.getElementById('map-container');
+  if (mapEl) {
+    if (bm.darkFilter) mapEl.classList.add('map-dark-filter');
+    else               mapEl.classList.remove('map-dark-filter');
+  }
+
   tileLayer = L.tileLayer(bm.url, opts).addTo(mapInstance);
   // Actualizar UI del selector
   document.querySelectorAll('.basemap-opt').forEach(b =>
