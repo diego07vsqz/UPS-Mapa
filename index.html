@@ -664,8 +664,10 @@ const SHEET_NAME     = 'P. Semaforico';
 const SEMAFOROS_NAME = 'Lista Sem\u00e1foros';
 const CACHE_KEY      = 'ccm_mapa_v3';
 const CACHE_TTL      = 10 * 60 * 1000; // 10 min
-const TILE_LIGHT     = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+const TILE_LIGHT     = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const TILE_DARK      = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+// Nota: CARTO ahora exige API key. OSM directo funciona sin llave.
+// Modo noche sigue usando CARTO dark (menos crítico visualmente).
 
 /* ── Catálogo de tipos ──────────────────────────────────────── */
 const TIPOS = {
@@ -1063,8 +1065,8 @@ function initMap() {
   if (mapInstance) return;
   mapInstance = L.map('map-container', { zoomControl:true }).setView([13.6894,-89.1872], 8);
   tileLayer = L.tileLayer(TILE_LIGHT, {
-    attribution:'&copy; <a href="https://www.openstreetmap.org">OSM</a> &amp; CARTO',
-    subdomains:'abcd', maxZoom:19, minZoom:5,
+    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom:19, minZoom:5,
   }).addTo(mapInstance);
 
   // Leyenda
@@ -1411,12 +1413,12 @@ function toggleDarkMap() {
   if (btn) btn.innerHTML = darkMode ? '&#9728; Modo d\u00eda' : '&#127761; Modo noche';
 
   if (!mapInstance) return;
-  // Cambiar tile
+  // Cambiar tile — OSM (light) no usa subdominios, CARTO dark sí
   if (tileLayer) mapInstance.removeLayer(tileLayer);
-  tileLayer = L.tileLayer(darkMode ? TILE_DARK : TILE_LIGHT, {
-    attribution: '&copy; <a href="https://www.openstreetmap.org">OSM</a> &amp; CARTO',
-    subdomains: 'abcd', maxZoom: 19, minZoom: 5,
-  }).addTo(mapInstance);
+  const opts = darkMode
+    ? { attribution:'&copy; OSM &amp; CARTO', subdomains:'abcd', maxZoom:19, minZoom:5 }
+    : { attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom:19, minZoom:5 };
+  tileLayer = L.tileLayer(darkMode ? TILE_DARK : TILE_LIGHT, opts).addTo(mapInstance);
 }
 
 /* ── Captura PNG ────────────────────────────────────────────── */
